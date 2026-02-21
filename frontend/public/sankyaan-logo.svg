@@ -1,0 +1,131 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="hexagon-clip">
+      <polygon points="100,20 170,55 170,145 100,180 30,145 30,55"/>
+    </clipPath>
+  </defs>
+  
+  <!-- Hexagon background -->
+  <polygon points="100,20 170,55 170,145 100,180 30,145 30,55" fill="#10B981" stroke="#059669" stroke-width="2"/>
+  
+  <!-- Grid background with numbers -->
+  <g opacity="0.3" fill="white" font-size="8" font-weight="bold" text-anchor="middle">
+    <!-- Row 1 -->
+    <text x="45" y="55">5</text>
+    <text x="65" y="55">3</text>
+    <text x="85" y="55">7</text>
+    <text x="105" y="55">2</text>
+    <text x="125" y="55">8</text>
+    <text x="145" y="55">4</text>
+    
+    <!-- Row 2 -->
+    <text x="45" y="75">9</text>
+    <text x="65" y="75">2</text>
+    <text x="85" y="75">4</text>
+    <text x="105" y="75">6</text>
+    <text x="125" y="75">1</text>
+    <text x="145" y="75">5</text>
+    
+    <!-- Row 3 -->
+    <text x="45" y="95">8</text>
+    <text x="65" y="95">1</text>
+    <text x="85" y="95">6</text>
+    <text x="105" y="95">9</text>
+    <text x="125" y="95">3</text>
+    <text x="145" y="95">7</text>
+    
+    <!-- Row 4 -->
+    <text x="45" y="115">2</text>
+    <text x="65" y="115">7</text>
+    <text x="85" y="115">9</text>
+    <text x="105" y="115">3</text>
+    <text x="125" y="115">5</text>
+    <text x="145" y="115">6</text>
+    
+    <!-- Row 5 -->
+    <text x="45" y="135">3</text>
+    <text x="65" y="135">4</text>
+    <text x="85" y="135">1</text>
+    <text x="105" y="135">7</text>
+    <text x="125" y="135">2</text>
+    <text x="145" y="135">9</text>
+  </g>
+  
+  <!-- Grid lines -->
+  <g stroke="rgba(255,255,255,0.2)" stroke-width="0.5">
+    <!-- Vertical lines -->
+    <line x1="40" y1="50" x2="40" y2="140"/>
+    <line x1="60" y1="50" x2="60" y2="140"/>
+    <line x1="80" y1="50" x2="80" y2="140"/>
+    <line x1="100" y1="50" x2="100" y2="140"/>
+    <line x1="120" y1="50" x2="120" y2="140"/>
+    <line x1="140" y1="50" x2="140" y2="140"/>
+    <line x1="160" y1="50" x2="160" y2="140"/>
+    
+    <!-- Horizontal lines -->
+    <line x1="35" y1="60" x2="165" y2="60"/>
+    <line x1="35" y1="80" x2="165" y2="80"/>
+    <line x1="35" y1="100" x2="165" y2="100"/>
+    <line x1="35" y1="120" x2="165" y2="120"/>
+  </g>
+  
+  <!-- Elephant body and head - solid silhouette style -->
+  <g fill="white" stroke="white" stroke-width="1" stroke-linejoin="round">
+    <!-- Body -->
+    <ellipse cx="100" cy="120" rx="22" ry="28" fill="white"/>
+    
+    <!-- Head -->
+    <circle cx="100" cy="85" r="22" fill="white"/>
+    
+    <!-- Ears -->
+    <ellipse cx="72" cy="95" rx="16" ry="30" fill="white"/>
+    <ellipse cx="128" cy="95" rx="16" ry="30" fill="white"/>
+    
+    <!-- Front left leg -->
+    <rect x="83" y="145" width="8" height="25" rx="4" fill="white"/>
+    
+    <!-- Front right leg -->
+    <rect x="109" y="145" width="8" height="25" rx="4" fill="white"/>
+    
+    <!-- Back left leg -->
+    <rect x="78" y="145" width="6" height="23" rx="3" fill="white" opacity="0.8"/>
+    
+    <!-- Back right leg -->
+    <rect x="116" y="145" width="6" height="23" rx="3" fill="white" opacity="0.8"/>
+    
+    <!-- Trunk - raised upward in an arc -->
+    <path d="M 95 105 Q 85 70 80 45 Q 78 35 82 30" 
+          fill="none" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Trunk tip curl -->
+    <path d="M 82 30 Q 80 25 85 23 Q 90 22 88 28" 
+          fill="none" stroke="white" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- Left Tusk -->
+    <path d="M 85 95 Q 75 85 70 65" 
+          fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
+    
+    <!-- Right Tusk -->
+    <path d="M 115 95 Q 125 85 130 65" 
+          fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
+    
+    <!-- Eye -->
+    <circle cx="95" cy="78" r="2.5" fill="white"/>
+    
+    <!-- Trunk water splash effect (droplets) -->
+    <circle cx="75" cy="50" r="2" fill="white" opacity="0.7"/>
+    <circle cx="70" cy="48" r="1.5" fill="white" opacity="0.6"/>
+    <circle cx="80" cy="48" r="1.5" fill="white" opacity="0.6"/>
+  </g>
+  
+  <!-- Left Tusk -->
+  <path d="M 88 105 Q 80 115 75 125" 
+        fill="none" stroke="#F4D69F" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Right Tusk -->
+  <path d="M 112 105 Q 120 115 125 125" 
+        fill="none" stroke="#F4D69F" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Shine/highlight on elephant -->
+  <circle cx="88" cy="80" r="4" fill="white" opacity="0.4"/>
+</svg>

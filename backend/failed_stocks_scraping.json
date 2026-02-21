@@ -1,0 +1,42 @@
+[
+  {
+    "symbol": "ICDSLTD.NS",
+    "error": "timeout of 15000ms exceeded"
+  },
+  {
+    "symbol": "ICEMAKE.NS",
+    "error": "timeout of 15000ms exceeded"
+  },
+  {
+    "symbol": "ICICIAMC.NS",
+    "error": "getaddrinfo ENOTFOUND www.screener.in"
+  },
+  {
+    "symbol": "ICICIBANK.NS",
+    "error": "getaddrinfo ENOTFOUND www.screener.in"
+  },
+  {
+    "symbol": "ICICIGI.NS",
+    "error": "getaddrinfo ENOTFOUND www.screener.in"
+  },
+  {
+    "symbol": "ICICIPRULI.NS",
+    "error": "getaddrinfo ENOTFOUND www.screener.in"
+  },
+  {
+    "symbol": "INFY.NS",
+    "error": "duplicate key value violates unique constraint \"stock_fundamentals_stock_id_period_type_fiscal_year_fiscal__key\""
+  },
+  {
+    "symbol": "PAUSHAKLTD.NS",
+    "error": "duplicate key value violates unique constraint \"stock_fundamentals_stock_id_period_type_fiscal_year_fiscal__key\""
+  },
+  {
+    "symbol": "RELIANCE.NS",
+    "error": "duplicate key value violates unique constraint \"stock_fundamentals_stock_id_period_type_fiscal_year_fiscal__key\""
+  },
+  {
+    "symbol": "TCS.NS",
+    "error": "duplicate key value violates unique constraint \"stock_fundamentals_stock_id_period_type_fiscal_year_fiscal__key\""
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(psql:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell.exe -Command \"wmic process where name=''node.exe'' get ProcessId,CommandLine /format:list 2>&1\")",
+      "Bash(powershell.exe:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(cmd /c \"taskkill /PID 13436 /F\")",
+      "Bash(cmd /c:*)",
+      "Bash(timeout:*)",
+      "Bash(PGPASSWORD=Sankyaan \"/c/Program Files/PostgreSQL/18/bin/psql.exe\":*)",
+      "Bash(python:*)",
+      "Bash(PGPASSWORD=Sankyaan \"C:/Program Files/PostgreSQL/18/bin/psql.exe\":*)",
+      "Bash(\"C:/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -d Sankyaan -c \"SELECT table_name, \\(xpath\\(''/row/cnt/text\\(\\)'', query_to_xml\\(''SELECT COUNT\\(*\\) AS cnt FROM '' || quote_ident\\(table_name\\), false, true, ''''\\)\\)\\)[1]::text::int AS row_count FROM information_schema.tables WHERE table_schema = ''public'' AND table_name LIKE ''portfolio_%'' ORDER BY table_name;\")",
+      "Bash(set:*)",
+      "Bash(\"C:/Program Files/PostgreSQL/18/bin/psql.exe\":*)",
+      "Bash(npm install:*)",
+      "WebFetch(domain:www.tijorifinance.com)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(ping:*)",
+      "Bash(del:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

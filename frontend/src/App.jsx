@@ -1,0 +1,36 @@
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import Home from './Home';
+import StockDetail from './StockDetail';
+import './AppLayout.css';
+import './accessibility.css';
+
+function AppContent() {
+  const [viewMode, setViewMode] = useState('mutual-funds');
+  const location = useLocation();
+
+  const isStockDetailPage = location.pathname.startsWith('/stock/');
+
+  return (
+    <div className="app-layout">
+      {!isStockDetailPage && (
+        <Sidebar viewMode={viewMode} onViewModeChange={setViewMode} />
+      )}
+      <div className={`main-content ${!isStockDetailPage ? 'with-sidebar' : ''}`}>
+        <Routes>
+          <Route path="/" element={<Home viewMode={viewMode} setViewMode={setViewMode} />} />
+          <Route path="/stock/:symbol" element={<StockDetail />} />
+        </Routes>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  );
+}

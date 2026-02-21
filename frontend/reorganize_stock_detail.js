@@ -1,0 +1,792 @@
+/**
+ * Reorganization Script for StockDetail.jsx
+ *
+ * This script restructures StockDetail.jsx to use tab navigation:
+ * - Overview: Performance + Key Metrics
+ * - Financials: Fundamentals
+ * - Shareholding: Shareholding Pattern
+ * - Quality Scores: Quality Scores Section
+ *
+ * Usage: node reorganize_stock_detail.js
+ */
+
+import fs from 'fs';
+import path from 'path';
+
+const STOCK_DETAIL_PATH = path.join(process.cwd(), 'src', 'StockDetail.jsx');
+const BACKUP_PATH = path.join(process.cwd(), 'src', 'StockDetail.jsx.backup');
+
+console.log('🔧 Stock Detail Reorganization Script\n');
+console.log('=' .repeat(60));
+
+try {
+  // Read current file
+  console.log('\n📖 Reading current StockDetail.jsx...');
+  const content = fs.readFileSync(STOCK_DETAIL_PATH, 'utf8');
+
+  // Create backup
+  console.log('💾 Creating backup at StockDetail.jsx.backup...');
+  fs.writeFileSync(BACKUP_PATH, content, 'utf8');
+
+  // The new properly structured content
+  const newContent = `import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
+import StockHeader from './components/StockHeader';
+import StockChart from './components/StockChart';
+import StockTabs from './components/StockTabs';
+import './StockDetail.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const COLORS = ['#2E8B57', '#1E5C41', '#FFD93D', '#6BCB77', '#FF6B6B'];
+
+export default function StockDetail() {
+  const { symbol } = useParams();
+  const navigate = useNavigate();
+  const [stockData, setStockData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (symbol) {
+      fetchStockData(symbol);
+    }
+  }, [symbol]);
+
+  const fetchStockData = async (stockSymbol) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log(\`📊 Fetching stock data for: \${stockSymbol}\`);
+      const response = await axios.get(\`\${API_URL}/stocks/\${stockSymbol}\`);
+      setStockData(response.data);
+      console.log('✅ Stock data loaded:', response.data);
+    } catch (err) {
+      console.error('❌ Error fetching stock:', err);
+      setError(err.response?.data?.message || 'Failed to fetch stock data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshStockData = async () => {
+    if (!symbol || refreshing) return;
+
+    setRefreshing(true);
+    try {
+      console.log(\`🔄 Refreshing stock data for: \${symbol}\`);
+      await axios.post(\`\${API_URL}/stocks/fetch/\${symbol}\`);
+      const response = await axios.get(\`\${API_URL}/stocks/\${symbol}\`);
+      setStockData(response.data);
+      console.log('✅ Stock data refreshed');
+    } catch (err) {
+      console.error('❌ Error refreshing stock:', err);
+      setError('Failed to refresh stock data');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const goBack = () => {
+    navigate(-1);
+  };
+
+  // Calculate price change metrics
+  const calculatePriceChange = () => {
+    if (!stockData?.priceHistory || stockData.priceHistory.length < 2) {
+      return { change: 0, changePercent: 0 };
+    }
+
+    const sortedHistory = [...stockData.priceHistory].sort((a, b) =>
+      new Date(b.date) - new Date(a.date)
+    );
+
+    const currentPrice = parseFloat(stockData.current_price || sortedHistory[0]?.close || 0);
+    const previousClose = parseFloat(sortedHistory[1]?.close || currentPrice);
+    const change = currentPrice - previousClose;
+    const changePercent = previousClose !== 0 ? (change / previousClose) * 100 : 0;
+
+    return { change, changePercent };
+  };
+
+  // Calculate performance metrics
+  const calculatePerformance = () => {
+    if (!stockData?.priceHistory || stockData.priceHistory.length === 0) {
+      return null;
+    }
+
+    const sortedHistory = [...stockData.priceHistory].sort((a, b) =>
+      new Date(b.date) - new Date(a.date)
+    );
+
+    const currentPrice = parseFloat(stockData.current_price || sortedHistory[0]?.close || 0);
+
+    const getReturnForDays = (days) => {
+      if (sortedHistory.length <= days) return null;
+      const pastPrice = parseFloat(sortedHistory[days]?.close || 0);
+      return pastPrice !== 0 ? ((currentPrice - pastPrice) / pastPrice) * 100 : 0;
+    };
+
+    return {
+      oneDay: getReturnForDays(1),
+      oneWeek: getReturnForDays(7),
+      oneMonth: getReturnForDays(30),
+      threeMonth: sortedHistory.length > 90 ? getReturnForDays(90) : null,
+      sixMonth: sortedHistory.length > 180 ? getReturnForDays(180) : null,
+      oneYear: sortedHistory.length > 365 ? getReturnForDays(365) : null,
+    };
+  };
+
+  // Calculate 52-week high/low
+  const calculate52WeekRange = () => {
+    if (!stockData?.priceHistory || stockData.priceHistory.length === 0) {
+      return { high: 0, low: 0 };
+    }
+
+    const prices = stockData.priceHistory.map(p => parseFloat(p.high || p.close || 0));
+    const lows = stockData.priceHistory.map(p => parseFloat(p.low || p.close || 0));
+
+    return {
+      high: Math.max(...prices),
+      low: Math.min(...lows.filter(l => l > 0))
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="stock-detail-container">
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading stock data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="stock-detail-container">
+        <div className="error-box">{error}</div>
+        <button onClick={goBack} className="back-btn">Go Back</button>
+      </div>
+    );
+  }
+
+  if (!stockData) {
+    return (
+      <div className="stock-detail-container">
+        <div className="error-box">Stock not found</div>
+        <button onClick={goBack} className="back-btn">Go Back</button>
+      </div>
+    );
+  }
+
+  // Get current price - fallback to latest price from history if current_price is null
+  const getCurrentPrice = () => {
+    if (stockData.current_price) {
+      return parseFloat(stockData.current_price);
+    }
+    if (stockData.priceHistory && stockData.priceHistory.length > 0) {
+      const sorted = [...stockData.priceHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+      return parseFloat(sorted[0]?.close || 0);
+    }
+    return 0;
+  };
+
+  const currentPrice = getCurrentPrice();
+  const marketCap = parseFloat(stockData.market_cap || 0);
+  const marketCapCr = (marketCap / 10000000).toFixed(2);
+  const { change, changePercent } = calculatePriceChange();
+  const performance = calculatePerformance();
+  const { high: weekHigh52, low: weekLow52 } = calculate52WeekRange();
+
+  // Shareholding pattern data (if available)
+  const shareholdingData = stockData.shareholding ? [
+    { name: 'Promoters', value: parseFloat(stockData.shareholding.promoter_holding || 0) },
+    { name: 'FII', value: parseFloat(stockData.shareholding.fii_holding || 0) },
+    { name: 'DII', value: parseFloat(stockData.shareholding.dii_holding || 0) },
+    { name: 'Public', value: parseFloat(stockData.shareholding.public_holding || 0) },
+  ].filter(item => item.value > 0) : null;
+
+  return (
+    <div className="stock-detail-container">
+      {/* Enhanced Header */}
+      <StockHeader
+        stock={{
+          company_name: stockData.company_name,
+          symbol: stockData.symbol,
+          sector: stockData.sector,
+          industry: stockData.industry,
+          price: currentPrice,
+          market_cap: marketCap,
+        }}
+        fundamentals={stockData.fundamentals}
+        priceChange={change}
+        priceChangePercent={changePercent}
+      />
+
+      {/* Refresh Button */}
+      <div style={{ marginBottom: '24px', textAlign: 'right' }}>
+        <button
+          onClick={refreshStockData}
+          className="refresh-btn"
+          disabled={refreshing}
+          title="Refresh latest data from Yahoo Finance"
+        >
+          {refreshing ? '🔄 Refreshing...' : '🔄 Refresh'}
+        </button>
+      </div>
+
+      {/* Enhanced Stock Chart with Timeframe Selector */}
+      <StockChart
+        symbol={stockData.symbol}
+        priceHistory={stockData.priceHistory || []}
+      />
+
+      {/* Tabbed Content Organization */}
+      <StockTabs
+        tabs={[
+          // TAB 1: OVERVIEW
+          {
+            label: 'Overview',
+            content: (
+              <>
+                {/* Performance Section */}
+                {performance && (
+                  <div className="performance-section" style={{ marginBottom: '32px' }}>
+                    <h2>Performance</h2>
+                    <div className="performance-grid">
+                      {performance.oneDay !== null && (
+                        <div className="performance-card">
+                          <span className="performance-label">1 Day</span>
+                          <span className={\`performance-value \${performance.oneDay >= 0 ? 'positive' : 'negative'}\`}>
+                            {performance.oneDay >= 0 ? '+' : ''}{performance.oneDay.toFixed(2)}%
+                          </span>
+                        </div>
+                      )}
+                      {performance.oneWeek !== null && (
+                        <div className="performance-card">
+                          <span className="performance-label">1 Week</span>
+                          <span className={\`performance-value \${performance.oneWeek >= 0 ? 'positive' : 'negative'}\`}>
+                            {performance.oneWeek >= 0 ? '+' : ''}{performance.oneWeek.toFixed(2)}%
+                          </span>
+                        </div>
+                      )}
+                      {performance.oneMonth !== null && (
+                        <div className="performance-card">
+                          <span className="performance-label">1 Month</span>
+                          <span className={\`performance-value \${performance.oneMonth >= 0 ? 'positive' : 'negative'}\`}>
+                            {performance.oneMonth >= 0 ? '+' : ''}{performance.oneMonth.toFixed(2)}%
+                          </span>
+                        </div>
+                      )}
+                      {performance.threeMonth !== null && (
+                        <div className="performance-card">
+                          <span className="performance-label">3 Months</span>
+                          <span className={\`performance-value \${performance.threeMonth >= 0 ? 'positive' : 'negative'}\`}>
+                            {performance.threeMonth >= 0 ? '+' : ''}{performance.threeMonth.toFixed(2)}%
+                          </span>
+                        </div>
+                      )}
+                      {performance.sixMonth !== null && (
+                        <div className="performance-card">
+                          <span className="performance-label">6 Months</span>
+                          <span className={\`performance-value \${performance.sixMonth >= 0 ? 'positive' : 'negative'}\`}>
+                            {performance.sixMonth >= 0 ? '+' : ''}{performance.sixMonth.toFixed(2)}%
+                          </span>
+                        </div>
+                      )}
+                      {performance.oneYear !== null && (
+                        <div className="performance-card">
+                          <span className="performance-label">1 Year</span>
+                          <span className={\`performance-value \${performance.oneYear >= 0 ? 'positive' : 'negative'}\`}>
+                            {performance.oneYear >= 0 ? '+' : ''}{performance.oneYear.toFixed(2)}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Key Metrics */}
+                <div className="metrics-grid">
+                  <h2>Key Metrics</h2>
+                  <div className="metrics-container">
+                    <div className="metric-card">
+                      <span className="metric-label">Market Cap</span>
+                      <span className="metric-value">₹{marketCapCr} Cr</span>
+                    </div>
+                    <div className="metric-card">
+                      <span className="metric-label">Sector</span>
+                      <span className="metric-value">{stockData.sector || 'N/A'}</span>
+                    </div>
+                    <div className="metric-card">
+                      <span className="metric-label">Industry</span>
+                      <span className="metric-value">{stockData.industry || 'N/A'}</span>
+                    </div>
+                    <div className="metric-card">
+                      <span className="metric-label">Exchange</span>
+                      <span className="metric-value">{stockData.exchange || 'N/A'}</span>
+                    </div>
+                    {stockData.isin && (
+                      <div className="metric-card">
+                        <span className="metric-label">ISIN</span>
+                        <span className="metric-value">{stockData.isin}</span>
+                      </div>
+                    )}
+                    <div className="metric-card">
+                      <span className="metric-label">Avg Volume (30D)</span>
+                      <span className="metric-value">
+                        {stockData.priceHistory && stockData.priceHistory.length > 0
+                          ? (stockData.priceHistory.reduce((sum, p) => sum + parseInt(p.volume || 0), 0) / stockData.priceHistory.length).toLocaleString('en-IN', { maximumFractionDigits: 0 })
+                          : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Placeholder for Events Timeline (Phase 4) */}
+                <div style={{ marginTop: '32px', padding: '24px', background: 'var(--bg)', borderRadius: '8px', border: '1px dashed var(--bg3)' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: 'var(--text2)' }}>📅 Events Timeline</h3>
+                  <p style={{ margin: 0, fontSize: '14px', color: 'var(--text2)' }}>Corporate events timeline coming in Phase 4</p>
+                </div>
+
+                {/* Placeholder for Peer Comparison (Phase 5) */}
+                <div style={{ marginTop: '24px', padding: '24px', background: 'var(--bg)', borderRadius: '8px', border: '1px dashed var(--bg3)' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: 'var(--text2)' }}>📊 Peer Comparison</h3>
+                  <p style={{ margin: 0, fontSize: '14px', color: 'var(--text2)' }}>Industry peer comparison coming in Phase 5</p>
+                </div>
+              </>
+            ),
+          },
+
+          // TAB 2: FINANCIALS
+          {
+            label: 'Financials',
+            content: stockData.fundamentals ? (
+              <div className="fundamentals-section">
+                <h2>Fundamentals</h2>
+
+                {/* Valuation Ratios */}
+                <div className="fundamentals-category">
+                  <h3>Valuation Ratios</h3>
+                  <div className="fundamentals-grid">
+                    {stockData.fundamentals.pe_ratio && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">P/E Ratio</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.pe_ratio).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {stockData.fundamentals.pb_ratio && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">P/B Ratio</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.pb_ratio).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {stockData.fundamentals.eps && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">EPS</span>
+                        <span className="fundamental-value">₹{parseFloat(stockData.fundamentals.eps).toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Profitability Ratios */}
+                <div className="fundamentals-category">
+                  <h3>Profitability Ratios</h3>
+                  <div className="fundamentals-grid">
+                    {stockData.fundamentals.roe && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">ROE</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.roe).toFixed(2)}%</span>
+                      </div>
+                    )}
+                    {stockData.fundamentals.roa && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">ROA</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.roa).toFixed(2)}%</span>
+                      </div>
+                    )}
+                    {stockData.fundamentals.net_margin && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">Net Margin</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.net_margin).toFixed(2)}%</span>
+                      </div>
+                    )}
+                    {stockData.fundamentals.operating_margin && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">Operating Margin</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.operating_margin).toFixed(2)}%</span>
+                      </div>
+                    )}
+                    {stockData.fundamentals.gross_margin && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">Gross Margin</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.gross_margin).toFixed(2)}%</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Leverage Ratios */}
+                <div className="fundamentals-category">
+                  <h3>Leverage & Liquidity</h3>
+                  <div className="fundamentals-grid">
+                    {stockData.fundamentals.debt_to_equity && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">Debt/Equity</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.debt_to_equity).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {stockData.fundamentals.current_ratio && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">Current Ratio</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.current_ratio).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {stockData.fundamentals.quick_ratio && (
+                      <div className="fundamental-item">
+                        <span className="fundamental-label">Quick Ratio</span>
+                        <span className="fundamental-value">{parseFloat(stockData.fundamentals.quick_ratio).toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Financial Metrics */}
+                {(stockData.fundamentals.revenue || stockData.fundamentals.net_income || stockData.fundamentals.ebitda) && (
+                  <div className="fundamentals-category">
+                    <h3>Financial Metrics</h3>
+                    <div className="fundamentals-grid">
+                      {stockData.fundamentals.revenue && (
+                        <div className="fundamental-item">
+                          <span className="fundamental-label">Revenue</span>
+                          <span className="fundamental-value">₹{(parseFloat(stockData.fundamentals.revenue) / 10000000).toFixed(2)} Cr</span>
+                        </div>
+                      )}
+                      {stockData.fundamentals.net_income && (
+                        <div className="fundamental-item">
+                          <span className="fundamental-label">Net Income</span>
+                          <span className="fundamental-value">₹{(parseFloat(stockData.fundamentals.net_income) / 10000000).toFixed(2)} Cr</span>
+                        </div>
+                      )}
+                      {stockData.fundamentals.ebitda && (
+                        <div className="fundamental-item">
+                          <span className="fundamental-label">EBITDA</span>
+                          <span className="fundamental-value">₹{(parseFloat(stockData.fundamentals.ebitda) / 10000000).toFixed(2)} Cr</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text2)' }}>
+                <h3>No fundamental data available</h3>
+                <p>Fundamental data has not been loaded for this stock yet.</p>
+              </div>
+            ),
+          },
+
+          // TAB 3: SHAREHOLDING
+          {
+            label: 'Shareholding',
+            content: shareholdingData && shareholdingData.length > 0 ? (
+              <div className="shareholding-section">
+                <h2>Shareholding Pattern</h2>
+                <div className="shareholding-content">
+                  <div className="shareholding-chart">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={shareholdingData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={2}
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, value }) => \`\${name}: \${value.toFixed(1)}%\`}
+                        >
+                          {shareholdingData.map((entry, index) => (
+                            <Cell key={\`cell-\${index}\`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => \`\${value.toFixed(2)}%\`} />
+                        <Legend verticalAlign="bottom" height={36} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="shareholding-details">
+                    {shareholdingData.map((item, index) => (
+                      <div key={index} className="shareholding-item">
+                        <div className="shareholding-color" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                        <span className="shareholding-name">{item.name}</span>
+                        <span className="shareholding-value">{item.value.toFixed(2)}%</span>
+                      </div>
+                    ))}
+                    {stockData.shareholding?.promoter_pledged && parseFloat(stockData.shareholding.promoter_pledged) > 0 && (
+                      <div className="shareholding-warning">
+                        ⚠️ Promoter Pledged: {parseFloat(stockData.shareholding.promoter_pledged).toFixed(2)}%
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text2)' }}>
+                <h3>No shareholding data available</h3>
+                <p>Shareholding pattern has not been loaded for this stock yet.</p>
+              </div>
+            ),
+          },
+
+          // TAB 4: QUALITY SCORES
+          {
+            label: 'Quality Scores',
+            content: stockData.qualityScores ? (
+              <div className="quality-section">
+                {/* Section Header */}
+                <div className="section-header">
+                  <div className="section-icon">🔍</div>
+                  <div className="section-title">
+                    <h2>Quality & Forensic Scores</h2>
+                    <p>Comprehensive financial health analysis across multiple metrics</p>
+                  </div>
+                  {stockData.qualityScores.overall_quality_score !== null && stockData.qualityScores.overall_quality_score !== undefined && (
+                    <div className={\`section-badge badge-\${getScoreClass(stockData.qualityScores.overall_quality_score, 100)}\`}>
+                      ⭐ {getQualityDescription(stockData.qualityScores.overall_quality_score, 100)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Main Scores Grid */}
+                <div className="scores-grid">
+                  {/* Primary Score - Overall Quality */}
+                  {stockData.qualityScores.overall_quality_score !== null && stockData.qualityScores.overall_quality_score !== undefined && (
+                    <div className={\`primary-score score-bg-\${getScoreClass(stockData.qualityScores.overall_quality_score, 100)}\`}>
+                      <div className="primary-label">Overall Quality Score</div>
+                      <div className="primary-value-wrap">
+                        <div className={\`primary-score-num score-\${getScoreClass(stockData.qualityScores.overall_quality_score, 100)}\`}>
+                          {stockData.qualityScores.overall_quality_score}
+                        </div>
+                        <div className="primary-score-max">/100</div>
+                      </div>
+                      <div className={\`primary-rating rating-\${getScoreClass(stockData.qualityScores.overall_quality_score, 100)}\`}>
+                        {getQualityDescription(stockData.qualityScores.overall_quality_score, 100)}
+                      </div>
+
+                      <div className="gauge-bar">
+                        <div
+                          className={\`gauge-fill fill-\${getScoreClass(stockData.qualityScores.overall_quality_score, 100)}\`}
+                          style={{ width: \`\${stockData.qualityScores.overall_quality_score}%\` }}
+                        ></div>
+                      </div>
+                      <div className="gauge-markers">
+                        <span>0</span>
+                        <span>25</span>
+                        <span>50</span>
+                        <span>75</span>
+                        <span>100</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Secondary Metrics */}
+                  <div className="secondary-grid">
+                    {/* Piotroski F-Score */}
+                    {stockData.qualityScores.piotroski_score !== null && stockData.qualityScores.piotroski_score !== undefined && (
+                      <div className="metric-card">
+                        <div className={\`metric-icon icon-\${getScoreClass(stockData.qualityScores.piotroski_score, 9)}\`}>📊</div>
+                        <div className="metric-info">
+                          <div className="metric-label">Piotroski F-Score</div>
+                          <div className={\`metric-value score-\${getScoreClass(stockData.qualityScores.piotroski_score, 9)}\`}>
+                            {stockData.qualityScores.piotroski_score}/9
+                          </div>
+                        </div>
+                        <div className={\`metric-badge badge-\${getScoreClass(stockData.qualityScores.piotroski_score, 9)}\`}>
+                          {getPiotroskiDescription(stockData.qualityScores.piotroski_score)}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Altman Z-Score */}
+                    {stockData.qualityScores.altman_z_score !== null && stockData.qualityScores.altman_z_score !== undefined && (
+                      <div className="metric-card">
+                        <div className={\`metric-icon icon-\${getAltmanClass(stockData.qualityScores.altman_z_score)}\`}>⚠️</div>
+                        <div className="metric-info">
+                          <div className="metric-label">Altman Z-Score</div>
+                          <div className={\`metric-value score-\${getAltmanClass(stockData.qualityScores.altman_z_score)}\`}>
+                            {parseFloat(stockData.qualityScores.altman_z_score).toFixed(2)}
+                          </div>
+                        </div>
+                        <div className={\`metric-badge badge-\${getAltmanClass(stockData.qualityScores.altman_z_score)}\`}>
+                          {getAltmanDescription(stockData.qualityScores.altman_z_score).split(' -')[0]}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Detailed Metrics Row */}
+                <div className="detailed-row">
+                  {/* Financial Health */}
+                  {stockData.qualityScores.financial_health_score !== null && stockData.qualityScores.financial_health_score !== undefined && (
+                    <div className="detail-card">
+                      <div className="detail-header">
+                        <div className="detail-label">Financial Health</div>
+                        <div className="detail-trend">💚</div>
+                      </div>
+                      <div className="detail-score-wrap">
+                        <div className={\`detail-score score-\${getScoreClass(stockData.qualityScores.financial_health_score, 100)}\`}>
+                          {stockData.qualityScores.financial_health_score}
+                        </div>
+                        <div className="detail-max">/100</div>
+                      </div>
+                      <div className="detail-desc">Balance sheet strength and debt management</div>
+                      <div className="mini-gauge">
+                        <div
+                          className={\`mini-gauge-fill fill-\${getScoreClass(stockData.qualityScores.financial_health_score, 100)}\`}
+                          style={{ width: \`\${stockData.qualityScores.financial_health_score}%\` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Management Quality */}
+                  {stockData.qualityScores.management_quality_score !== null && stockData.qualityScores.management_quality_score !== undefined && (
+                    <div className="detail-card">
+                      <div className="detail-header">
+                        <div className="detail-label">Management Quality</div>
+                        <div className="detail-trend">📈</div>
+                      </div>
+                      <div className="detail-score-wrap">
+                        <div className={\`detail-score score-\${getScoreClass(stockData.qualityScores.management_quality_score, 100)}\`}>
+                          {stockData.qualityScores.management_quality_score}
+                        </div>
+                        <div className="detail-max">/100</div>
+                      </div>
+                      <div className="detail-desc">Capital allocation and governance effectiveness</div>
+                      <div className="mini-gauge">
+                        <div
+                          className={\`mini-gauge-fill fill-\${getScoreClass(stockData.qualityScores.management_quality_score, 100)}\`}
+                          style={{ width: \`\${stockData.qualityScores.management_quality_score}%\` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Earnings Quality */}
+                  {stockData.qualityScores.earnings_quality_score !== null && stockData.qualityScores.earnings_quality_score !== undefined && (
+                    <div className="detail-card">
+                      <div className="detail-header">
+                        <div className="detail-label">Earnings Quality</div>
+                        <div className="detail-trend">✨</div>
+                      </div>
+                      <div className="detail-score-wrap">
+                        <div className={\`detail-score score-\${getScoreClass(stockData.qualityScores.earnings_quality_score, 100)}\`}>
+                          {stockData.qualityScores.earnings_quality_score}
+                        </div>
+                        <div className="detail-max">/100</div>
+                      </div>
+                      <div className="detail-desc">Revenue quality and earnings sustainability</div>
+                      <div className="mini-gauge">
+                        <div
+                          className={\`mini-gauge-fill fill-\${getScoreClass(stockData.qualityScores.earnings_quality_score, 100)}\`}
+                          style={{ width: \`\${stockData.qualityScores.earnings_quality_score}%\` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text2)' }}>
+                <h3>No quality scores available</h3>
+                <p>Quality scores have not been calculated for this stock yet.</p>
+              </div>
+            ),
+          },
+        ]}
+        defaultTab={0}
+      />
+    </div>
+  );
+}
+
+// Helper function to determine score color class
+function getScoreClass(score, maxScore) {
+  const percentage = (score / maxScore) * 100;
+  if (percentage >= 70) return 'good';
+  if (percentage >= 40) return 'medium';
+  return 'poor';
+}
+
+// Helper function for quality score description
+function getQualityDescription(score, maxScore) {
+  const percentage = (score / maxScore) * 100;
+  if (percentage >= 80) return 'Excellent';
+  if (percentage >= 60) return 'Good';
+  if (percentage >= 40) return 'Fair';
+  return 'Poor';
+}
+
+// Helper function for Piotroski F-Score description
+function getPiotroskiDescription(score) {
+  if (score >= 7) return 'Strong';
+  if (score >= 5) return 'Moderate';
+  if (score >= 3) return 'Weak';
+  return 'Very Weak';
+}
+
+// Helper function for Altman Z-Score classification
+function getAltmanClass(score) {
+  const z = parseFloat(score);
+  if (z >= 3.0) return 'good'; // Safe zone
+  if (z >= 1.8) return 'medium'; // Grey zone
+  return 'poor'; // Distress zone
+}
+
+// Helper function for Altman Z-Score description
+function getAltmanDescription(score) {
+  const z = parseFloat(score);
+  if (z >= 3.0) return 'Safe Zone - Low bankruptcy risk';
+  if (z >= 1.8) return 'Grey Zone - Moderate risk';
+  return 'Distress Zone - High bankruptcy risk';
+}
+`;
+
+  // Write new content
+  console.log('✍️  Writing reorganized StockDetail.jsx...');
+  fs.writeFileSync(STOCK_DETAIL_PATH, newContent, 'utf8');
+
+  console.log('\n✅ Reorganization complete!');
+  console.log('\n' + '=' .repeat(60));
+  console.log('\n📋 Summary:');
+  console.log('   ✅ Backup created: StockDetail.jsx.backup');
+  console.log('   ✅ Tab navigation implemented');
+  console.log('   ✅ Content organized into 4 tabs:');
+  console.log('      1. Overview (Performance + Key Metrics + Placeholders)');
+  console.log('      2. Financials (Fundamentals)');
+  console.log('      3. Shareholding (Shareholding Pattern)');
+  console.log('      4. Quality Scores (Quality Scores Section)');
+  console.log('\n💡 Next steps:');
+  console.log('   - Test the stock detail page');
+  console.log('   - Implement Events Timeline (Phase 4)');
+  console.log('   - Implement Peer Comparison (Phase 5)');
+  console.log('\n🔄 To restore backup:');
+  console.log('   cp src/StockDetail.jsx.backup src/StockDetail.jsx\n');
+
+  process.exit(0);
+
+} catch (error) {
+  console.error('\n❌ Error:', error.message);
+  console.error(error.stack);
+  process.exit(1);
+}
