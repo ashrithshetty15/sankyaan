@@ -1,25 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
 export default function Sidebar({ viewMode, onViewModeChange }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleNavClick = (mode) => {
     if (location.pathname !== '/') {
       navigate('/');
     }
     onViewModeChange(mode);
+    setIsMobileMenuOpen(false); // Close menu on mobile after selection
   };
 
   const handleLogoClick = () => {
     navigate('/');
     onViewModeChange('mutual-funds');
+    setIsMobileMenuOpen(false);
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   return (
-    <div className="sidebar">
+    <>
+      {/* Mobile Menu Button */}
+      <button className="mobile-menu-btn" onClick={toggleMobileMenu} aria-label="Toggle menu">
+        <span className="hamburger-icon">
+          {isMobileMenuOpen ? '✕' : '☰'}
+        </span>
+      </button>
+
+      {/* Overlay for mobile */}
+      {isMobileMenuOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
+
+      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
       <div className="sidebar-header" onClick={handleLogoClick} role="button">
         <div className="sidebar-logo">
           <img src="/Sankyaan.jpeg" alt="Sankyaan" className="logo-image" />
