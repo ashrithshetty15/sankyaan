@@ -1266,6 +1266,35 @@ html::before {
   .portfolio-view {
     padding: 20px;
   }
+
+  /* Chart fixes for mobile */
+  .chart-card {
+    padding: 20px;
+    overflow: visible;
+  }
+
+  .chart-wrapper {
+    min-height: 300px;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .chart-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .chart-legend-custom {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Ensure main content doesn't hide behind sidebar */
+  .main-content {
+    margin-left: 0 !important;
+    padding-top: 70px; /* Space for hamburger button */
+  }
 }
 
 /* ─── All Holdings Table ─────────────────────────────────────────────────── */

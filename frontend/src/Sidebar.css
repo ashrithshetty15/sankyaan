@@ -184,7 +184,7 @@
   }
 
   .sidebar-overlay {
-    display: block;
+    display: block !important;
   }
 
   .sidebar {
