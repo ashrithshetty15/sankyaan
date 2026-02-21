@@ -172,10 +172,10 @@ export default function PortfolioForensicScores({ ticker }) {
             <div className="metric-info">
               <div className="metric-label">Altman Z-Score</div>
               <div className={`metric-value ${scores.altman_z_score >= 3.0 ? 'excellent' : 'warning'}`}>
-                {scores.altman_z_score != null ? parseFloat(scores.altman_z_score).toFixed(2) : 'N/A'}
+                {scores.altman_z_score != null && !isNaN(parseFloat(scores.altman_z_score)) ? parseFloat(scores.altman_z_score).toFixed(2) : 'N/A'}
               </div>
             </div>
-            {scores.altman_z_score !== null && (
+            {scores.altman_z_score !== null && !isNaN(parseFloat(scores.altman_z_score)) && (
               <div className={`metric-badge ${scores.altman_z_score >= 3.0 ? 'excellent' : 'warning'}`}>
                 {getAltmanDescription(scores.altman_z_score)}
               </div>
