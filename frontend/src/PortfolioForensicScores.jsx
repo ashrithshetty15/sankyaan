@@ -93,6 +93,19 @@ export default function PortfolioForensicScores({ ticker }) {
   };
 
   const scores = forensicData.scores;
+  const cagr = forensicData.cagr || {};
+
+  const getReturnColor = (value) => {
+    if (value == null) return undefined;
+    return value >= 0 ? '#22c55e' : '#ef4444';
+  };
+
+  const getReturnClass = (value) => {
+    if (value == null) return '';
+    return value >= 0 ? 'good' : 'poor';
+  };
+
+  const hasAnyCagr = cagr.cagr_1y != null || cagr.cagr_3y != null || cagr.cagr_5y != null || cagr.cagr_10y != null;
 
   return (
     <div className="forensic-scores-section">
@@ -267,6 +280,38 @@ export default function PortfolioForensicScores({ ticker }) {
         </div>
 
       </div>
+
+      {/* CAGR / Returns Section */}
+      {hasAnyCagr && (
+        <>
+          <div className="cagr-section-header">
+            <span className="cagr-icon">📈</span>
+            <span className="cagr-title">Fund Returns (CAGR)</span>
+          </div>
+          <div className="cagr-cards-row">
+            {[
+              { key: 'cagr_1y', label: '1 Year' },
+              { key: 'cagr_3y', label: '3 Year' },
+              { key: 'cagr_5y', label: '5 Year' },
+              { key: 'cagr_10y', label: '10 Year' },
+            ].map(({ key, label }) => {
+              const val = cagr[key] != null ? parseFloat(cagr[key]) : null;
+              return (
+                <div key={key} className="cagr-card">
+                  <div className="cagr-label">{label}</div>
+                  <div
+                    className={`cagr-value ${getReturnClass(val)}`}
+                    style={{ color: getReturnColor(val) }}
+                  >
+                    {val != null ? `${val >= 0 ? '+' : ''}${val.toFixed(1)}%` : 'N/A'}
+                  </div>
+                  <div className="cagr-sublabel">CAGR</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

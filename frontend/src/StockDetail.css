@@ -967,6 +967,91 @@
   box-shadow: 0 0 8px rgba(240, 180, 41, 0.4);
 }
 
+/* CAGR / Returns Section */
+.cagr-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+
+.cagr-icon {
+  font-size: 20px;
+}
+
+.cagr-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text2);
+  font-weight: 700;
+}
+
+.cagr-cards-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.cagr-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.cagr-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.cagr-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text3);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.cagr-value {
+  font-size: 32px;
+  font-weight: 800;
+  font-family: 'DM Mono', monospace;
+  line-height: 1;
+  margin-bottom: 6px;
+  color: var(--text2);
+}
+
+.cagr-value.good {
+  color: var(--green);
+}
+
+.cagr-value.poor {
+  color: var(--red);
+}
+
+.cagr-sublabel {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+@media (max-width: 768px) {
+  .cagr-cards-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .cagr-cards-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Loading & Error States */
 .loading,
 .error-box {

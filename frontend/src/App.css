@@ -1612,34 +1612,33 @@ html::before {
 
 /* Export to PDF Button */
 .export-pdf-btn {
-  background: linear-gradient(135deg, var(--gold), #d4af37);
-  color: #000;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  gap: 5px;
+  transition: all 0.2s ease;
 }
 
 .export-pdf-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(212, 175, 55, 0.5);
-  background: linear-gradient(135deg, #d4af37, #c9a020);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text1);
+  border-color: var(--text3);
 }
 
 .export-pdf-btn:active {
-  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 @media (max-width: 768px) {
   .export-pdf-btn {
-    font-size: 14px;
-    padding: 10px 20px;
+    font-size: 11px;
+    padding: 5px 10px;
   }
 }

@@ -8,7 +8,7 @@ async function computeStockRatingsCache() {
   try {
     console.log('🔄 Computing stock ratings cache...\n');
 
-    // Query to get all stock data with latest quality scores and current price
+    // Query to get all stock data with latest quality scores, current price, and historical prices for CAGR
     const computeQuery = `
       SELECT
         s.symbol,
@@ -32,7 +32,27 @@ async function computeStockRatingsCache() {
           WHERE stock_id = s.id
           ORDER BY date DESC
           LIMIT 1
-        ) as current_price
+        ) as current_price,
+        (
+          SELECT close FROM stock_prices
+          WHERE stock_id = s.id AND date <= CURRENT_DATE - INTERVAL '1 year'
+          ORDER BY date DESC LIMIT 1
+        ) as price_1y_ago,
+        (
+          SELECT close FROM stock_prices
+          WHERE stock_id = s.id AND date <= CURRENT_DATE - INTERVAL '3 years'
+          ORDER BY date DESC LIMIT 1
+        ) as price_3y_ago,
+        (
+          SELECT close FROM stock_prices
+          WHERE stock_id = s.id AND date <= CURRENT_DATE - INTERVAL '5 years'
+          ORDER BY date DESC LIMIT 1
+        ) as price_5y_ago,
+        (
+          SELECT close FROM stock_prices
+          WHERE stock_id = s.id AND date <= CURRENT_DATE - INTERVAL '10 years'
+          ORDER BY date DESC LIMIT 1
+        ) as price_10y_ago
       FROM stocks s
       INNER JOIN LATERAL (
         SELECT *
@@ -59,6 +79,15 @@ async function computeStockRatingsCache() {
     console.log('🗑️  Clearing existing cache...');
     await db.query('TRUNCATE TABLE stock_ratings_cache');
 
+    // CAGR helper: ((current/old)^(1/years) - 1) * 100
+    const computeCAGR = (currentPrice, oldPrice, years) => {
+      if (!currentPrice || !oldPrice || oldPrice <= 0) return null;
+      const cp = parseFloat(currentPrice);
+      const op = parseFloat(oldPrice);
+      if (isNaN(cp) || isNaN(op) || op <= 0) return null;
+      return Math.round((Math.pow(cp / op, 1 / years) - 1) * 10000) / 100;
+    };
+
     // Insert all rows into cache
     console.log('💾 Populating cache...');
     const insertQuery = `
@@ -67,12 +96,14 @@ async function computeStockRatingsCache() {
         current_price, overall_quality_score, piotroski_score,
         magic_formula_score, canslim_score, altman_z_score,
         financial_health_score, management_quality_score, earnings_quality_score,
-        calculated_date, cached_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
+        calculated_date, cached_at,
+        cagr_1y, cagr_3y, cagr_5y, cagr_10y
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20)
     `;
 
     let inserted = 0;
     for (const row of result.rows) {
+      const cp = row.current_price;
       await db.query(insertQuery, [
         row.symbol,
         row.company_name,
@@ -80,7 +111,7 @@ async function computeStockRatingsCache() {
         row.industry,
         row.market_cap,
         row.exchange,
-        row.current_price,
+        cp,
         row.overall_quality_score,
         row.piotroski_score,
         row.magic_formula_score,
@@ -89,7 +120,11 @@ async function computeStockRatingsCache() {
         row.financial_health_score,
         row.management_quality_score,
         row.earnings_quality_score,
-        row.calculated_date
+        row.calculated_date,
+        computeCAGR(cp, row.price_1y_ago, 1),
+        computeCAGR(cp, row.price_3y_ago, 3),
+        computeCAGR(cp, row.price_5y_ago, 5),
+        computeCAGR(cp, row.price_10y_ago, 10)
       ]);
       inserted++;
 

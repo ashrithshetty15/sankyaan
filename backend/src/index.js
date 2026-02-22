@@ -8,6 +8,7 @@ import { calculatePortfolioForensics } from './routes/calculatePortfolioForensic
 import { getFundRatings, refreshFundRatings } from './routes/fundRatings.js';
 import { getStockRatings, refreshStockRatings } from './routes/stockRatings.js';
 import { fetchFMPDividendCalendar, fetchFMPStockSplits } from './fmpService.js';
+import { runMigrations } from './migrate.js';
 
 dotenv.config();
 
@@ -29,7 +30,11 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.match(/\.vercel\.app$/)) {
+    if (
+      allowedOrigins.indexOf(origin) !== -1 ||
+      origin.match(/\.vercel\.app$/) ||
+      origin.match(/^http:\/\/localhost:\d+$/)
+    ) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -194,6 +199,36 @@ app.post('/api/fund-ratings/refresh', refreshFundRatings);
 app.get('/api/stock-ratings', getStockRatings);
 app.post('/api/stock-ratings/refresh', refreshStockRatings);
 
+// Refresh all caches in correct order (stocks first, then funds)
+app.post('/api/refresh-all', async (req, res) => {
+  try {
+    console.log('🔄 Refreshing all caches (stock → fund)...');
+    const start = Date.now();
+
+    // Step 1: Refresh stock ratings (computes CAGR from price history)
+    console.log('  Step 1/2: Refreshing stock ratings cache...');
+    const stockRes = { json: (d) => d, status: () => ({ json: (d) => d }) };
+    await refreshStockRatings({ query: {} }, stockRes);
+
+    // Step 2: Refresh fund ratings (reads CAGR from stock cache)
+    console.log('  Step 2/2: Refreshing fund ratings...');
+    const fundRes = { json: (d) => d, status: () => ({ json: (d) => d }) };
+    await refreshFundRatings({ query: {} }, fundRes);
+
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    console.log(`✅ All caches refreshed in ${elapsed}s`);
+
+    res.json({
+      success: true,
+      elapsed: `${elapsed}s`,
+      refreshedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error refreshing all caches:', error);
+    res.status(500).json({ error: 'Failed to refresh caches' });
+  }
+});
+
 // Peer groups - get industry peers for a stock
 app.get('/api/peer-groups/:stockId', async (req, res) => {
   try {
@@ -260,8 +295,22 @@ app.get('/api/stocks/:symbol/events', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`📊 Try: http://localhost:${PORT}/api/search?ticker=INFY`);
+// Start server with auto-migration
+async function startServer() {
+  console.log('🚀 Starting Sankyaan server...');
+
+  // Run pending migrations before accepting requests
+  console.log('📦 Checking database migrations...');
+  await runMigrations();
+
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on http://localhost:${PORT}`);
+    console.log(`📊 Try: http://localhost:${PORT}/api/search?ticker=INFY`);
+    console.log(`🔄 Refresh all caches: POST http://localhost:${PORT}/api/refresh-all`);
+  });
+}
+
+startServer().catch(err => {
+  console.error('❌ Failed to start server:', err);
+  process.exit(1);
 });

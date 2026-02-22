@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "build": "echo 'Backend is ready'"
+    "build": "echo 'Backend is ready'",
+    "migrate": "node src/run-migrate.js",
+    "refresh": "node compute_stock_ratings_cache.js && node compute_fund_ratings.js",
+    "deploy": "node src/run-migrate.js && node compute_stock_ratings_cache.js && node compute_fund_ratings.js"
   },
   "dependencies": {
     "axios": "^1.13.5",

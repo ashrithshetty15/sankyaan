@@ -85,6 +85,11 @@ export default function StockScoresRating({ onStockClick }) {
     return '#ef4444';
   };
 
+  const getReturnColor = (value) => {
+    if (value == null) return undefined;
+    return value >= 0 ? '#22c55e' : '#ef4444';
+  };
+
   const getQualityLabel = (score) => {
     if (score >= 80) return 'Excellent';
     if (score >= 70) return 'Good';
@@ -228,6 +233,18 @@ export default function StockScoresRating({ onStockClick }) {
               <th className="col-num sortable" onClick={() => handleSort('altman_z_score')}>
                 Altman Z <SortIndicator col="altman_z_score" />
               </th>
+              <th className="col-num sortable" onClick={() => handleSort('cagr_1y')}>
+                1Y CAGR <SortIndicator col="cagr_1y" />
+              </th>
+              <th className="col-num sortable" onClick={() => handleSort('cagr_3y')}>
+                3Y CAGR <SortIndicator col="cagr_3y" />
+              </th>
+              <th className="col-num sortable" onClick={() => handleSort('cagr_5y')}>
+                5Y CAGR <SortIndicator col="cagr_5y" />
+              </th>
+              <th className="col-num sortable" onClick={() => handleSort('cagr_10y')}>
+                10Y CAGR <SortIndicator col="cagr_10y" />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -302,6 +319,18 @@ export default function StockScoresRating({ onStockClick }) {
                       </div>
                     ) : '—'}
                   </td>
+                  {['cagr_1y', 'cagr_3y', 'cagr_5y', 'cagr_10y'].map((key) => {
+                    const val = stock[key] != null ? parseFloat(stock[key]) : null;
+                    return (
+                      <td key={key} className="col-num">
+                        {val != null ? (
+                          <span className="plain-score" style={{ color: getReturnColor(val) }}>
+                            {val >= 0 ? '+' : ''}{val.toFixed(1)}%
+                          </span>
+                        ) : <span style={{ color: 'var(--text3)', fontSize: '0.8em' }}>N/A</span>}
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}
@@ -319,6 +348,7 @@ export default function StockScoresRating({ onStockClick }) {
         <strong>Magic Formula</strong> (0–100): Earnings Yield + Return on Capital &nbsp;|&nbsp;
         <strong>CANSLIM</strong> (0–100): Growth + Leadership + Institutional &nbsp;|&nbsp;
         <strong>Altman Z</strong>: &gt;3.0 Safe, 1.8–3.0 Grey, &lt;1.8 Distress &nbsp;|&nbsp;
+        <strong>CAGR</strong> = Compound Annual Growth Rate from historical stock prices &nbsp;|&nbsp;
         Click any stock for details
       </div>
     </div>

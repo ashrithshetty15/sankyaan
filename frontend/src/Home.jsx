@@ -673,11 +673,11 @@ export default function Home({ viewMode, setViewMode }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ margin: 0 }}>{fundData.companyName || 'Fund Portfolio'}</h2>
               <button
-                onClick={() => exportFundReportToPDF(fundData.companyName || 'Fund Portfolio')}
+                onClick={() => exportFundReportToPDF(fundData)}
                 className="export-pdf-btn"
                 title="Export to PDF"
               >
-                📄 Export to PDF
+                Export PDF
               </button>
             </div>
             <div className="stock-stats">

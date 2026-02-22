@@ -29,11 +29,16 @@ export async function calculatePortfolioForensics(req, res) {
         sf.roe_pct as roe,
         sf.roce_pct as roce,
         sf.debt_to_equity,
-        sf.current_ratio
+        sf.current_ratio,
+        src.cagr_1y,
+        src.cagr_3y,
+        src.cagr_5y,
+        src.cagr_10y
       FROM mutualfund_portfolio mp
       LEFT JOIN stocks s ON s.id = mp.stock_id
       LEFT JOIN stock_quality_scores qs ON qs.stock_id = mp.stock_id
       LEFT JOIN stock_fundamentals sf ON sf.fmp_symbol = s.symbol
+      LEFT JOIN stock_ratings_cache src ON src.symbol = s.symbol
       WHERE mp.fund_name = $1
         AND mp.percent_nav > 0
       ORDER BY mp.market_value_lacs DESC
@@ -71,6 +76,10 @@ export async function calculatePortfolioForensics(req, res) {
       piotroski_score: 0,
       altman_z_score: 0
     };
+
+    // CAGR weighted aggregation
+    let cagrSums = { cagr_1y: 0, cagr_3y: 0, cagr_5y: 0, cagr_10y: 0 };
+    let cagrWeights = { cagr_1y: 0, cagr_3y: 0, cagr_5y: 0, cagr_10y: 0 };
 
     const holdingsWithScores = [];
 
@@ -130,6 +139,17 @@ export async function calculatePortfolioForensics(req, res) {
           scoreCounts.altman_z_score += weight;
         }
       }
+
+      // Accumulate CAGR (even for holdings without quality scores)
+      for (const cagrKey of ['cagr_1y', 'cagr_3y', 'cagr_5y', 'cagr_10y']) {
+        if (holding[cagrKey] != null) {
+          const cagrVal = parseFloat(holding[cagrKey]);
+          if (!isNaN(cagrVal)) {
+            cagrSums[cagrKey] += cagrVal * weight;
+            cagrWeights[cagrKey] += weight;
+          }
+        }
+      }
     }
 
     // Normalize weighted scores
@@ -142,12 +162,36 @@ export async function calculatePortfolioForensics(req, res) {
       }
     }
 
+    // Compute weighted average CAGR from individual stocks (fallback)
+    const stockCagr = {};
+    for (const cagrKey of ['cagr_1y', 'cagr_3y', 'cagr_5y', 'cagr_10y']) {
+      stockCagr[cagrKey] = cagrWeights[cagrKey] > 0
+        ? Math.round((cagrSums[cagrKey] / cagrWeights[cagrKey]) * 100) / 100
+        : null;
+    }
+
+    // Prefer fund-level CAGR from mfapi.in NAV data (more accurate)
+    const fundCagrResult = await db.query(`
+      SELECT cagr_1y, cagr_3y, cagr_5y, cagr_10y
+      FROM fund_quality_scores
+      WHERE fund_name = $1
+    `, [ticker]);
+
+    const fundCagr = fundCagrResult.rows[0] || {};
+    const cagr = {
+      cagr_1y: fundCagr.cagr_1y != null ? parseFloat(fundCagr.cagr_1y) : stockCagr.cagr_1y,
+      cagr_3y: fundCagr.cagr_3y != null ? parseFloat(fundCagr.cagr_3y) : stockCagr.cagr_3y,
+      cagr_5y: fundCagr.cagr_5y != null ? parseFloat(fundCagr.cagr_5y) : stockCagr.cagr_5y,
+      cagr_10y: fundCagr.cagr_10y != null ? parseFloat(fundCagr.cagr_10y) : stockCagr.cagr_10y,
+    };
+
     res.json({
       ticker,
       totalHoldings: holdings.length,
       scoredHoldings: holdingsWithScores.length,
       coveragePercentage: (totalWeight * 100).toFixed(2),
       scores: finalScores,
+      cagr,
       topHoldings: holdingsWithScores.slice(0, 10),
       calculatedAt: new Date().toISOString()
     });

@@ -43,9 +43,15 @@ async function computeAndStoreFundRatings() {
         qs.altman_z_score,
         qs.financial_health_score,
         qs.management_quality_score,
-        qs.earnings_quality_score
+        qs.earnings_quality_score,
+        src.cagr_1y AS stock_cagr_1y,
+        src.cagr_3y AS stock_cagr_3y,
+        src.cagr_5y AS stock_cagr_5y,
+        src.cagr_10y AS stock_cagr_10y
       FROM mutualfund_portfolio mp
       LEFT JOIN stock_quality_scores qs ON qs.stock_id = mp.stock_id
+      LEFT JOIN stocks s ON s.id = mp.stock_id
+      LEFT JOIN stock_ratings_cache src ON src.symbol = s.symbol
       WHERE mp.stock_id IS NOT NULL
         AND mp.percent_nav > 0
         AND qs.overall_quality_score IS NOT NULL
@@ -61,7 +67,11 @@ async function computeAndStoreFundRatings() {
       ROUND((SUM(altman_z_score * weight) / NULLIF(SUM(weight), 0))::numeric, 2) AS altman_z_score,
       ROUND((SUM(financial_health_score * weight) / NULLIF(SUM(weight), 0))::numeric, 2) AS financial_health_score,
       ROUND((SUM(management_quality_score * weight) / NULLIF(SUM(weight), 0))::numeric, 2) AS management_quality_score,
-      ROUND((SUM(earnings_quality_score * weight) / NULLIF(SUM(weight), 0))::numeric, 2) AS earnings_quality_score
+      ROUND((SUM(earnings_quality_score * weight) / NULLIF(SUM(weight), 0))::numeric, 2) AS earnings_quality_score,
+      ROUND((SUM(stock_cagr_1y * weight) / NULLIF(SUM(CASE WHEN stock_cagr_1y IS NOT NULL THEN weight END), 0))::numeric, 2) AS cagr_1y,
+      ROUND((SUM(stock_cagr_3y * weight) / NULLIF(SUM(CASE WHEN stock_cagr_3y IS NOT NULL THEN weight END), 0))::numeric, 2) AS cagr_3y,
+      ROUND((SUM(stock_cagr_5y * weight) / NULLIF(SUM(CASE WHEN stock_cagr_5y IS NOT NULL THEN weight END), 0))::numeric, 2) AS cagr_5y,
+      ROUND((SUM(stock_cagr_10y * weight) / NULLIF(SUM(CASE WHEN stock_cagr_10y IS NOT NULL THEN weight END), 0))::numeric, 2) AS cagr_10y
     FROM matched_stocks
     GROUP BY fund_name
     HAVING COUNT(instrument_name) > 0
@@ -86,9 +96,10 @@ async function computeAndStoreFundRatings() {
       fund_name, scheme_name, fund_house, scored_holdings, coverage_pct,
       overall_quality_score, piotroski_score, altman_z_score,
       financial_health_score, management_quality_score, earnings_quality_score,
+      cagr_1y, cagr_3y, cagr_5y, cagr_10y,
       calculated_at
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW()
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW()
     )
     ON CONFLICT (fund_name) DO UPDATE SET
       scheme_name = EXCLUDED.scheme_name,
@@ -101,6 +112,10 @@ async function computeAndStoreFundRatings() {
       financial_health_score = EXCLUDED.financial_health_score,
       management_quality_score = EXCLUDED.management_quality_score,
       earnings_quality_score = EXCLUDED.earnings_quality_score,
+      cagr_1y = EXCLUDED.cagr_1y,
+      cagr_3y = EXCLUDED.cagr_3y,
+      cagr_5y = EXCLUDED.cagr_5y,
+      cagr_10y = EXCLUDED.cagr_10y,
       calculated_at = NOW()
   `;
 
@@ -118,6 +133,10 @@ async function computeAndStoreFundRatings() {
       row.financial_health_score,
       row.management_quality_score,
       row.earnings_quality_score,
+      row.cagr_1y,
+      row.cagr_3y,
+      row.cagr_5y,
+      row.cagr_10y,
     ]);
     stored++;
     if (stored % 50 === 0) {
