@@ -36,8 +36,38 @@ export const exportFundReportToPDF = async (fundName, elementId = 'fund-report-c
       throw new Error(`Element with ID "${elementId}" not found`);
     }
 
-    // Temporarily adjust styles for better PDF rendering
+    // Store original styles to restore later
     const originalOverflow = element.style.overflow;
+
+    // Find and hide elements that shouldn't appear in PDF
+    const paginationControls = element.querySelector('.holdings-pagination');
+    const exportButton = element.querySelector('.export-pdf-btn');
+    const holdingsTable = element.querySelector('.holdings-table');
+
+    const originalPaginationDisplay = paginationControls?.style.display;
+    const originalExportBtnDisplay = exportButton?.style.display;
+    const originalHoldingsMaxHeight = holdingsTable?.style.maxHeight;
+    const originalHoldingsOverflow = holdingsTable?.style.overflow;
+
+    // Temporarily hide pagination and export button
+    if (paginationControls) paginationControls.style.display = 'none';
+    if (exportButton) exportButton.style.display = 'none';
+
+    // Show all holdings (remove max-height restriction)
+    if (holdingsTable) {
+      holdingsTable.style.maxHeight = 'none';
+      holdingsTable.style.overflow = 'visible';
+    }
+
+    // Make all holdings rows visible
+    const allHoldingRows = element.querySelectorAll('.holdings-table tbody tr');
+    const originalRowDisplays = [];
+    allHoldingRows.forEach((row, index) => {
+      originalRowDisplays[index] = row.style.display;
+      row.style.display = 'table-row'; // Make all rows visible
+    });
+
+    // Temporarily adjust container styles for better PDF rendering
     element.style.overflow = 'visible';
 
     // Capture the element as canvas
@@ -50,25 +80,36 @@ export const exportFundReportToPDF = async (fundName, elementId = 'fund-report-c
       windowHeight: element.scrollHeight,
     });
 
-    // Restore original overflow
+    // Restore original styles
     element.style.overflow = originalOverflow;
+    if (paginationControls) paginationControls.style.display = originalPaginationDisplay;
+    if (exportButton) exportButton.style.display = originalExportBtnDisplay;
+    if (holdingsTable) {
+      holdingsTable.style.maxHeight = originalHoldingsMaxHeight;
+      holdingsTable.style.overflow = originalHoldingsOverflow;
+    }
+
+    // Restore original row displays
+    allHoldingRows.forEach((row, index) => {
+      row.style.display = originalRowDisplays[index];
+    });
 
     // Calculate PDF dimensions
     const imgWidth = 210; // A4 width in mm
+    const pageHeight = 297; // A4 height in mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     // Create PDF
     const pdf = new jsPDF({
-      orientation: imgHeight > imgWidth ? 'portrait' : 'portrait',
+      orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
     });
 
     // Add image to PDF
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL('image/png', 1.0);
 
     // If content is longer than one page, split it
-    const pageHeight = 297; // A4 height in mm
     let heightLeft = imgHeight;
     let position = 0;
 
@@ -82,6 +123,15 @@ export const exportFundReportToPDF = async (fundName, elementId = 'fund-report-c
       pdf.addPage();
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
+    }
+
+    // Add page numbers
+    const pageCount = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(10);
+      pdf.setTextColor(150);
+      pdf.text(`Page ${i} of ${pageCount}`, pdf.internal.pageSize.getWidth() - 30, pdf.internal.pageSize.getHeight() - 10);
     }
 
     // Add metadata
