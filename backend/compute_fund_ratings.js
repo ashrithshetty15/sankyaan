@@ -15,14 +15,21 @@ dotenv.config();
 
 const { Pool } = pg;
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'Sankyaan',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'Sankyaan',
-  port: process.env.DB_PORT || 5432,
-  statement_timeout: 300000, // 5 min timeout for this heavy query
-});
+// Support DATABASE_URL (Railway/production) or individual vars (local)
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      statement_timeout: 300000,
+    })
+  : new Pool({
+      host: process.env.DB_HOST || 'localhost',
+      database: process.env.DB_NAME || 'Sankyaan',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'Sankyaan',
+      port: process.env.DB_PORT || 5432,
+      statement_timeout: 300000,
+    });
 
 async function computeAndStoreFundRatings() {
   console.log('🔄 Computing fund quality scores...');

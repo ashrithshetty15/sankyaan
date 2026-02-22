@@ -19,13 +19,19 @@ dotenv.config();
 
 const { Pool } = pg;
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'Sankyaan',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'Sankyaan',
-  port: process.env.DB_PORT || 5432,
-});
+// Support DATABASE_URL (Railway/production) or individual vars (local)
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    })
+  : new Pool({
+      host: process.env.DB_HOST || 'localhost',
+      database: process.env.DB_NAME || 'Sankyaan',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'Sankyaan',
+      port: process.env.DB_PORT || 5432,
+    });
 
 const MFAPI_BASE = 'https://api.mfapi.in/mf';
 
