@@ -86,5 +86,6 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
         </button>
       </nav>
     </div>
+    </>
   );
 }
