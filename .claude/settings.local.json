@@ -28,7 +28,16 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(where:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(pg_dump:*)",
+      "Bash(dir:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:sankyaan-frontend.vercel.app)",
+      "Bash(frontend/src/App.css << 'EOF'\n\n/* Export to PDF Button */\n.export-pdf-btn {\n  background: linear-gradient\\(135deg, var\\(--gold\\), #d4af37\\);\n  color: #000;\n  border: none;\n  padding: 12px 24px;\n  border-radius: 8px;\n  font-size: 16px;\n  font-weight: 600;\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  transition: all 0.3s ease;\n  box-shadow: 0 4px 12px rgba\\(212, 175, 55, 0.3\\);\n}\n\n.export-pdf-btn:hover {\n  transform: translateY\\(-2px\\);\n  box-shadow: 0 6px 16px rgba\\(212, 175, 55, 0.5\\);\n  background: linear-gradient\\(135deg, #d4af37, #c9a020\\);\n}\n\n.export-pdf-btn:active {\n  transform: translateY\\(0\\);\n}\n\n@media \\(max-width: 768px\\) {\n  .export-pdf-btn {\n    font-size: 14px;\n    padding: 10px 20px;\n  }\n}\nEOF)"
     ]
   }
 }

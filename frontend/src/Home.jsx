@@ -7,6 +7,7 @@ import PortfolioForensicScores from './PortfolioForensicScores.jsx';
 import PortfolioStockScores from './PortfolioStockScores.jsx';
 import FundScoresRating from './FundScoresRating.jsx';
 import StockScoresRating from './StockScoresRating.jsx';
+import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
 
 // Error boundary to prevent forensic components from crashing the whole page
@@ -663,13 +664,22 @@ export default function Home({ viewMode, setViewMode }) {
       )}
 
       {fundData && (
-        <div className="results-section">
+        <div id="fund-report-container" className="results-section">
           <div className="stock-info">
             <div className="fund-meta">
               <span className="fund-code">{fundData.ticker}</span>
               {fundData.fundHouse && <span className="fund-house-badge">{fundData.fundHouse}</span>}
             </div>
-            <h2>{fundData.companyName || 'Fund Portfolio'}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0 }}>{fundData.companyName || 'Fund Portfolio'}</h2>
+              <button
+                onClick={() => exportFundReportToPDF(fundData.companyName || 'Fund Portfolio')}
+                className="export-pdf-btn"
+                title="Export to PDF"
+              >
+                📄 Export to PDF
+              </button>
+            </div>
             <div className="stock-stats">
               <div className="stat">
                 <span className="label">Total Portfolio Value</span>
