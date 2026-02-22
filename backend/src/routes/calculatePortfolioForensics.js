@@ -171,13 +171,18 @@ export async function calculatePortfolioForensics(req, res) {
     }
 
     // Prefer fund-level CAGR from mfapi.in NAV data (more accurate)
-    const fundCagrResult = await db.query(`
-      SELECT cagr_1y, cagr_3y, cagr_5y, cagr_10y
-      FROM fund_quality_scores
-      WHERE fund_name = $1
-    `, [ticker]);
+    let fundCagr = {};
+    try {
+      const fundCagrResult = await db.query(`
+        SELECT cagr_1y, cagr_3y, cagr_5y, cagr_10y
+        FROM fund_quality_scores
+        WHERE fund_name = $1
+      `, [ticker]);
+      fundCagr = fundCagrResult.rows[0] || {};
+    } catch (e) {
+      // Table may not exist yet on production — fall back to stock CAGR
+    }
 
-    const fundCagr = fundCagrResult.rows[0] || {};
     const cagr = {
       cagr_1y: fundCagr.cagr_1y != null ? parseFloat(fundCagr.cagr_1y) : stockCagr.cagr_1y,
       cagr_3y: fundCagr.cagr_3y != null ? parseFloat(fundCagr.cagr_3y) : stockCagr.cagr_3y,
