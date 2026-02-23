@@ -285,76 +285,40 @@ export default function StockDetail() {
             </div>
           </div>
 
-          {/* Detailed Metrics Row */}
+          {/* 5-Pillar Detailed Metrics Row */}
           <div className="detailed-row">
-            {/* Financial Health */}
-            {stockData.qualityScores.financial_health_score !== null && stockData.qualityScores.financial_health_score !== undefined && (
-              <div className="detail-card">
-                <div className="detail-header">
-                  <div className="detail-label">Financial Health</div>
-                  <div className="detail-trend">💚</div>
-                </div>
-                <div className="detail-score-wrap">
-                  <div className={`detail-score score-${getScoreClass(stockData.qualityScores.financial_health_score, 100)}`}>
-                    {stockData.qualityScores.financial_health_score}
+            {[
+              { key: 'profitability_score', label: 'Profitability', icon: '💰', desc: 'ROE, ROCE, Operating & Net Margins' },
+              { key: 'financial_strength_score', label: 'Financial Strength', icon: '🛡️', desc: 'Piotroski, Altman-Z, D/E, Interest Coverage' },
+              { key: 'earnings_quality_score_v2', label: 'Earnings Quality', icon: '✨', desc: 'Cash flow quality, FCF Yield, Accruals' },
+              { key: 'growth_score', label: 'Growth', icon: '📈', desc: 'Revenue & EPS Growth YoY, Margin Expansion' },
+              { key: 'valuation_score', label: 'Valuation', icon: '⚖️', desc: 'PE, PB, Earnings Yield' },
+            ].map(({ key, label, icon, desc }) => {
+              const val = stockData.qualityScores[key];
+              if (val == null) return null;
+              const numVal = parseFloat(val);
+              return (
+                <div className="detail-card" key={key}>
+                  <div className="detail-header">
+                    <div className="detail-label">{label}</div>
+                    <div className="detail-trend">{icon}</div>
                   </div>
-                  <div className="detail-max">/100</div>
-                </div>
-                <div className="detail-desc">Balance sheet strength and debt management</div>
-                <div className="mini-gauge">
-                  <div
-                    className={`mini-gauge-fill fill-${getScoreClass(stockData.qualityScores.financial_health_score, 100)}`}
-                    style={{ width: `${stockData.qualityScores.financial_health_score}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-
-            {/* Management Quality */}
-            {stockData.qualityScores.management_quality_score !== null && stockData.qualityScores.management_quality_score !== undefined && (
-              <div className="detail-card">
-                <div className="detail-header">
-                  <div className="detail-label">Management Quality</div>
-                  <div className="detail-trend">📈</div>
-                </div>
-                <div className="detail-score-wrap">
-                  <div className={`detail-score score-${getScoreClass(stockData.qualityScores.management_quality_score, 100)}`}>
-                    {stockData.qualityScores.management_quality_score}
+                  <div className="detail-score-wrap">
+                    <div className={`detail-score score-${getScoreClass(numVal, 100)}`}>
+                      {Math.round(numVal)}
+                    </div>
+                    <div className="detail-max">/100</div>
                   </div>
-                  <div className="detail-max">/100</div>
-                </div>
-                <div className="detail-desc">Capital allocation and governance effectiveness</div>
-                <div className="mini-gauge">
-                  <div
-                    className={`mini-gauge-fill fill-${getScoreClass(stockData.qualityScores.management_quality_score, 100)}`}
-                    style={{ width: `${stockData.qualityScores.management_quality_score}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-
-            {/* Earnings Quality */}
-            {stockData.qualityScores.earnings_quality_score !== null && stockData.qualityScores.earnings_quality_score !== undefined && (
-              <div className="detail-card">
-                <div className="detail-header">
-                  <div className="detail-label">Earnings Quality</div>
-                  <div className="detail-trend">✨</div>
-                </div>
-                <div className="detail-score-wrap">
-                  <div className={`detail-score score-${getScoreClass(stockData.qualityScores.earnings_quality_score, 100)}`}>
-                    {stockData.qualityScores.earnings_quality_score}
+                  <div className="detail-desc">{desc}</div>
+                  <div className="mini-gauge">
+                    <div
+                      className={`mini-gauge-fill fill-${getScoreClass(numVal, 100)}`}
+                      style={{ width: `${Math.min(numVal, 100)}%` }}
+                    ></div>
                   </div>
-                  <div className="detail-max">/100</div>
                 </div>
-                <div className="detail-desc">Revenue quality and earnings sustainability</div>
-                <div className="mini-gauge">
-                  <div
-                    className={`mini-gauge-fill fill-${getScoreClass(stockData.qualityScores.earnings_quality_score, 100)}`}
-                    style={{ width: `${stockData.qualityScores.earnings_quality_score}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
+              );
+            })}
           </div>
         </div>
       ) : null}

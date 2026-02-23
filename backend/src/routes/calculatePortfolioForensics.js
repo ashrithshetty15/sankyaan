@@ -25,6 +25,11 @@ export async function calculatePortfolioForensics(req, res) {
         qs.earnings_quality_score,
         qs.piotroski_score,
         qs.altman_z_score,
+        qs.profitability_score,
+        qs.financial_strength_score,
+        qs.earnings_quality_score_v2,
+        qs.growth_score,
+        qs.valuation_score,
         sf.net_margin,
         sf.roe_pct as roe,
         sf.roce_pct as roce,
@@ -65,7 +70,12 @@ export async function calculatePortfolioForensics(req, res) {
       management_quality_score: 0,
       earnings_quality_score: 0,
       piotroski_score: 0,
-      altman_z_score: 0
+      altman_z_score: 0,
+      profitability_score: 0,
+      financial_strength_score: 0,
+      earnings_quality_score_v2: 0,
+      growth_score: 0,
+      valuation_score: 0
     };
 
     let scoreCounts = {
@@ -74,7 +84,12 @@ export async function calculatePortfolioForensics(req, res) {
       management_quality_score: 0,
       earnings_quality_score: 0,
       piotroski_score: 0,
-      altman_z_score: 0
+      altman_z_score: 0,
+      profitability_score: 0,
+      financial_strength_score: 0,
+      earnings_quality_score_v2: 0,
+      growth_score: 0,
+      valuation_score: 0
     };
 
     // CAGR weighted aggregation
@@ -100,7 +115,12 @@ export async function calculatePortfolioForensics(req, res) {
             management_quality_score: holding.management_quality_score,
             earnings_quality_score: holding.earnings_quality_score,
             piotroski_score: holding.piotroski_score,
-            altman_z_score: holding.altman_z_score
+            altman_z_score: holding.altman_z_score,
+            profitability_score: holding.profitability_score,
+            financial_strength_score: holding.financial_strength_score,
+            earnings_quality_score_v2: holding.earnings_quality_score_v2,
+            growth_score: holding.growth_score,
+            valuation_score: holding.valuation_score
           },
           fundamentals: {
             net_margin: holding.net_margin,
@@ -137,6 +157,13 @@ export async function calculatePortfolioForensics(req, res) {
         if (holding.altman_z_score !== null) {
           aggregateScores.altman_z_score += holding.altman_z_score * weight;
           scoreCounts.altman_z_score += weight;
+        }
+        // 5-pillar scores
+        for (const key of ['profitability_score', 'financial_strength_score', 'earnings_quality_score_v2', 'growth_score', 'valuation_score']) {
+          if (holding[key] !== null && holding[key] !== undefined) {
+            aggregateScores[key] += parseFloat(holding[key]) * weight;
+            scoreCounts[key] += weight;
+          }
         }
       }
 

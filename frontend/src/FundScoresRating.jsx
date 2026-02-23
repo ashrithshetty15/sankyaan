@@ -93,6 +93,11 @@ export default function FundScoresRating({ onFundClick }) {
     return getQualityColor(pct);
   };
 
+  const getReturnColor = (value) => {
+    if (value == null) return undefined;
+    return value >= 0 ? '#22c55e' : '#ef4444';
+  };
+
   const getAltmanColor = (score) => {
     if (score >= 3) return '#22c55e';
     if (score >= 1.8) return '#eab308';
@@ -238,17 +243,14 @@ export default function FundScoresRating({ onFundClick }) {
               <th className="col-num sortable" onClick={() => handleSort('altman_z_score')}>
                 Altman Z <SortIndicator col="altman_z_score" />
               </th>
-              <th className="col-num sortable" onClick={() => handleSort('financial_health_score')}>
-                Health <SortIndicator col="financial_health_score" />
+              <th className="col-num sortable" onClick={() => handleSort('cagr_1y')}>
+                1Y CAGR <SortIndicator col="cagr_1y" />
               </th>
-              <th className="col-num sortable" onClick={() => handleSort('management_quality_score')}>
-                Mgmt <SortIndicator col="management_quality_score" />
+              <th className="col-num sortable" onClick={() => handleSort('cagr_3y')}>
+                3Y CAGR <SortIndicator col="cagr_3y" />
               </th>
-              <th className="col-num sortable" onClick={() => handleSort('earnings_quality_score')}>
-                Earnings <SortIndicator col="earnings_quality_score" />
-              </th>
-              <th className="col-num sortable" onClick={() => handleSort('coverage_pct')}>
-                Coverage <SortIndicator col="coverage_pct" />
+              <th className="col-num sortable" onClick={() => handleSort('cagr_5y')}>
+                5Y CAGR <SortIndicator col="cagr_5y" />
               </th>
             </tr>
           </thead>
@@ -301,30 +303,18 @@ export default function FundScoresRating({ onFundClick }) {
                       </div>
                     ) : '—'}
                   </td>
-                  <td className="col-num">
-                    {fund.financial_health_score != null ? (
-                      <span className="plain-score" style={{ color: getQualityColor(parseFloat(fund.financial_health_score)) }}>
-                        {Math.round(parseFloat(fund.financial_health_score))}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="col-num">
-                    {fund.management_quality_score != null ? (
-                      <span className="plain-score" style={{ color: getQualityColor(parseFloat(fund.management_quality_score)) }}>
-                        {Math.round(parseFloat(fund.management_quality_score))}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="col-num">
-                    {fund.earnings_quality_score != null ? (
-                      <span className="plain-score" style={{ color: getQualityColor(parseFloat(fund.earnings_quality_score)) }}>
-                        {Math.round(parseFloat(fund.earnings_quality_score))}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="col-num coverage-col">
-                    {fund.coverage_pct != null ? `${parseFloat(fund.coverage_pct).toFixed(1)}%` : '—'}
-                  </td>
+                  {['cagr_1y', 'cagr_3y', 'cagr_5y'].map((key) => {
+                    const val = fund[key] != null ? parseFloat(fund[key]) : null;
+                    return (
+                      <td key={key} className="col-num">
+                        {val != null ? (
+                          <span className="plain-score" style={{ color: getReturnColor(val) }}>
+                            {val >= 0 ? '+' : ''}{val.toFixed(1)}%
+                          </span>
+                        ) : <span style={{ color: 'var(--text3)', fontSize: '0.8em' }}>N/A</span>}
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}
@@ -336,11 +326,10 @@ export default function FundScoresRating({ onFundClick }) {
       </div>
 
       <div className="ratings-footer">
-        <strong>Score Interpretation:</strong>
-        &nbsp; Quality (0–100): 80+ Excellent, 60–79 Good, 40–59 Average, &lt;40 Below Average &nbsp;|&nbsp;
-        Piotroski (0–9): 7–9 Strong, 5–6 Moderate, &lt;5 Weak &nbsp;|&nbsp;
-        Altman Z: &gt;3.0 Safe, 1.8–3.0 Grey Zone, &lt;1.8 Distress &nbsp;|&nbsp;
-        Coverage = % of fund weight matched with our stock database
+        <strong>Quality</strong> = Weighted avg of holdings' 5-pillar scores (Profitability, Strength, Earnings, Growth, Valuation) &nbsp;|&nbsp;
+        <strong>Piotroski</strong> (0–9): Financial strength &nbsp;|&nbsp;
+        <strong>Altman Z</strong>: &gt;3.0 Safe, 1.8–3.0 Grey, &lt;1.8 Distress &nbsp;|&nbsp;
+        <strong>CAGR</strong> = Fund NAV growth (annualized)
       </div>
     </div>
   );

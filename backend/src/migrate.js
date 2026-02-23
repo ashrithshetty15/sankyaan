@@ -87,7 +87,6 @@ const MIGRATIONS = [
         UNIQUE(stock_id, calculated_date)
       );
       CREATE INDEX IF NOT EXISTS idx_stock_prices_stock_date ON stock_prices(stock_id, date DESC);
-      CREATE INDEX IF NOT EXISTS idx_stock_fundamentals_stock ON stock_fundamentals(stock_id, fiscal_year DESC, fiscal_quarter DESC);
       CREATE INDEX IF NOT EXISTS idx_stocks_symbol ON stocks(symbol);
       CREATE INDEX IF NOT EXISTS idx_stocks_sector_industry ON stocks(sector, industry);
     `
@@ -159,6 +158,34 @@ const MIGRATIONS = [
     sql: `
       ALTER TABLE fund_quality_scores
         ADD COLUMN IF NOT EXISTS mfapi_scheme_code INTEGER;
+    `
+  },
+  {
+    name: '006_add_five_pillar_scores',
+    sql: `
+      ALTER TABLE stock_quality_scores
+        ADD COLUMN IF NOT EXISTS profitability_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS financial_strength_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS earnings_quality_score_v2 NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS growth_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS valuation_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS revenue_growth_yoy NUMERIC(8,2),
+        ADD COLUMN IF NOT EXISTS eps_growth_yoy NUMERIC(8,2),
+        ADD COLUMN IF NOT EXISTS margin_expansion NUMERIC(8,2);
+      ALTER TABLE stock_ratings_cache
+        ADD COLUMN IF NOT EXISTS profitability_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS financial_strength_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS earnings_quality_score_v2 NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS growth_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS valuation_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS revenue_growth_yoy NUMERIC(8,2),
+        ADD COLUMN IF NOT EXISTS eps_growth_yoy NUMERIC(8,2);
+      ALTER TABLE fund_quality_scores
+        ADD COLUMN IF NOT EXISTS profitability_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS financial_strength_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS earnings_quality_score_v2 NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS growth_score NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS valuation_score NUMERIC(5,2);
     `
   }
 ];

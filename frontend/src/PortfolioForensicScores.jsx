@@ -198,87 +198,42 @@ export default function PortfolioForensicScores({ ticker }) {
 
       </div>
 
-      {/* DETAILED METRICS ROW */}
+      {/* 5-PILLAR DETAILED METRICS */}
       <div className="detailed-row">
-
-        <div className="detail-card">
-          <div className="detail-header">
-            <div className="detail-label">Financial Health</div>
-            <div className="detail-trend">
-              {scores.financial_health_score >= 80 ? '💚' : scores.financial_health_score >= 60 ? '💛' : '❤️'}
+        {[
+          { key: 'profitability_score', label: 'Profitability', desc: 'ROE, ROCE, Operating & Net Margins', icons: ['💚', '💛', '❤️'] },
+          { key: 'financial_strength_score', label: 'Financial Strength', desc: 'Piotroski, Altman-Z, D/E ratio, Interest Coverage', icons: ['🛡️', '⚠️', '🔴'] },
+          { key: 'earnings_quality_score_v2', label: 'Earnings Quality', desc: 'Cash flow quality, FCF Yield, Accruals ratio', icons: ['✨', '⭐', '💫'] },
+          { key: 'growth_score', label: 'Growth', desc: 'Revenue & EPS Growth YoY, Margin Expansion', icons: ['📈', '📊', '📉'] },
+          { key: 'valuation_score', label: 'Valuation', desc: 'PE ratio, PB ratio, Earnings Yield', icons: ['💰', '💵', '💸'] },
+        ].map(({ key, label, desc, icons }) => {
+          const val = scores[key] != null ? parseFloat(scores[key]) : null;
+          return (
+            <div key={key} className="detail-card">
+              <div className="detail-header">
+                <div className="detail-label">{label}</div>
+                <div className="detail-trend">
+                  {val >= 80 ? icons[0] : val >= 60 ? icons[1] : icons[2]}
+                </div>
+              </div>
+              <div className="detail-score-wrap">
+                <div className={`detail-score ${getScoreClass(val || 0)}`}>
+                  {val !== null ? Math.round(val) : 'N/A'}
+                </div>
+                <div className="detail-max">/100</div>
+              </div>
+              <div className="detail-desc">{desc}</div>
+              {val !== null && (
+                <div className="mini-gauge">
+                  <div
+                    className={`mini-gauge-fill ${getScoreClass(val)}`}
+                    style={{ width: `${val}%` }}
+                  ></div>
+                </div>
+              )}
             </div>
-          </div>
-          <div className="detail-score-wrap">
-            <div className={`detail-score ${getScoreClass(scores.financial_health_score || 0)}`}>
-              {scores.financial_health_score !== null ? Math.round(scores.financial_health_score) : 'N/A'}
-            </div>
-            <div className="detail-max">/100</div>
-          </div>
-          <div className="detail-desc">
-            Balance sheet strength & liquidity across holdings
-          </div>
-          {scores.financial_health_score !== null && (
-            <div className="mini-gauge">
-              <div
-                className={`mini-gauge-fill ${getScoreClass(scores.financial_health_score)}`}
-                style={{ width: `${scores.financial_health_score}%` }}
-              ></div>
-            </div>
-          )}
-        </div>
-
-        <div className="detail-card">
-          <div className="detail-header">
-            <div className="detail-label">Management Quality</div>
-            <div className="detail-trend">
-              {scores.management_quality_score >= 80 ? '📈' : scores.management_quality_score >= 60 ? '📊' : '📉'}
-            </div>
-          </div>
-          <div className="detail-score-wrap">
-            <div className={`detail-score ${getScoreClass(scores.management_quality_score || 0)}`}>
-              {scores.management_quality_score !== null ? Math.round(scores.management_quality_score) : 'N/A'}
-            </div>
-            <div className="detail-max">/100</div>
-          </div>
-          <div className="detail-desc">
-            Return on equity & capital allocation efficiency
-          </div>
-          {scores.management_quality_score !== null && (
-            <div className="mini-gauge">
-              <div
-                className={`mini-gauge-fill ${getScoreClass(scores.management_quality_score)}`}
-                style={{ width: `${scores.management_quality_score}%` }}
-              ></div>
-            </div>
-          )}
-        </div>
-
-        <div className="detail-card">
-          <div className="detail-header">
-            <div className="detail-label">Earnings Quality</div>
-            <div className="detail-trend">
-              {scores.earnings_quality_score >= 80 ? '✨' : scores.earnings_quality_score >= 60 ? '⭐' : '💫'}
-            </div>
-          </div>
-          <div className="detail-score-wrap">
-            <div className={`detail-score ${getScoreClass(scores.earnings_quality_score || 0)}`}>
-              {scores.earnings_quality_score !== null ? Math.round(scores.earnings_quality_score) : 'N/A'}
-            </div>
-            <div className="detail-max">/100</div>
-          </div>
-          <div className="detail-desc">
-            Cash flow quality & sustainable profitability
-          </div>
-          {scores.earnings_quality_score !== null && (
-            <div className="mini-gauge">
-              <div
-                className={`mini-gauge-fill ${getScoreClass(scores.earnings_quality_score)}`}
-                style={{ width: `${scores.earnings_quality_score}%` }}
-              ></div>
-            </div>
-          )}
-        </div>
-
+          );
+        })}
       </div>
 
       {/* CAGR / Returns Section */}

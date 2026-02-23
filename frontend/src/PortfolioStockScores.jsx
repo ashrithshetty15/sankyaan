@@ -173,9 +173,11 @@ export default function PortfolioStockScores({ ticker }) {
               <th onClick={() => handleSort('altman')} className="sortable text-center">
                 Altman Z {sortConfig.key === 'altman' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </th>
-              <th className="text-center">Health</th>
-              <th className="text-center">Management</th>
+              <th className="text-center">Profit</th>
+              <th className="text-center">Strength</th>
               <th className="text-center">Earnings</th>
+              <th className="text-center">Growth</th>
+              <th className="text-center">Value</th>
             </tr>
           </thead>
           <tbody>
@@ -221,21 +223,13 @@ export default function PortfolioStockScores({ ticker }) {
                     {holding.scores?.altman_z_score != null ? parseFloat(holding.scores.altman_z_score).toFixed(2) : 'N/A'}
                   </div>
                 </td>
-                <td className="text-center">
-                  <div className="score-mini">
-                    {holding.scores?.financial_health_score != null ? Math.round(holding.scores?.financial_health_score) : '-'}
-                  </div>
-                </td>
-                <td className="text-center">
-                  <div className="score-mini">
-                    {holding.scores?.management_quality_score != null ? Math.round(holding.scores?.management_quality_score) : '-'}
-                  </div>
-                </td>
-                <td className="text-center">
-                  <div className="score-mini">
-                    {holding.scores?.earnings_quality_score != null ? Math.round(holding.scores?.earnings_quality_score) : '-'}
-                  </div>
-                </td>
+                {['profitability_score', 'financial_strength_score', 'earnings_quality_score_v2', 'growth_score', 'valuation_score'].map((key) => (
+                  <td key={key} className="text-center">
+                    <div className="score-mini">
+                      {holding.scores?.[key] != null ? Math.round(holding.scores[key]) : '-'}
+                    </div>
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

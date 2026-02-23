@@ -224,26 +224,8 @@ export default function StockScoresRating({ onStockClick }) {
               <th className="col-num sortable" onClick={() => handleSort('piotroski_score')}>
                 Piotroski <SortIndicator col="piotroski_score" />
               </th>
-              <th className="col-num sortable" onClick={() => handleSort('magic_formula_score')}>
-                Magic Formula <SortIndicator col="magic_formula_score" />
-              </th>
-              <th className="col-num sortable" onClick={() => handleSort('canslim_score')}>
-                CANSLIM <SortIndicator col="canslim_score" />
-              </th>
               <th className="col-num sortable" onClick={() => handleSort('altman_z_score')}>
                 Altman Z <SortIndicator col="altman_z_score" />
-              </th>
-              <th className="col-num sortable" onClick={() => handleSort('cagr_1y')}>
-                1Y CAGR <SortIndicator col="cagr_1y" />
-              </th>
-              <th className="col-num sortable" onClick={() => handleSort('cagr_3y')}>
-                3Y CAGR <SortIndicator col="cagr_3y" />
-              </th>
-              <th className="col-num sortable" onClick={() => handleSort('cagr_5y')}>
-                5Y CAGR <SortIndicator col="cagr_5y" />
-              </th>
-              <th className="col-num sortable" onClick={() => handleSort('cagr_10y')}>
-                10Y CAGR <SortIndicator col="cagr_10y" />
               </th>
             </tr>
           </thead>
@@ -251,8 +233,6 @@ export default function StockScoresRating({ onStockClick }) {
             {sortedStocks.map((stock, idx) => {
               const qualityScore = stock.overall_quality_score != null ? parseFloat(stock.overall_quality_score) : null;
               const piotroski = stock.piotroski_score != null ? parseFloat(stock.piotroski_score) : null;
-              const magicFormula = stock.magic_formula_score != null ? parseFloat(stock.magic_formula_score) : null;
-              const canslim = stock.canslim_score != null ? parseFloat(stock.canslim_score) : null;
               const altmanZ = stock.altman_z_score != null ? parseFloat(stock.altman_z_score) : null;
 
               return (
@@ -299,38 +279,12 @@ export default function StockScoresRating({ onStockClick }) {
                     ) : '—'}
                   </td>
                   <td className="col-num">
-                    {magicFormula != null ? (
-                      <span className="plain-score" style={{ color: getQualityColor(magicFormula) }}>
-                        {Math.round(magicFormula)}
-                      </span>
-                    ) : <span style={{ color: 'var(--text3)', fontSize: '0.8em' }}>N/A</span>}
-                  </td>
-                  <td className="col-num">
-                    {canslim != null ? (
-                      <span className="plain-score" style={{ color: getQualityColor(canslim) }}>
-                        {Math.round(canslim)}
-                      </span>
-                    ) : <span style={{ color: 'var(--text3)', fontSize: '0.8em' }}>N/A</span>}
-                  </td>
-                  <td className="col-num">
                     {altmanZ != null ? (
                       <div className="mini-score-pill" style={{ background: getAltmanColor(altmanZ) }}>
                         {altmanZ.toFixed(2)}
                       </div>
                     ) : '—'}
                   </td>
-                  {['cagr_1y', 'cagr_3y', 'cagr_5y', 'cagr_10y'].map((key) => {
-                    const val = stock[key] != null ? parseFloat(stock[key]) : null;
-                    return (
-                      <td key={key} className="col-num">
-                        {val != null ? (
-                          <span className="plain-score" style={{ color: getReturnColor(val) }}>
-                            {val >= 0 ? '+' : ''}{val.toFixed(1)}%
-                          </span>
-                        ) : <span style={{ color: 'var(--text3)', fontSize: '0.8em' }}>N/A</span>}
-                      </td>
-                    );
-                  })}
                 </tr>
               );
             })}
@@ -342,13 +296,9 @@ export default function StockScoresRating({ onStockClick }) {
       </div>
 
       <div className="ratings-footer">
-        <strong>Scoring Methods:</strong>
-        &nbsp; <strong>Overall Quality</strong> = Average of 3 methods &nbsp;|&nbsp;
-        <strong>Piotroski F-Score</strong> (0–9): 9 fundamental criteria &nbsp;|&nbsp;
-        <strong>Magic Formula</strong> (0–100): Earnings Yield + Return on Capital &nbsp;|&nbsp;
-        <strong>CANSLIM</strong> (0–100): Growth + Leadership + Institutional &nbsp;|&nbsp;
+        <strong>Quality</strong> = 5-pillar score (Profitability, Strength, Earnings, Growth, Valuation) &nbsp;|&nbsp;
+        <strong>Piotroski</strong> (0–9): Financial strength &nbsp;|&nbsp;
         <strong>Altman Z</strong>: &gt;3.0 Safe, 1.8–3.0 Grey, &lt;1.8 Distress &nbsp;|&nbsp;
-        <strong>CAGR</strong> = Compound Annual Growth Rate from historical stock prices &nbsp;|&nbsp;
         Click any stock for details
       </div>
     </div>

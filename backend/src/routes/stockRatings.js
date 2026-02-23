@@ -28,6 +28,13 @@ export async function getStockRatings(req, res) {
         financial_health_score,
         management_quality_score,
         earnings_quality_score,
+        profitability_score,
+        financial_strength_score,
+        earnings_quality_score_v2,
+        growth_score,
+        valuation_score,
+        revenue_growth_yoy,
+        eps_growth_yoy,
         calculated_date,
         cagr_1y,
         cagr_3y,
@@ -104,6 +111,13 @@ export async function refreshStockRatings(req, res) {
         qs.financial_health_score,
         qs.management_quality_score,
         qs.earnings_quality_score,
+        qs.profitability_score,
+        qs.financial_strength_score,
+        qs.earnings_quality_score_v2,
+        qs.growth_score,
+        qs.valuation_score,
+        qs.revenue_growth_yoy,
+        qs.eps_growth_yoy,
         qs.calculated_date,
         (
           SELECT close
@@ -167,9 +181,11 @@ export async function refreshStockRatings(req, res) {
           current_price, overall_quality_score, piotroski_score,
           magic_formula_score, canslim_score, altman_z_score,
           financial_health_score, management_quality_score, earnings_quality_score,
+          profitability_score, financial_strength_score, earnings_quality_score_v2,
+          growth_score, valuation_score, revenue_growth_yoy, eps_growth_yoy,
           calculated_date, cached_at,
           cagr_1y, cagr_3y, cagr_5y, cagr_10y
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20)
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,NOW(),$24,$25,$26,$27)
       `;
 
       for (const row of result.rows) {
@@ -190,6 +206,13 @@ export async function refreshStockRatings(req, res) {
           row.financial_health_score,
           row.management_quality_score,
           row.earnings_quality_score,
+          row.profitability_score,
+          row.financial_strength_score,
+          row.earnings_quality_score_v2,
+          row.growth_score,
+          row.valuation_score,
+          row.revenue_growth_yoy,
+          row.eps_growth_yoy,
           row.calculated_date,
           computeCAGR(cp, row.price_1y_ago, 1),
           computeCAGR(cp, row.price_3y_ago, 3),
