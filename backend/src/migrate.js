@@ -187,6 +187,14 @@ const MIGRATIONS = [
         ADD COLUMN IF NOT EXISTS growth_score NUMERIC(5,2),
         ADD COLUMN IF NOT EXISTS valuation_score NUMERIC(5,2);
     `
+  },
+  {
+    name: '007_add_fund_manager',
+    sql: `
+      ALTER TABLE fund_quality_scores
+        ADD COLUMN IF NOT EXISTS fund_manager TEXT,
+        ADD COLUMN IF NOT EXISTS fund_manager_updated_at TIMESTAMP;
+    `
   }
 ];
 

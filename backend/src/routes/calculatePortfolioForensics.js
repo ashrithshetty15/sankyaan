@@ -201,7 +201,7 @@ export async function calculatePortfolioForensics(req, res) {
     let fundCagr = {};
     try {
       const fundCagrResult = await db.query(`
-        SELECT cagr_1y, cagr_3y, cagr_5y, cagr_10y
+        SELECT cagr_1y, cagr_3y, cagr_5y, cagr_10y, fund_manager
         FROM fund_quality_scores
         WHERE fund_name = $1
       `, [ticker]);
@@ -224,6 +224,7 @@ export async function calculatePortfolioForensics(req, res) {
       coveragePercentage: (totalWeight * 100).toFixed(2),
       scores: finalScores,
       cagr,
+      fundManager: fundCagr.fund_manager || null,
       topHoldings: holdingsWithScores.slice(0, 10),
       calculatedAt: new Date().toISOString()
     });

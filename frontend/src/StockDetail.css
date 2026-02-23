@@ -1052,6 +1052,31 @@
   }
 }
 
+/* Fund Manager Display */
+.fund-manager-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  background: var(--bg2);
+  border-radius: 10px;
+  border: 1px solid var(--bg4);
+}
+
+.fund-manager-label {
+  color: var(--text3);
+  font-size: 0.85em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.fund-manager-names {
+  color: var(--text);
+  font-size: 0.95em;
+  font-weight: 600;
+}
+
 /* Loading & Error States */
 .loading,
 .error-box {

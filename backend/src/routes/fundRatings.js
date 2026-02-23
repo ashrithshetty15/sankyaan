@@ -16,6 +16,7 @@ export async function getFundRatings(req, res) {
         fund_name AS ticker,
         scheme_name,
         fund_house,
+        fund_manager,
         scored_holdings,
         coverage_pct,
         overall_quality_score,

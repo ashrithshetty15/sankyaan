@@ -128,6 +128,18 @@ export default function PortfolioForensicScores({ ticker }) {
         )}
       </div>
 
+      {/* Fund Manager */}
+      {forensicData.fundManager && (
+        <div className="fund-manager-row">
+          <span className="fund-manager-label">
+            Fund Manager{forensicData.fundManager.includes(';') ? 's' : ''}:
+          </span>
+          <span className="fund-manager-names">
+            {forensicData.fundManager.split(';').map(name => name.trim()).join(' | ')}
+          </span>
+        </div>
+      )}
+
       {/* Main Grid */}
       <div className="scores-grid">
 
