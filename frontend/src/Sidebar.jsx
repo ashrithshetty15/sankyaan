@@ -92,6 +92,14 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-icon">⚖️</span>
           <span className="nav-text">Compare Funds</span>
         </button>
+
+        <button
+          className={`nav-item ${viewMode === 'portfolio-overlap' ? 'active' : ''}`}
+          onClick={() => handleNavClick('portfolio-overlap')}
+        >
+          <span className="nav-icon">🔀</span>
+          <span className="nav-text">Portfolio Overlap</span>
+        </button>
       </nav>
     </div>
     </>

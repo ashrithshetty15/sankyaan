@@ -8,6 +8,7 @@ import { calculatePortfolioForensics } from './routes/calculatePortfolioForensic
 import { getFundRatings, refreshFundRatings } from './routes/fundRatings.js';
 import { getStockRatings, refreshStockRatings } from './routes/stockRatings.js';
 import { compareFunds } from './routes/fundComparison.js';
+import { getPortfolioOverlap } from './routes/portfolioOverlap.js';
 import { fetchFMPDividendCalendar, fetchFMPStockSplits } from './fmpService.js';
 import { runMigrations } from './migrate.js';
 
@@ -198,6 +199,9 @@ app.post('/api/fund-ratings/refresh', refreshFundRatings);
 
 // Fund comparison - compare 2-3 funds side-by-side
 app.get('/api/fund-comparison', compareFunds);
+
+// Portfolio overlap - detect stock overlap across 2-5 funds
+app.get('/api/portfolio-overlap', getPortfolioOverlap);
 
 // Stock ratings - serve from cache (fast) and refresh (on-demand)
 app.get('/api/stock-ratings', getStockRatings);

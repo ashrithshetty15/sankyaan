@@ -8,6 +8,7 @@ import PortfolioStockScores from './PortfolioStockScores.jsx';
 import FundScoresRating from './FundScoresRating.jsx';
 import StockScoresRating from './StockScoresRating.jsx';
 import FundComparison from './FundComparison.jsx';
+import PortfolioOverlap from './PortfolioOverlap.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
 
@@ -509,6 +510,7 @@ export default function Home({ viewMode, setViewMode }) {
             : viewMode === 'stocks' ? 'Stock Analysis'
             : viewMode === 'fund-scores' ? 'Fund Scores Rating'
             : viewMode === 'fund-comparison' ? 'Compare Funds'
+            : viewMode === 'portfolio-overlap' ? 'Portfolio Overlap'
             : 'Stock Scores Rating'}
         </h1>
         <p className="subtitle">
@@ -520,6 +522,8 @@ export default function Home({ viewMode, setViewMode }) {
             ? 'Rank mutual funds by portfolio quality score'
             : viewMode === 'fund-comparison'
             ? 'Side-by-side comparison of mutual funds'
+            : viewMode === 'portfolio-overlap'
+            ? 'Detect stock overlap across your mutual funds'
             : 'Rank stocks by quality scores'}
         </p>
       </header>
@@ -1015,6 +1019,11 @@ export default function Home({ viewMode, setViewMode }) {
       {/* Fund Comparison View */}
       {viewMode === 'fund-comparison' && (
         <FundComparison />
+      )}
+
+      {/* Portfolio Overlap Detector */}
+      {viewMode === 'portfolio-overlap' && (
+        <PortfolioOverlap />
       )}
 
       {/* Stock Scores Rating View */}
