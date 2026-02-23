@@ -7,6 +7,7 @@ import PortfolioForensicScores from './PortfolioForensicScores.jsx';
 import PortfolioStockScores from './PortfolioStockScores.jsx';
 import FundScoresRating from './FundScoresRating.jsx';
 import StockScoresRating from './StockScoresRating.jsx';
+import FundComparison from './FundComparison.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
 
@@ -507,6 +508,7 @@ export default function Home({ viewMode, setViewMode }) {
           {viewMode === 'mutual-funds' ? 'Mutual Fund Portfolio'
             : viewMode === 'stocks' ? 'Stock Analysis'
             : viewMode === 'fund-scores' ? 'Fund Scores Rating'
+            : viewMode === 'fund-comparison' ? 'Compare Funds'
             : 'Stock Scores Rating'}
         </h1>
         <p className="subtitle">
@@ -516,6 +518,8 @@ export default function Home({ viewMode, setViewMode }) {
             ? 'Discover and analyze NSE stocks'
             : viewMode === 'fund-scores'
             ? 'Rank mutual funds by portfolio quality score'
+            : viewMode === 'fund-comparison'
+            ? 'Side-by-side comparison of mutual funds'
             : 'Rank stocks by quality scores'}
         </p>
       </header>
@@ -1006,6 +1010,11 @@ export default function Home({ viewMode, setViewMode }) {
             performSearch(ticker);
           }}
         />
+      )}
+
+      {/* Fund Comparison View */}
+      {viewMode === 'fund-comparison' && (
+        <FundComparison />
       )}
 
       {/* Stock Scores Rating View */}

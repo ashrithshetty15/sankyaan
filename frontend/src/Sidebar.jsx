@@ -84,6 +84,14 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-icon">⭐</span>
           <span className="nav-text">Stock Scores Rating</span>
         </button>
+
+        <button
+          className={`nav-item ${viewMode === 'fund-comparison' ? 'active' : ''}`}
+          onClick={() => handleNavClick('fund-comparison')}
+        >
+          <span className="nav-icon">⚖️</span>
+          <span className="nav-text">Compare Funds</span>
+        </button>
       </nav>
     </div>
     </>
