@@ -15,6 +15,24 @@ export default function FundScoresRating({ onFundClick }) {
   const [filterHouse, setFilterHouse] = useState('');
   const [fundHouses, setFundHouses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [minQuality, setMinQuality] = useState('');
+  const [minPiotroski, setMinPiotroski] = useState('');
+  const [altmanBand, setAltmanBand] = useState('');
+  const [minCagr1y, setMinCagr1y] = useState('');
+  const [minCagr3y, setMinCagr3y] = useState('');
+  const [minCagr5y, setMinCagr5y] = useState('');
+
+  const activeFilterCount = [minQuality, minPiotroski, altmanBand, minCagr1y, minCagr3y, minCagr5y].filter(Boolean).length;
+
+  const clearAllFilters = () => {
+    setMinQuality('');
+    setMinPiotroski('');
+    setAltmanBand('');
+    setMinCagr1y('');
+    setMinCagr3y('');
+    setMinCagr5y('');
+  };
 
   const fetchRatings = async () => {
     try {
@@ -65,13 +83,26 @@ export default function FundScoresRating({ onFundClick }) {
 
   const getSortedFunds = () => {
     const filtered = funds.filter(f => {
-      if (!searchTerm) return true;
-      const term = searchTerm.toLowerCase();
-      return (
-        f.scheme_name?.toLowerCase().includes(term) ||
-        f.ticker?.toLowerCase().includes(term) ||
-        f.fund_house?.toLowerCase().includes(term)
-      );
+      // Text search
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        if (!(f.scheme_name?.toLowerCase().includes(term) ||
+              f.ticker?.toLowerCase().includes(term) ||
+              f.fund_house?.toLowerCase().includes(term))) return false;
+      }
+      // Quality score minimum
+      if (minQuality && (f.overall_quality_score == null || parseFloat(f.overall_quality_score) < parseFloat(minQuality))) return false;
+      // Piotroski minimum
+      if (minPiotroski && (f.piotroski_score == null || parseFloat(f.piotroski_score) < parseFloat(minPiotroski))) return false;
+      // Altman Z band
+      if (altmanBand === 'safe' && (f.altman_z_score == null || parseFloat(f.altman_z_score) < 3)) return false;
+      if (altmanBand === 'grey' && (f.altman_z_score == null || parseFloat(f.altman_z_score) < 1.8 || parseFloat(f.altman_z_score) >= 3)) return false;
+      if (altmanBand === 'distress' && (f.altman_z_score == null || parseFloat(f.altman_z_score) >= 1.8)) return false;
+      // CAGR minimums
+      if (minCagr1y && (f.cagr_1y == null || parseFloat(f.cagr_1y) < parseFloat(minCagr1y))) return false;
+      if (minCagr3y && (f.cagr_3y == null || parseFloat(f.cagr_3y) < parseFloat(minCagr3y))) return false;
+      if (minCagr5y && (f.cagr_5y == null || parseFloat(f.cagr_5y) < parseFloat(minCagr5y))) return false;
+      return true;
     });
 
     return [...filtered].sort((a, b) => {
@@ -216,7 +247,133 @@ export default function FundScoresRating({ onFundClick }) {
             <option key={house} value={house}>{house}</option>
           ))}
         </select>
+        <button
+          className={`screener-toggle-btn ${showFilters ? 'active' : ''}`}
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          Filters
+          {activeFilterCount > 0 && <span className="screener-badge">{activeFilterCount}</span>}
+          <span className="screener-chevron">{showFilters ? '\u25B2' : '\u25BC'}</span>
+        </button>
       </div>
+
+      {/* Screener Panel */}
+      {showFilters && (
+        <div className="screener-panel">
+          <div className="screener-grid">
+            {/* Quality Score */}
+            <div className="screener-group">
+              <div className="screener-label">Quality Score</div>
+              <div className="screener-tier-btns">
+                {[
+                  { label: 'All', value: '' },
+                  { label: '80+', value: '80' },
+                  { label: '60+', value: '60' },
+                  { label: '40+', value: '40' },
+                ].map(t => (
+                  <button
+                    key={t.value}
+                    className={`screener-tier-btn ${minQuality === t.value ? 'active' : ''}`}
+                    onClick={() => setMinQuality(t.value)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Piotroski F-Score */}
+            <div className="screener-group">
+              <div className="screener-label">Min Piotroski F-Score</div>
+              <div className="screener-input-wrap">
+                <input
+                  type="number"
+                  className="screener-input"
+                  placeholder="0"
+                  min="0"
+                  max="9"
+                  step="0.5"
+                  value={minPiotroski}
+                  onChange={e => setMinPiotroski(e.target.value)}
+                />
+                <span className="screener-input-suffix">/9</span>
+              </div>
+            </div>
+
+            {/* Altman Z-Score */}
+            <div className="screener-group">
+              <div className="screener-label">Altman Z-Score</div>
+              <div className="screener-tier-btns">
+                {[
+                  { label: 'All', value: '' },
+                  { label: 'Safe', value: 'safe' },
+                  { label: 'Grey', value: 'grey' },
+                  { label: 'Distress', value: 'distress' },
+                ].map(t => (
+                  <button
+                    key={t.value}
+                    className={`screener-tier-btn ${altmanBand === t.value ? 'active' : ''}`}
+                    onClick={() => setAltmanBand(t.value)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Min 1Y CAGR */}
+            <div className="screener-group">
+              <div className="screener-label">Min 1Y CAGR</div>
+              <div className="screener-input-wrap">
+                <input
+                  type="number"
+                  className="screener-input"
+                  placeholder="e.g. 10"
+                  value={minCagr1y}
+                  onChange={e => setMinCagr1y(e.target.value)}
+                />
+                <span className="screener-input-suffix">%</span>
+              </div>
+            </div>
+
+            {/* Min 3Y CAGR */}
+            <div className="screener-group">
+              <div className="screener-label">Min 3Y CAGR</div>
+              <div className="screener-input-wrap">
+                <input
+                  type="number"
+                  className="screener-input"
+                  placeholder="e.g. 12"
+                  value={minCagr3y}
+                  onChange={e => setMinCagr3y(e.target.value)}
+                />
+                <span className="screener-input-suffix">%</span>
+              </div>
+            </div>
+
+            {/* Min 5Y CAGR */}
+            <div className="screener-group">
+              <div className="screener-label">Min 5Y CAGR</div>
+              <div className="screener-input-wrap">
+                <input
+                  type="number"
+                  className="screener-input"
+                  placeholder="e.g. 15"
+                  value={minCagr5y}
+                  onChange={e => setMinCagr5y(e.target.value)}
+                />
+                <span className="screener-input-suffix">%</span>
+              </div>
+            </div>
+          </div>
+
+          {activeFilterCount > 0 && (
+            <button className="screener-clear-btn" onClick={clearAllFilters}>
+              Clear All Filters
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Legend */}
       <div className="ratings-legend">
