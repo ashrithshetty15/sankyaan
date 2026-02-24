@@ -55,19 +55,34 @@ async function fetchIsinFromMfapi(schemeCode) {
  * Fetch fund manager name from Kuvera API using ISIN.
  * mf.captnemo.in/kuvera/{ISIN} redirects to api.kuvera.in.
  */
-async function fetchFundManagerFromKuvera(isin) {
+async function fetchFundDataFromKuvera(isin) {
   try {
     const url = `https://mf.captnemo.in/kuvera/${isin}`;
     const res = await fetch(url, {
-      headers: { 'Accept': 'application/json' }
+      headers: { 'Accept': 'application/json' },
+      redirect: 'follow'
     });
     if (!res.ok) return null;
 
-    const data = await res.json();
+    const text = await res.text();
+    // Handle redirect text response from captnemo proxy
+    if (text.startsWith('Redirecting')) {
+      const redirectUrl = text.split('to ')[1]?.trim();
+      if (redirectUrl) {
+        const res2 = await fetch(redirectUrl, { headers: { 'Accept': 'application/json' } });
+        if (!res2.ok) return null;
+        const data2 = await res2.json();
+        const fund2 = Array.isArray(data2) ? data2[0] : data2;
+        return fund2 ? { fundManager: fund2.fund_manager || null, startDate: fund2.start_date || null } : null;
+      }
+      return null;
+    }
+
+    const data = JSON.parse(text);
     const fund = Array.isArray(data) ? data[0] : data;
     if (!fund) return null;
 
-    return fund.fund_manager || null;
+    return { fundManager: fund.fund_manager || null, startDate: fund.start_date || null };
   } catch (err) {
     console.error(`  Kuvera fetch error for ISIN ${isin}:`, err.message);
     return null;
@@ -83,7 +98,8 @@ async function main() {
   await pool.query(`
     ALTER TABLE fund_quality_scores
       ADD COLUMN IF NOT EXISTS fund_manager TEXT,
-      ADD COLUMN IF NOT EXISTS fund_manager_updated_at TIMESTAMP
+      ADD COLUMN IF NOT EXISTS fund_manager_updated_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS fund_start_date DATE
   `);
 
   // Get all funds with mfapi_scheme_code
@@ -133,11 +149,11 @@ async function main() {
       continue;
     }
 
-    // Step 2: Get fund_manager from Kuvera
-    const fundManager = await fetchFundManagerFromKuvera(isin);
+    // Step 2: Get fund_manager + start_date from Kuvera
+    const kuveraData = await fetchFundDataFromKuvera(isin);
     await delay(300);
 
-    if (!fundManager) {
+    if (!kuveraData || !kuveraData.fundManager) {
       console.log(`-- no fund manager found (ISIN: ${isin})`);
       notFound++;
       continue;
@@ -146,11 +162,12 @@ async function main() {
     // Step 3: Update DB
     await pool.query(`
       UPDATE fund_quality_scores
-      SET fund_manager = $1, fund_manager_updated_at = NOW()
+      SET fund_manager = $1, fund_manager_updated_at = NOW(),
+          fund_start_date = COALESCE($3::date, fund_start_date)
       WHERE fund_name = $2
-    `, [fundManager, fund.fund_name]);
+    `, [kuveraData.fundManager, fund.fund_name, kuveraData.startDate]);
 
-    console.log(`-> ${fundManager}`);
+    console.log(`-> ${kuveraData.fundManager}${kuveraData.startDate ? ` (since ${kuveraData.startDate})` : ''}`);
     updated++;
   }
 

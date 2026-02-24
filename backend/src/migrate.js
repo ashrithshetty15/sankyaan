@@ -195,6 +195,13 @@ const MIGRATIONS = [
         ADD COLUMN IF NOT EXISTS fund_manager TEXT,
         ADD COLUMN IF NOT EXISTS fund_manager_updated_at TIMESTAMP;
     `
+  },
+  {
+    name: '008_add_fund_start_date',
+    sql: `
+      ALTER TABLE fund_quality_scores
+        ADD COLUMN IF NOT EXISTS fund_start_date DATE;
+    `
   }
 ];
 

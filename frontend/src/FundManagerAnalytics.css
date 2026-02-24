@@ -289,6 +289,14 @@
   white-space: nowrap;
 }
 
+.fm-aum {
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 0.88em;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
 .fm-cagr {
   font-weight: 700;
   font-size: 0.95em;
@@ -365,7 +373,7 @@
 
 .fm-fund-item {
   display: grid;
-  grid-template-columns: 1fr 150px 60px 70px 70px 70px;
+  grid-template-columns: 1fr 150px 60px 90px 60px 70px 70px 70px;
   gap: 10px;
   align-items: center;
   padding: 8px 12px;
@@ -400,6 +408,22 @@
   font-weight: 700;
   font-size: 0.9em;
   text-align: center;
+}
+
+.fm-fi-aum {
+  font-family: 'DM Mono', monospace;
+  font-weight: 600;
+  font-size: 0.8em;
+  color: var(--gold);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.fm-fi-age {
+  font-size: 0.78em;
+  color: var(--text2);
+  text-align: center;
+  white-space: nowrap;
 }
 
 .fm-fi-cagr {
@@ -444,15 +468,20 @@
   }
 
   .fm-fund-item {
-    grid-template-columns: 1fr 60px 55px 55px;
+    grid-template-columns: 1fr 60px 70px 55px;
     gap: 6px;
   }
 
-  .fm-fi-house {
+  .fm-fi-house,
+  .fm-fi-age {
     display: none;
   }
 
   .fm-fi-cagr:last-child {
+    display: none;
+  }
+
+  .fm-fi-cagr:nth-last-child(2) {
     display: none;
   }
 }

@@ -8,18 +8,26 @@ import db from '../db.js';
 export async function getFundManagers(req, res) {
   try {
     const result = await db.query(`
-      WITH manager_split AS (
+      WITH fund_aum AS (
+        SELECT fund_name, ROUND(SUM(market_value_lacs)::numeric / 100, 0) AS aum_crores
+        FROM mutualfund_portfolio
+        GROUP BY fund_name
+      ),
+      manager_split AS (
         SELECT
-          TRIM(unnest(string_to_array(fund_manager, ';'))) AS manager_name,
-          fund_house, fund_name, scheme_name,
-          overall_quality_score, piotroski_score, altman_z_score,
-          profitability_score, financial_strength_score,
-          earnings_quality_score_v2, growth_score, valuation_score,
-          cagr_1y, cagr_3y, cagr_5y
-        FROM fund_quality_scores
-        WHERE fund_manager IS NOT NULL
-          AND overall_quality_score IS NOT NULL
-          AND coverage_pct >= 50
+          TRIM(unnest(string_to_array(fqs.fund_manager, ';'))) AS manager_name,
+          fqs.fund_house, fqs.fund_name, fqs.scheme_name,
+          fqs.overall_quality_score, fqs.piotroski_score, fqs.altman_z_score,
+          fqs.profitability_score, fqs.financial_strength_score,
+          fqs.earnings_quality_score_v2, fqs.growth_score, fqs.valuation_score,
+          fqs.cagr_1y, fqs.cagr_3y, fqs.cagr_5y,
+          fqs.fund_start_date,
+          COALESCE(fa.aum_crores, 0) AS fund_aum_crores
+        FROM fund_quality_scores fqs
+        LEFT JOIN fund_aum fa ON fa.fund_name = fqs.fund_name
+        WHERE fqs.fund_manager IS NOT NULL
+          AND fqs.overall_quality_score IS NOT NULL
+          AND fqs.coverage_pct >= 50
       )
       SELECT
         manager_name,
@@ -32,7 +40,9 @@ export async function getFundManagers(req, res) {
           'qualityScore', overall_quality_score,
           'cagr1y', cagr_1y,
           'cagr3y', cagr_3y,
-          'cagr5y', cagr_5y
+          'cagr5y', cagr_5y,
+          'aumCrores', fund_aum_crores,
+          'startDate', fund_start_date
         ) ORDER BY overall_quality_score DESC) AS funds,
         ROUND(AVG(overall_quality_score)::numeric, 1) AS avg_quality,
         ROUND(AVG(piotroski_score)::numeric, 1) AS avg_piotroski,
@@ -44,7 +54,8 @@ export async function getFundManagers(req, res) {
         ROUND(AVG(financial_strength_score)::numeric, 1) AS avg_financial_strength,
         ROUND(AVG(earnings_quality_score_v2)::numeric, 1) AS avg_earnings_quality,
         ROUND(AVG(growth_score)::numeric, 1) AS avg_growth,
-        ROUND(AVG(valuation_score)::numeric, 1) AS avg_valuation
+        ROUND(AVG(valuation_score)::numeric, 1) AS avg_valuation,
+        ROUND(SUM(fund_aum_crores)::numeric, 0) AS total_aum_crores
       FROM manager_split
       WHERE manager_name != ''
       GROUP BY manager_name
@@ -60,6 +71,7 @@ export async function getFundManagers(req, res) {
       avgQuality: parseFloat(row.avg_quality),
       avgPiotroski: parseFloat(row.avg_piotroski),
       avgAltmanZ: parseFloat(row.avg_altman_z),
+      totalAumCrores: parseFloat(row.total_aum_crores) || 0,
       avgCagr1y: row.avg_cagr_1y != null ? parseFloat(row.avg_cagr_1y) : null,
       avgCagr3y: row.avg_cagr_3y != null ? parseFloat(row.avg_cagr_3y) : null,
       avgCagr5y: row.avg_cagr_5y != null ? parseFloat(row.avg_cagr_5y) : null,

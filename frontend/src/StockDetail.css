@@ -1077,6 +1077,18 @@
   font-weight: 600;
 }
 
+.fund-inception-badge {
+  margin-left: auto;
+  font-size: 0.8em;
+  color: var(--gold);
+  background: var(--gold-dim);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 3px 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* Loading & Error States */
 .loading,
 .error-box {

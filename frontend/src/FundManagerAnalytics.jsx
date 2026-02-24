@@ -27,6 +27,23 @@ const getPiotroskiColor = (score) => {
   return getQualityColor(pct);
 };
 
+const formatAum = (crores) => {
+  if (crores == null || crores === 0) return '—';
+  if (crores >= 100000) return `₹${(crores / 100000).toFixed(1)}L Cr`;
+  return `₹${Math.round(crores).toLocaleString('en-IN')} Cr`;
+};
+
+const formatFundAge = (startDate) => {
+  if (!startDate) return null;
+  const start = new Date(startDate);
+  const now = new Date();
+  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  if (months < 12) return `${months}mo`;
+  const years = Math.floor(months / 12);
+  const rem = months % 12;
+  return rem > 0 ? `${years}y ${rem}mo` : `${years}y`;
+};
+
 const getQualityLabel = (score) => {
   if (score >= 80) return 'Excellent';
   if (score >= 70) return 'Good';
@@ -41,7 +58,7 @@ export default function FundManagerAnalytics({ onFundClick }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterHouse, setFilterHouse] = useState('');
   const [fundHouses, setFundHouses] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: 'avgQuality', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'totalAumCrores', direction: 'desc' });
   const [expandedManager, setExpandedManager] = useState(null);
 
   useEffect(() => {
@@ -122,7 +139,7 @@ export default function FundManagerAnalytics({ onFundClick }) {
       <div className="fm-header">
         <div className="fm-title-block">
           <p className="fm-subtitle">
-            {sorted.length} fund managers ranked by average portfolio quality
+            {sorted.length} fund managers ranked by assets under management
           </p>
         </div>
         <div className="fm-badge">{sorted.length} Managers</div>
@@ -152,7 +169,6 @@ export default function FundManagerAnalytics({ onFundClick }) {
         <table className="fm-table">
           <thead>
             <tr>
-              <th className="fm-col-rank">Rank</th>
               <th className="fm-col-name">Manager</th>
               <th className="fm-col-house">Fund House(s)</th>
               <th className="fm-col-num fm-sortable" onClick={() => handleSort('fundCount')}>
@@ -161,8 +177,8 @@ export default function FundManagerAnalytics({ onFundClick }) {
               <th className="fm-col-num fm-sortable" onClick={() => handleSort('avgQuality')}>
                 Avg Quality <SortIndicator col="avgQuality" />
               </th>
-              <th className="fm-col-num fm-sortable" onClick={() => handleSort('avgPiotroski')}>
-                Avg Piotroski <SortIndicator col="avgPiotroski" />
+              <th className="fm-col-num fm-sortable" onClick={() => handleSort('totalAumCrores')}>
+                AUM <SortIndicator col="totalAumCrores" />
               </th>
               <th className="fm-col-num fm-sortable" onClick={() => handleSort('avgCagr1y')}>
                 Avg 1Y <SortIndicator col="avgCagr1y" />
@@ -182,11 +198,6 @@ export default function FundManagerAnalytics({ onFundClick }) {
                   className={`fm-row ${expandedManager === mgr.managerName ? 'expanded' : ''}`}
                   onClick={() => setExpandedManager(expandedManager === mgr.managerName ? null : mgr.managerName)}
                 >
-                  <td className="fm-col-rank">
-                    <span className={`fm-rank-badge ${idx < 3 ? `fm-rank-top-${idx + 1}` : ''}`}>
-                      {idx + 1}
-                    </span>
-                  </td>
                   <td className="fm-col-name">
                     <div className="fm-manager-name">{mgr.managerName}</div>
                     <div className="fm-expand-hint">{expandedManager === mgr.managerName ? '\u25B2 collapse' : '\u25BC expand'}</div>
@@ -208,9 +219,7 @@ export default function FundManagerAnalytics({ onFundClick }) {
                     </div>
                   </td>
                   <td className="fm-col-num">
-                    <div className="fm-mini-pill" style={{ background: getPiotroskiColor(mgr.avgPiotroski) }}>
-                      {mgr.avgPiotroski.toFixed(1)}/9
-                    </div>
+                    <span className="fm-aum">{formatAum(mgr.totalAumCrores)}</span>
                   </td>
                   {['avgCagr1y', 'avgCagr3y', 'avgCagr5y'].map(key => {
                     const val = mgr[key];
@@ -229,7 +238,7 @@ export default function FundManagerAnalytics({ onFundClick }) {
                 {/* Expanded funds row */}
                 {expandedManager === mgr.managerName && (
                   <tr className="fm-expand-row">
-                    <td colSpan={9}>
+                    <td colSpan={8}>
                       <div className="fm-expand-content">
                         <div className="fm-expand-title">Funds managed by {mgr.managerName}</div>
 
@@ -276,6 +285,8 @@ export default function FundManagerAnalytics({ onFundClick }) {
                                 <div className="fm-fi-score" style={{ color: q != null ? getQualityColor(q) : 'var(--text3)' }}>
                                   {q != null ? Math.round(q) : '—'}
                                 </div>
+                                <div className="fm-fi-aum">{formatAum(fund.aumCrores)}</div>
+                                <div className="fm-fi-age">{formatFundAge(fund.startDate) || '—'}</div>
                                 {['cagr1y', 'cagr3y', 'cagr5y'].map(k => {
                                   const v = fund[k] != null ? parseFloat(fund[k]) : null;
                                   return (

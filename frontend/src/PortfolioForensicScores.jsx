@@ -128,15 +128,24 @@ export default function PortfolioForensicScores({ ticker }) {
         )}
       </div>
 
-      {/* Fund Manager */}
-      {forensicData.fundManager && (
+      {/* Fund Manager & Inception */}
+      {(forensicData.fundManager || forensicData.fundStartDate) && (
         <div className="fund-manager-row">
-          <span className="fund-manager-label">
-            Fund Manager{forensicData.fundManager.includes(';') ? 's' : ''}:
-          </span>
-          <span className="fund-manager-names">
-            {forensicData.fundManager.split(';').map(name => name.trim()).join(' | ')}
-          </span>
+          {forensicData.fundManager && (
+            <>
+              <span className="fund-manager-label">
+                Fund Manager{forensicData.fundManager.includes(';') ? 's' : ''}:
+              </span>
+              <span className="fund-manager-names">
+                {forensicData.fundManager.split(';').map(name => name.trim()).join(' | ')}
+              </span>
+            </>
+          )}
+          {forensicData.fundStartDate && (
+            <span className="fund-inception-badge">
+              Since {new Date(forensicData.fundStartDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+            </span>
+          )}
         </div>
       )}
 
