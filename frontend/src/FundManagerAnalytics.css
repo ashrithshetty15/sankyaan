@@ -1,0 +1,458 @@
+.fm-container {
+  padding: 32px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.fm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.fm-subtitle {
+  color: var(--text2);
+  font-size: 0.95em;
+  margin: 0;
+}
+
+.fm-badge {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.85em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Filters */
+.fm-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.fm-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 16px;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9em;
+  outline: none;
+}
+
+.fm-search:focus {
+  border-color: var(--gold);
+}
+
+.fm-search::placeholder {
+  color: var(--text3);
+}
+
+.fm-filter-select {
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9em;
+  cursor: pointer;
+  outline: none;
+}
+
+.fm-filter-select:focus {
+  border-color: var(--gold);
+}
+
+/* Loading */
+.fm-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text2);
+}
+
+.fm-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--bg4);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: fm-spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes fm-spin {
+  to { transform: rotate(360deg); }
+}
+
+.fm-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 20px;
+  color: #ef4444;
+  text-align: center;
+}
+
+/* Table */
+.fm-table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--bg4);
+}
+
+.fm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.fm-table thead tr {
+  background: var(--bg3);
+  border-bottom: 2px solid var(--bg4);
+}
+
+.fm-table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.82em;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.fm-sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.fm-sortable:hover {
+  color: var(--gold);
+}
+
+.fm-col-rank {
+  width: 60px;
+  text-align: center !important;
+}
+
+.fm-col-name {
+  min-width: 180px;
+}
+
+.fm-col-house {
+  min-width: 140px;
+}
+
+.fm-col-num {
+  text-align: center !important;
+  min-width: 90px;
+}
+
+.fm-sort-inactive {
+  opacity: 0.3;
+  font-size: 0.8em;
+}
+
+.fm-sort-active {
+  color: var(--gold);
+  font-size: 0.85em;
+}
+
+/* Rows */
+.fm-row {
+  border-bottom: 1px solid var(--bg4);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fm-row:hover {
+  background: var(--bg3);
+}
+
+.fm-row.expanded {
+  background: var(--bg3);
+}
+
+.fm-table td {
+  padding: 12px 14px;
+  vertical-align: middle;
+}
+
+/* Rank badge */
+.fm-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9em;
+  background: var(--bg4);
+  color: var(--text2);
+}
+
+.fm-rank-top-1 {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+}
+
+.fm-rank-top-2 {
+  background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
+  color: #000;
+}
+
+.fm-rank-top-3 {
+  background: linear-gradient(135deg, #CD7F32, #A05020);
+  color: #fff;
+}
+
+/* Manager name */
+.fm-manager-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95em;
+}
+
+.fm-expand-hint {
+  font-size: 0.7em;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+/* Fund houses */
+.fm-houses-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.fm-house-tag {
+  font-size: 0.78em;
+  background: var(--bg4);
+  color: var(--text2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Fund count */
+.fm-fund-count {
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 1em;
+  color: var(--text);
+}
+
+/* Score pills */
+.fm-score-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: #fff;
+  min-width: 60px;
+  line-height: 1.2;
+}
+
+.fm-score-num {
+  font-size: 1em;
+  font-weight: 700;
+}
+
+.fm-score-label {
+  font-size: 0.65em;
+  opacity: 0.9;
+}
+
+.fm-mini-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.82em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fm-cagr {
+  font-weight: 700;
+  font-size: 0.95em;
+  font-family: 'DM Mono', monospace;
+}
+
+.fm-na {
+  color: var(--text3);
+  font-size: 0.8em;
+}
+
+/* ── Expanded Row ── */
+.fm-expand-row {
+  background: var(--bg2);
+}
+
+.fm-expand-row td {
+  padding: 0;
+}
+
+.fm-expand-content {
+  padding: 16px 20px 20px;
+}
+
+.fm-expand-title {
+  font-size: 0.82em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  margin-bottom: 14px;
+}
+
+/* 5-Pillar Summary */
+.fm-pillar-summary {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  background: var(--bg3);
+  border-radius: 10px;
+  border: 1px solid var(--bg4);
+}
+
+.fm-pillar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 70px;
+}
+
+.fm-pillar-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.2em;
+  font-weight: 700;
+}
+
+.fm-pillar-label {
+  font-size: 0.68em;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+/* Individual funds list */
+.fm-fund-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fm-fund-item {
+  display: grid;
+  grid-template-columns: 1fr 150px 60px 70px 70px 70px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fm-fund-item:hover {
+  background: var(--bg3);
+}
+
+.fm-fi-name {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fm-fi-house {
+  font-size: 0.75em;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fm-fi-score {
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+.fm-fi-cagr {
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 0.82em;
+  text-align: right;
+}
+
+.fm-no-results {
+  padding: 40px;
+  text-align: center;
+  color: var(--text3);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .fm-container {
+    padding: 20px 12px;
+  }
+
+  .fm-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .fm-filters {
+    flex-direction: column;
+  }
+
+  .fm-pillar-summary {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .fm-pillar-item {
+    min-width: 55px;
+  }
+
+  .fm-pillar-val {
+    font-size: 1em;
+  }
+
+  .fm-fund-item {
+    grid-template-columns: 1fr 60px 55px 55px;
+    gap: 6px;
+  }
+
+  .fm-fi-house {
+    display: none;
+  }
+
+  .fm-fi-cagr:last-child {
+    display: none;
+  }
+}

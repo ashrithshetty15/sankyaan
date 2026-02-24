@@ -8,6 +8,7 @@ import PortfolioStockScores from './PortfolioStockScores.jsx';
 import FundScoresRating from './FundScoresRating.jsx';
 import StockScoresRating from './StockScoresRating.jsx';
 import FundComparison from './FundComparison.jsx';
+import FundManagerAnalytics from './FundManagerAnalytics.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
 
@@ -509,6 +510,7 @@ export default function Home({ viewMode, setViewMode }) {
             : viewMode === 'stocks' ? 'Stock Analysis'
             : viewMode === 'fund-scores' ? 'Fund Scores Rating'
             : viewMode === 'fund-comparison' ? 'Compare Funds'
+            : viewMode === 'fund-managers' ? 'Fund Manager Analytics'
             : 'Stock Scores Rating'}
         </h1>
         <p className="subtitle">
@@ -520,6 +522,8 @@ export default function Home({ viewMode, setViewMode }) {
             ? 'Rank mutual funds by portfolio quality score'
             : viewMode === 'fund-comparison'
             ? 'Side-by-side comparison of mutual funds'
+            : viewMode === 'fund-managers'
+            ? 'Discover top fund managers by portfolio quality'
             : 'Rank stocks by quality scores'}
         </p>
       </header>
@@ -1015,6 +1019,16 @@ export default function Home({ viewMode, setViewMode }) {
       {/* Fund Comparison View */}
       {viewMode === 'fund-comparison' && (
         <FundComparison />
+      )}
+
+      {/* Fund Manager Analytics View */}
+      {viewMode === 'fund-managers' && (
+        <FundManagerAnalytics
+          onFundClick={(ticker) => {
+            setViewMode('mutual-funds');
+            setTimeout(() => performSearch(ticker), 100);
+          }}
+        />
       )}
 
       {/* Stock Scores Rating View */}

@@ -93,6 +93,14 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-text">Compare Funds</span>
         </button>
 
+        <button
+          className={`nav-item ${viewMode === 'fund-managers' ? 'active' : ''}`}
+          onClick={() => handleNavClick('fund-managers')}
+        >
+          <span className="nav-icon">👤</span>
+          <span className="nav-text">Fund Managers</span>
+        </button>
+
       </nav>
     </div>
     </>
