@@ -105,7 +105,7 @@ async function main() {
   // Get all funds with mfapi_scheme_code
   const fundsResult = await pool.query(`
     SELECT fund_name, scheme_name, fund_house, mfapi_scheme_code,
-           fund_manager, fund_manager_updated_at
+           fund_manager, fund_manager_updated_at, fund_start_date
     FROM fund_quality_scores
     WHERE mfapi_scheme_code IS NOT NULL
     ORDER BY fund_name
@@ -129,8 +129,8 @@ async function main() {
     const label = (fund.scheme_name || fund.fund_name).substring(0, 55).padEnd(55);
     process.stdout.write(`[${i + 1}/${funds.length}] ${label} `);
 
-    // Skip if recently updated (within last 30 days)
-    if (fund.fund_manager && fund.fund_manager_updated_at) {
+    // Skip if recently updated (within last 30 days) AND start_date already populated
+    if (fund.fund_manager && fund.fund_manager_updated_at && fund.fund_start_date) {
       const daysSinceUpdate = (Date.now() - new Date(fund.fund_manager_updated_at).getTime()) / (1000 * 60 * 60 * 24);
       if (daysSinceUpdate < 30) {
         console.log(`-- skipped (${Math.round(daysSinceUpdate)}d ago): ${fund.fund_manager}`);
