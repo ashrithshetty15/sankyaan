@@ -22,6 +22,7 @@ const TABLE_TO_FUND_HOUSE = {
   portfolio_mahindra:          'Mahindra Manulife',
   portfolio_motilal_oswal:     'Motilal Oswal',
   portfolio_nippon_india:      'Nippon India',
+  portfolio_nj:                'NJ',
   portfolio_old_bridge:        'Old Bridge',
   portfolio_ppfas:             'PPFAS',
   portfolio_quant:             'Quant',
@@ -32,6 +33,19 @@ const TABLE_TO_FUND_HOUSE = {
   portfolio_sundaram:          'Sundaram',
   portfolio_tata:              'Tata',
   portfolio_trust:             'Trust',
+  portfolio_whiteoak:          'WhiteOak Capital',
+  portfolio_zerodha:           'Zerodha',
+};
+
+// Zerodha uses a generic regulatory header as scheme_name for all rows.
+// Map source_file prefixes to actual fund names.
+const ZERODHA_FUND_NAMES = {
+  ZBSEN: 'Zerodha BSE Sensex Index Fund',
+  ZELSS: 'Zerodha ELSS Tax Saver Nifty LargeMidcap 250 Index Fund',
+  ZN250: 'Zerodha Nifty LargeMidcap 250 Index Fund',
+  ZNFTY: 'Zerodha Nifty 1D Rate Liquid ETF',
+  ZOVER: 'Zerodha Overnight Fund',
+  ZSLVR: 'Zerodha Silver ETF Fund of Fund',
 };
 
 async function migrateTable(tableName, fundHouse) {
@@ -69,10 +83,17 @@ async function migrateTable(tableName, fundHouse) {
         ? new Date(row.portfolio_date).toISOString().slice(0, 10)
         : null;
 
+      // For Zerodha, derive fund name from source_file prefix
+      let schemeName = row.scheme_name;
+      if (fundHouse === 'Zerodha' && row.source_file) {
+        const prefix = row.source_file.split(' ')[0];
+        schemeName = ZERODHA_FUND_NAMES[prefix] || `Zerodha ${prefix} Fund`;
+      }
+
       values.push(
         fundHouse,                              // $1  fund_house
-        row.scheme_name,                        // $2  fund_name
-        row.scheme_name,                        // $3  scheme_name
+        schemeName,                             // $2  fund_name
+        schemeName,                             // $3  scheme_name
         portfolioDate,                          // $4  portfolio_date (varchar)
         row.source_file || null,               // $5  source_file
         row.isin || null,                       // $6  isin
