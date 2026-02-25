@@ -1,7 +1,7 @@
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 
-export default function GoogleLoginButton() {
+function GoogleLoginButtonInner() {
   const { loginWithGoogle } = useAuth();
 
   const login = useGoogleLogin({
@@ -24,4 +24,9 @@ export default function GoogleLoginButton() {
       Sign in with Google
     </button>
   );
+}
+
+export default function GoogleLoginButton() {
+  if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) return null;
+  return <GoogleLoginButtonInner />;
 }
