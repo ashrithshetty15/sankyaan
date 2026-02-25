@@ -1600,11 +1600,183 @@ html::before {
   font-size: 0.9em;
 }
 
+/* View All Holdings button */
+.holdings-view-all-btn {
+  padding: 7px 16px;
+  background: var(--gold);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-size: 0.82em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.holdings-view-all-btn:hover {
+  opacity: 0.85;
+}
+
+/* Holdings preview (top 5) */
+.holdings-preview {
+  padding: 12px 24px 16px;
+}
+
+.holdings-preview-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bg4);
+  gap: 12px;
+}
+
+.holdings-preview-item:last-child {
+  border-bottom: none;
+}
+
+.holdings-preview-item .instrument-cell {
+  flex: 1;
+  min-width: 0;
+}
+
+.holdings-preview-item .alloc-cell {
+  min-width: 140px;
+}
+
+.holdings-preview-more {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  background: var(--bg3);
+  border: 1px dashed var(--bg4);
+  border-radius: 8px;
+  color: var(--gold);
+  font-size: 0.85em;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.holdings-preview-more:hover {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+}
+
+/* Holdings Modal */
+.holdings-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modal-fade-in 0.2s ease;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.holdings-modal {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-slide-in 0.2s ease;
+}
+
+@keyframes modal-slide-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.holdings-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--bg4);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.holdings-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.holdings-modal-close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.holdings-modal-close:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.holdings-modal .holdings-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.holdings-modal .holdings-pagination {
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
   .holdings-section-top {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .holdings-modal {
+    max-height: 90vh;
+    border-radius: 12px;
+  }
+
+  .holdings-modal-overlay {
+    padding: 10px;
+  }
+
+  .holdings-modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .holdings-modal-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .th-industry, .td-industry { display: none; }
   .th-value, .td-value { display: none; }
   .alloc-bar-track { min-width: 50px; }

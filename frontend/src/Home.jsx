@@ -5,10 +5,10 @@ import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recha
 import * as XLSX from 'xlsx';
 import PortfolioForensicScores from './PortfolioForensicScores.jsx';
 import PortfolioStockScores from './PortfolioStockScores.jsx';
-import FundScoresRating from './FundScoresRating.jsx';
 import StockScoresRating from './StockScoresRating.jsx';
 import FundComparison from './FundComparison.jsx';
 import FundManagerAnalytics from './FundManagerAnalytics.jsx';
+import FundScreener from './FundScreener.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
 
@@ -119,12 +119,11 @@ export default function Home({ viewMode, setViewMode }) {
   const [selectedFundHouse, setSelectedFundHouse] = useState('');
   const [stocks, setStocks] = useState([]);
   const [filteredStocks, setFilteredStocks] = useState([]);
-  const [holdingsPage, setHoldingsPage] = useState(1);
   const [holdingsFilter, setHoldingsFilter] = useState('all');
+  const [showHoldingsModal, setShowHoldingsModal] = useState(false);
   const [fundHouseSearch, setFundHouseSearch] = useState('');
   const [showFundHouseDropdown, setShowFundHouseDropdown] = useState(false);
 
-  const HOLDINGS_PER_PAGE = 10;
 
   // Fetch all fund houses on component mount
   useEffect(() => {
@@ -240,9 +239,8 @@ export default function Home({ viewMode, setViewMode }) {
     setFundHouseSearch('');
   }, [viewMode]);
 
-  // Reset holdings pagination when fund changes
+  // Reset holdings filter when fund changes
   useEffect(() => {
-    setHoldingsPage(1);
     setHoldingsFilter('all');
   }, [fundData]);
 
@@ -485,22 +483,7 @@ export default function Home({ viewMode, setViewMode }) {
       ? classifiedHoldings
       : classifiedHoldings.filter(h => h.holdingType === holdingsFilter);
 
-    const totalHoldingsPages = Math.max(1, Math.ceil(filteredHoldings.length / HOLDINGS_PER_PAGE));
-    const safeHoldingsPage = Math.min(holdingsPage, totalHoldingsPages);
-    const pagedHoldings = filteredHoldings.slice(
-      (safeHoldingsPage - 1) * HOLDINGS_PER_PAGE,
-      safeHoldingsPage * HOLDINGS_PER_PAGE
-    );
     const maxAllocation = filteredHoldings[0]?.portfolioPercentage || 1;
-
-    const getPageNumbers = (current, total) => {
-      if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-      const pages = [];
-      if (current > 3) { pages.push(1); if (current > 4) pages.push('...'); }
-      for (let i = Math.max(1, current - 1); i <= Math.min(total, current + 1); i++) pages.push(i);
-      if (current < total - 2) { if (current < total - 3) pages.push('...'); pages.push(total); }
-      return pages;
-    };
 
     return (
     <div className="container">
@@ -508,9 +491,9 @@ export default function Home({ viewMode, setViewMode }) {
         <h1>
           {viewMode === 'mutual-funds' ? 'Mutual Fund Portfolio'
             : viewMode === 'stocks' ? 'Stock Analysis'
-            : viewMode === 'fund-scores' ? 'Fund Scores Rating'
             : viewMode === 'fund-comparison' ? 'Compare Funds'
             : viewMode === 'fund-managers' ? 'Fund Manager Analytics'
+            : viewMode === 'fund-screener' ? 'Fund Screener'
             : 'Stock Scores Rating'}
         </h1>
         <p className="subtitle">
@@ -518,12 +501,12 @@ export default function Home({ viewMode, setViewMode }) {
             ? 'Explore mutual fund portfolio holdings'
             : viewMode === 'stocks'
             ? 'Discover and analyze NSE stocks'
-            : viewMode === 'fund-scores'
-            ? 'Rank mutual funds by portfolio quality score'
             : viewMode === 'fund-comparison'
             ? 'Side-by-side comparison of mutual funds'
             : viewMode === 'fund-managers'
             ? 'Discover top fund managers by portfolio quality'
+            : viewMode === 'fund-screener'
+            ? 'Discover funds by sector, stock, AUM, and performance'
             : 'Rank stocks by quality scores'}
         </p>
       </header>
@@ -851,7 +834,7 @@ export default function Home({ viewMode, setViewMode }) {
               <PortfolioStockScores ticker={searchTerm} />
             </ForensicErrorBoundary>
 
-            {/* All Holdings Table */}
+            {/* All Holdings - Summary + Popup trigger */}
             <div className="holdings-section">
               <div className="holdings-section-top">
                 <div className="holdings-section-meta">
@@ -861,138 +844,169 @@ export default function Home({ viewMode, setViewMode }) {
                   </p>
                 </div>
                 <div className="holdings-section-actions">
-                  <div className="holdings-type-tabs">
-                    {[
-                      { key: 'all', label: 'All' },
-                      { key: 'equity', label: 'Equity' },
-                      { key: 'debt', label: 'Debt' },
-                      { key: 'derivatives', label: 'Derivatives' },
-                    ].map(({ key, label }) => (
-                      <button
-                        key={key}
-                        className={`type-tab ${holdingsFilter === key ? 'active' : ''}`}
-                        onClick={() => { setHoldingsFilter(key); setHoldingsPage(1); }}
-                      >
-                        {label}
-                        {typeCounts[key] > 0 && (
-                          <span className="tab-count">{typeCounts[key]}</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
                   <button className="holdings-export-btn" onClick={() => exportToExcel(fundData)}>
                     ↓ Export
                   </button>
+                  <button
+                    className="holdings-view-all-btn"
+                    onClick={() => { setShowHoldingsModal(true); setHoldingsFilter('all'); }}
+                  >
+                    View All Holdings
+                  </button>
                 </div>
               </div>
 
-              <div className="holdings-table-wrapper">
-                <table className="holdings-table">
-                  <thead>
-                    <tr>
-                      <th className="th-num">#</th>
-                      <th className="th-instrument">INSTRUMENT</th>
-                      <th className="th-industry">INDUSTRY</th>
-                      <th className="th-allocation">ALLOCATION</th>
-                      <th className="th-value">VALUE (₹ LAKH)</th>
-                      <th className="th-quantity">QUANTITY</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pagedHoldings.map((fund, idx) => {
-                      const globalIdx = (safeHoldingsPage - 1) * HOLDINGS_PER_PAGE + idx;
-                      const instrumentName = fund.fundName || fund.instrument_name || 'Unknown';
-                      const stockSymbol = fund.symbol || null; // Use symbol from API
-                      const hasStockSymbol = stockSymbol !== null;
-                      const alloc = fund.portfolioPercentage || 0;
-                      const barWidth = maxAllocation > 0 ? (alloc / maxAllocation) * 100 : 0;
-
-                      return (
-                        <tr key={`${fund.fundId || globalIdx}`} className="holding-row">
-                          <td className="td-num">
-                            {String(globalIdx + 1).padStart(2, '0')}
-                          </td>
-                          <td className="td-instrument">
-                            <div className="instrument-cell">
-                              <div
-                                className="instrument-color-bar"
-                                style={{ backgroundColor: COLORS[globalIdx % COLORS.length] }}
-                              />
-                              <span
-                                className={`instrument-name${hasStockSymbol ? ' clickable' : ''}`}
-                                onClick={hasStockSymbol ? () => navigate(`/stock/${stockSymbol}`) : undefined}
-                                title={hasStockSymbol ? 'Click to view stock details' : ''}
-                              >
-                                {instrumentName}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="td-industry">
-                            {fund.industry
-                              ? <span className="industry-tag">{fund.industry}</span>
-                              : <span className="industry-tag industry-tag-empty">—</span>}
-                          </td>
-                          <td className="td-allocation">
-                            <div className="alloc-cell">
-                              <div className="alloc-bar-track">
-                                <div
-                                  className="alloc-bar-fill"
-                                  style={{ width: `${barWidth}%` }}
-                                />
-                              </div>
-                              <span className="alloc-pct">{alloc.toFixed(2)}%</span>
-                            </div>
-                          </td>
-                          <td className="td-value">
-                            ₹{(fund.assetsUnderManagement || 0).toLocaleString('en-IN', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2
-                            })}
-                          </td>
-                          <td className="td-quantity">
-                            {(fund.quantity || 0).toLocaleString('en-IN')}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="holdings-pagination">
-                <span className="pagination-info">
-                  Showing {filteredHoldings.length === 0 ? 0 : (safeHoldingsPage - 1) * HOLDINGS_PER_PAGE + 1}–{Math.min(safeHoldingsPage * HOLDINGS_PER_PAGE, filteredHoldings.length)} of {filteredHoldings.length} holdings
-                </span>
-                <div className="pagination-controls">
+              {/* Top 5 holdings preview */}
+              <div className="holdings-preview">
+                {classifiedHoldings.slice(0, 5).map((fund, idx) => {
+                  const instrumentName = fund.fundName || fund.instrument_name || 'Unknown';
+                  const alloc = fund.portfolioPercentage || 0;
+                  const barWidth = maxAllocation > 0 ? (alloc / maxAllocation) * 100 : 0;
+                  return (
+                    <div key={idx} className="holdings-preview-item">
+                      <div className="instrument-cell">
+                        <div className="instrument-color-bar" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                        <span className="instrument-name">{instrumentName}</span>
+                      </div>
+                      <div className="alloc-cell">
+                        <div className="alloc-bar-track">
+                          <div className="alloc-bar-fill" style={{ width: `${barWidth}%` }} />
+                        </div>
+                        <span className="alloc-pct">{alloc.toFixed(2)}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {classifiedHoldings.length > 5 && (
                   <button
-                    className="pg-btn"
-                    disabled={safeHoldingsPage === 1}
-                    onClick={() => setHoldingsPage(p => Math.max(1, p - 1))}
+                    className="holdings-preview-more"
+                    onClick={() => { setShowHoldingsModal(true); setHoldingsFilter('all'); }}
                   >
-                    ← Prev
+                    +{classifiedHoldings.length - 5} more holdings — click to view all
                   </button>
-                  {getPageNumbers(safeHoldingsPage, totalHoldingsPages).map((pg, i) =>
-                    pg === '...'
-                      ? <span key={`ellipsis-${i}`} className="pg-ellipsis">...</span>
-                      : <button
-                          key={pg}
-                          className={`pg-btn${pg === safeHoldingsPage ? ' active' : ''}`}
-                          onClick={() => setHoldingsPage(pg)}
-                        >
-                          {pg}
-                        </button>
-                  )}
-                  <button
-                    className="pg-btn"
-                    disabled={safeHoldingsPage === totalHoldingsPages}
-                    onClick={() => setHoldingsPage(p => Math.min(totalHoldingsPages, p + 1))}
-                  >
-                    Next →
-                  </button>
-                </div>
+                )}
               </div>
             </div>
+
+            {/* Holdings Modal */}
+            {showHoldingsModal && (
+              <div className="holdings-modal-overlay" onClick={() => setShowHoldingsModal(false)}>
+                <div className="holdings-modal" onClick={e => e.stopPropagation()}>
+                  <div className="holdings-modal-header">
+                    <div>
+                      <h3 className="holdings-title">All Holdings</h3>
+                      <p className="holdings-subtitle">
+                        {filteredHoldings.length} instruments · sorted by allocation
+                      </p>
+                    </div>
+                    <div className="holdings-modal-header-actions">
+                      <div className="holdings-type-tabs">
+                        {[
+                          { key: 'all', label: 'All' },
+                          { key: 'equity', label: 'Equity' },
+                          { key: 'debt', label: 'Debt' },
+                          { key: 'derivatives', label: 'Derivatives' },
+                        ].map(({ key, label }) => (
+                          <button
+                            key={key}
+                            className={`type-tab ${holdingsFilter === key ? 'active' : ''}`}
+                            onClick={() => setHoldingsFilter(key)}
+                          >
+                            {label}
+                            {typeCounts[key] > 0 && (
+                              <span className="tab-count">{typeCounts[key]}</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      <button className="holdings-export-btn" onClick={() => exportToExcel(fundData)}>
+                        ↓ Export
+                      </button>
+                      <button className="holdings-modal-close" onClick={() => setShowHoldingsModal(false)}>
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="holdings-table-wrapper">
+                    <table className="holdings-table">
+                      <thead>
+                        <tr>
+                          <th className="th-num">#</th>
+                          <th className="th-instrument">INSTRUMENT</th>
+                          <th className="th-industry">INDUSTRY</th>
+                          <th className="th-allocation">ALLOCATION</th>
+                          <th className="th-value">VALUE (₹ LAKH)</th>
+                          <th className="th-quantity">QUANTITY</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredHoldings.map((fund, idx) => {
+                          const globalIdx = idx;
+                          const instrumentName = fund.fundName || fund.instrument_name || 'Unknown';
+                          const stockSymbol = fund.symbol || null;
+                          const hasStockSymbol = stockSymbol !== null;
+                          const alloc = fund.portfolioPercentage || 0;
+                          const barWidth = maxAllocation > 0 ? (alloc / maxAllocation) * 100 : 0;
+
+                          return (
+                            <tr key={`${fund.fundId || globalIdx}`} className="holding-row">
+                              <td className="td-num">
+                                {String(globalIdx + 1).padStart(2, '0')}
+                              </td>
+                              <td className="td-instrument">
+                                <div className="instrument-cell">
+                                  <div
+                                    className="instrument-color-bar"
+                                    style={{ backgroundColor: COLORS[globalIdx % COLORS.length] }}
+                                  />
+                                  <span
+                                    className={`instrument-name${hasStockSymbol ? ' clickable' : ''}`}
+                                    onClick={hasStockSymbol ? () => navigate(`/stock/${stockSymbol}`) : undefined}
+                                    title={hasStockSymbol ? 'Click to view stock details' : ''}
+                                  >
+                                    {instrumentName}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="td-industry">
+                                {fund.industry
+                                  ? <span className="industry-tag">{fund.industry}</span>
+                                  : <span className="industry-tag industry-tag-empty">—</span>}
+                              </td>
+                              <td className="td-allocation">
+                                <div className="alloc-cell">
+                                  <div className="alloc-bar-track">
+                                    <div
+                                      className="alloc-bar-fill"
+                                      style={{ width: `${barWidth}%` }}
+                                    />
+                                  </div>
+                                  <span className="alloc-pct">{alloc.toFixed(2)}%</span>
+                                </div>
+                              </td>
+                              <td className="td-value">
+                                ₹{(fund.assetsUnderManagement || 0).toLocaleString('en-IN', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                })}
+                              </td>
+                              <td className="td-quantity">
+                                {(fund.quantity || 0).toLocaleString('en-IN')}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="holdings-count-info">
+                    Showing {filteredHoldings.length} holdings
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1005,17 +1019,6 @@ export default function Home({ viewMode, setViewMode }) {
         </>
       )}
 
-      {/* Fund Scores Rating View */}
-      {viewMode === 'fund-scores' && (
-        <FundScoresRating
-          onFundClick={(ticker, schemeName) => {
-            setViewMode('mutual-funds');
-            setSearchTerm(schemeName || ticker);
-            performSearch(ticker);
-          }}
-        />
-      )}
-
       {/* Fund Comparison View */}
       {viewMode === 'fund-comparison' && (
         <FundComparison />
@@ -1024,6 +1027,16 @@ export default function Home({ viewMode, setViewMode }) {
       {/* Fund Manager Analytics View */}
       {viewMode === 'fund-managers' && (
         <FundManagerAnalytics
+          onFundClick={(ticker) => {
+            setViewMode('mutual-funds');
+            setTimeout(() => performSearch(ticker), 100);
+          }}
+        />
+      )}
+
+      {/* Fund Screener View */}
+      {viewMode === 'fund-screener' && (
+        <FundScreener
           onFundClick={(ticker) => {
             setViewMode('mutual-funds');
             setTimeout(() => performSearch(ticker), 100);

@@ -251,6 +251,22 @@ export default function FundComparison() {
             </div>
           ))}
 
+          {/* Expense Ratio */}
+          <div className="comparison-row" style={{ gridTemplateColumns: `200px repeat(${comparisonData.funds.length}, 1fr)` }}>
+            <div className="row-label">Expense Ratio</div>
+            {comparisonData.funds.map((fund, i) => {
+              const er = fund.expenseRatio;
+              const erColor = er == null ? '#545f72' : er <= 0.5 ? '#22c55e' : er <= 1.0 ? '#eab308' : er <= 1.5 ? '#f97316' : '#ef4444';
+              return (
+                <div key={i} className="score-cell mini">
+                  <div className="score-value" style={{ color: erColor }}>
+                    {er != null ? `${er.toFixed(2)}%` : 'N/A'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           {/* Piotroski & Altman Z */}
           <div className="comparison-row" style={{ gridTemplateColumns: `200px repeat(${comparisonData.funds.length}, 1fr)` }}>
             <div className="row-label">Piotroski F-Score</div>

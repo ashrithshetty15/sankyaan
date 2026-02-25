@@ -27,7 +27,7 @@ export async function compareFunds(req, res) {
                profitability_score, financial_strength_score,
                earnings_quality_score_v2, growth_score, valuation_score,
                cagr_1y, cagr_3y, cagr_5y, cagr_10y,
-               scored_holdings, coverage_pct
+               scored_holdings, coverage_pct, expense_ratio
         FROM fund_quality_scores
         WHERE fund_name = $1
       `, [fundName]);
@@ -72,6 +72,7 @@ export async function compareFunds(req, res) {
         fundManager: scores.fund_manager || null,
         scoredHoldings: scores.scored_holdings,
         coveragePct: scores.coverage_pct,
+        expenseRatio: scores.expense_ratio != null ? parseFloat(scores.expense_ratio) : null,
         scores: {
           overall_quality_score: scores.overall_quality_score ? parseFloat(scores.overall_quality_score) : null,
           piotroski_score: scores.piotroski_score ? parseFloat(scores.piotroski_score) : null,

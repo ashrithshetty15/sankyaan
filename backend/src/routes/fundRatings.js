@@ -34,7 +34,8 @@ export async function getFundRatings(req, res) {
         cagr_1y,
         cagr_3y,
         cagr_5y,
-        cagr_10y
+        cagr_10y,
+        expense_ratio
       FROM fund_quality_scores
       WHERE overall_quality_score IS NOT NULL
         AND coverage_pct >= 50

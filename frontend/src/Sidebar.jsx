@@ -70,19 +70,19 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
         <div className="nav-section-label">ANALYSIS</div>
 
         <button
-          className={`nav-item ${viewMode === 'fund-scores' ? 'active' : ''}`}
-          onClick={() => handleNavClick('fund-scores')}
-        >
-          <span className="nav-icon">🏆</span>
-          <span className="nav-text">Fund Scores Rating</span>
-        </button>
-
-        <button
           className={`nav-item ${viewMode === 'stock-scores' ? 'active' : ''}`}
           onClick={() => handleNavClick('stock-scores')}
         >
           <span className="nav-icon">⭐</span>
           <span className="nav-text">Stock Scores Rating</span>
+        </button>
+
+        <button
+          className={`nav-item ${viewMode === 'fund-screener' ? 'active' : ''}`}
+          onClick={() => handleNavClick('fund-screener')}
+        >
+          <span className="nav-icon">🔍</span>
+          <span className="nav-text">Fund Screener</span>
         </button>
 
         <button

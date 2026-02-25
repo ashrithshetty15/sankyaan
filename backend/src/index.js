@@ -9,6 +9,7 @@ import { getFundRatings, refreshFundRatings } from './routes/fundRatings.js';
 import { getStockRatings, refreshStockRatings } from './routes/stockRatings.js';
 import { compareFunds } from './routes/fundComparison.js';
 import { getFundManagers } from './routes/fundManagers.js';
+import { fundScreener, getScreenerSectors } from './routes/fundScreener.js';
 import { fetchFMPDividendCalendar, fetchFMPStockSplits } from './fmpService.js';
 import { runMigrations } from './migrate.js';
 
@@ -202,6 +203,10 @@ app.get('/api/fund-comparison', compareFunds);
 
 // Fund manager analytics - aggregated manager performance
 app.get('/api/fund-managers', getFundManagers);
+
+// Fund screener - advanced filtering by sector, stock, AUM, etc.
+app.get('/api/fund-screener/sectors', getScreenerSectors);
+app.get('/api/fund-screener', fundScreener);
 
 // Stock ratings - serve from cache (fast) and refresh (on-demand)
 app.get('/api/stock-ratings', getStockRatings);

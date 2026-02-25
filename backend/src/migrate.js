@@ -202,6 +202,14 @@ const MIGRATIONS = [
       ALTER TABLE fund_quality_scores
         ADD COLUMN IF NOT EXISTS fund_start_date DATE;
     `
+  },
+  {
+    name: '009_add_expense_ratio',
+    sql: `
+      ALTER TABLE fund_quality_scores
+        ADD COLUMN IF NOT EXISTS expense_ratio NUMERIC(5,2),
+        ADD COLUMN IF NOT EXISTS expense_ratio_date DATE;
+    `
   }
 ];
 

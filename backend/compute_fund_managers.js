@@ -73,7 +73,12 @@ async function fetchFundDataFromKuvera(isin) {
         if (!res2.ok) return null;
         const data2 = await res2.json();
         const fund2 = Array.isArray(data2) ? data2[0] : data2;
-        return fund2 ? { fundManager: fund2.fund_manager || null, startDate: fund2.start_date || null } : null;
+        return fund2 ? {
+          fundManager: fund2.fund_manager || null,
+          startDate: fund2.start_date || null,
+          expenseRatio: fund2.expense_ratio != null ? parseFloat(fund2.expense_ratio) : null,
+          expenseRatioDate: fund2.expense_ratio_date || null
+        } : null;
       }
       return null;
     }
@@ -82,7 +87,12 @@ async function fetchFundDataFromKuvera(isin) {
     const fund = Array.isArray(data) ? data[0] : data;
     if (!fund) return null;
 
-    return { fundManager: fund.fund_manager || null, startDate: fund.start_date || null };
+    return {
+      fundManager: fund.fund_manager || null,
+      startDate: fund.start_date || null,
+      expenseRatio: fund.expense_ratio != null ? parseFloat(fund.expense_ratio) : null,
+      expenseRatioDate: fund.expense_ratio_date || null
+    };
   } catch (err) {
     console.error(`  Kuvera fetch error for ISIN ${isin}:`, err.message);
     return null;
@@ -99,13 +109,15 @@ async function main() {
     ALTER TABLE fund_quality_scores
       ADD COLUMN IF NOT EXISTS fund_manager TEXT,
       ADD COLUMN IF NOT EXISTS fund_manager_updated_at TIMESTAMP,
-      ADD COLUMN IF NOT EXISTS fund_start_date DATE
+      ADD COLUMN IF NOT EXISTS fund_start_date DATE,
+      ADD COLUMN IF NOT EXISTS expense_ratio NUMERIC(5,2),
+      ADD COLUMN IF NOT EXISTS expense_ratio_date DATE
   `);
 
   // Get all funds with mfapi_scheme_code
   const fundsResult = await pool.query(`
     SELECT fund_name, scheme_name, fund_house, mfapi_scheme_code,
-           fund_manager, fund_manager_updated_at, fund_start_date
+           fund_manager, fund_manager_updated_at, fund_start_date, expense_ratio
     FROM fund_quality_scores
     WHERE mfapi_scheme_code IS NOT NULL
     ORDER BY fund_name
@@ -129,8 +141,8 @@ async function main() {
     const label = (fund.scheme_name || fund.fund_name).substring(0, 55).padEnd(55);
     process.stdout.write(`[${i + 1}/${funds.length}] ${label} `);
 
-    // Skip if recently updated (within last 30 days) AND start_date already populated
-    if (fund.fund_manager && fund.fund_manager_updated_at && fund.fund_start_date) {
+    // Skip if recently updated (within last 30 days) AND all fields populated
+    if (fund.fund_manager && fund.fund_manager_updated_at && fund.fund_start_date && fund.expense_ratio != null) {
       const daysSinceUpdate = (Date.now() - new Date(fund.fund_manager_updated_at).getTime()) / (1000 * 60 * 60 * 24);
       if (daysSinceUpdate < 30) {
         console.log(`-- skipped (${Math.round(daysSinceUpdate)}d ago): ${fund.fund_manager}`);
@@ -163,11 +175,14 @@ async function main() {
     await pool.query(`
       UPDATE fund_quality_scores
       SET fund_manager = $1, fund_manager_updated_at = NOW(),
-          fund_start_date = COALESCE($3::date, fund_start_date)
+          fund_start_date = COALESCE($3::date, fund_start_date),
+          expense_ratio = COALESCE($4, expense_ratio),
+          expense_ratio_date = COALESCE($5::date, expense_ratio_date)
       WHERE fund_name = $2
-    `, [kuveraData.fundManager, fund.fund_name, kuveraData.startDate]);
+    `, [kuveraData.fundManager, fund.fund_name, kuveraData.startDate, kuveraData.expenseRatio, kuveraData.expenseRatioDate]);
 
-    console.log(`-> ${kuveraData.fundManager}${kuveraData.startDate ? ` (since ${kuveraData.startDate})` : ''}`);
+    const erStr = kuveraData.expenseRatio != null ? ` ER:${kuveraData.expenseRatio}%` : '';
+    console.log(`-> ${kuveraData.fundManager}${kuveraData.startDate ? ` (since ${kuveraData.startDate})` : ''}${erStr}`);
     updated++;
   }
 
