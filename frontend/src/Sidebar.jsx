@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import UserProfile from './components/UserProfile';
 import './Sidebar.css';
 
 export default function Sidebar({ viewMode, onViewModeChange }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleNavClick = (mode) => {
@@ -67,41 +70,50 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-text">Stocks</span>
         </button>
 
-        <div className="nav-section-label">ANALYSIS</div>
+        <div className="nav-section-label">ANALYSIS {!user && <span className="lock-badge">🔒</span>}</div>
 
         <button
-          className={`nav-item ${viewMode === 'stock-scores' ? 'active' : ''}`}
-          onClick={() => handleNavClick('stock-scores')}
+          className={`nav-item ${viewMode === 'stock-scores' ? 'active' : ''} ${!user ? 'locked' : ''}`}
+          onClick={() => user && handleNavClick('stock-scores')}
+          title={!user ? 'Sign in to access' : ''}
         >
           <span className="nav-icon">⭐</span>
           <span className="nav-text">Stock Scores Rating</span>
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'fund-screener' ? 'active' : ''}`}
-          onClick={() => handleNavClick('fund-screener')}
+          className={`nav-item ${viewMode === 'fund-screener' ? 'active' : ''} ${!user ? 'locked' : ''}`}
+          onClick={() => user && handleNavClick('fund-screener')}
+          title={!user ? 'Sign in to access' : ''}
         >
           <span className="nav-icon">🔍</span>
           <span className="nav-text">Fund Screener</span>
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'fund-comparison' ? 'active' : ''}`}
-          onClick={() => handleNavClick('fund-comparison')}
+          className={`nav-item ${viewMode === 'fund-comparison' ? 'active' : ''} ${!user ? 'locked' : ''}`}
+          onClick={() => user && handleNavClick('fund-comparison')}
+          title={!user ? 'Sign in to access' : ''}
         >
           <span className="nav-icon">⚖️</span>
           <span className="nav-text">Compare Funds</span>
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'fund-managers' ? 'active' : ''}`}
-          onClick={() => handleNavClick('fund-managers')}
+          className={`nav-item ${viewMode === 'fund-managers' ? 'active' : ''} ${!user ? 'locked' : ''}`}
+          onClick={() => user && handleNavClick('fund-managers')}
+          title={!user ? 'Sign in to access' : ''}
         >
           <span className="nav-icon">👤</span>
           <span className="nav-text">Fund Managers</span>
         </button>
 
       </nav>
+
+        <UserProfile />
+        <div className="sidebar-footer">
+          <a href="mailto:contact@sankyaan.com" className="footer-email">contact@sankyaan.com</a>
+        </div>
     </div>
     </>
   );

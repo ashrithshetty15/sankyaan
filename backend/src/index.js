@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { searchStock } from './services.js';
 import { getTickersWithFunds, getFundHouses, getAllStocks, getPeerStocks } from './db.js';
@@ -12,6 +13,8 @@ import { getFundManagers } from './routes/fundManagers.js';
 import { fundScreener, getScreenerSectors } from './routes/fundScreener.js';
 import { fetchFMPDividendCalendar, fetchFMPStockSplits } from './fmpService.js';
 import { runMigrations } from './migrate.js';
+import { optionalAuth } from './middleware/auth.js';
+import { googleLogin, getMe, logout } from './routes/auth.js';
 
 dotenv.config();
 
@@ -46,6 +49,13 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
+app.use(optionalAuth);
+
+// Auth routes
+app.post('/api/auth/google', googleLogin);
+app.get('/api/auth/me', getMe);
+app.post('/api/auth/logout', logout);
 
 // Health check
 app.get('/health', (req, res) => {

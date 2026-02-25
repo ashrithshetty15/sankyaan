@@ -210,6 +210,23 @@ const MIGRATIONS = [
         ADD COLUMN IF NOT EXISTS expense_ratio NUMERIC(5,2),
         ADD COLUMN IF NOT EXISTS expense_ratio_date DATE;
     `
+  },
+  {
+    name: '010_create_users_table',
+    sql: `
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        google_id VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        picture TEXT,
+        domain VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    `
   }
 ];
 
