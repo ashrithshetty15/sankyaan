@@ -25,10 +25,11 @@ export default function UserProfile() {
         )}
         <div className="user-profile-login">
           <GoogleLoginButton />
-          <p className="privacy-note">
-            We only use your name and email for login. No data is shared. <Link to="/privacy">Privacy Policy</Link>
-          </p>
         </div>
+        <p className="privacy-note">
+          We only use your name and email for login. No data is shared.<br />
+          <Link to="/privacy">Privacy Policy</Link>
+        </p>
       </div>
     );
   }

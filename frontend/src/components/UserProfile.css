@@ -97,11 +97,12 @@
 }
 
 .privacy-note {
-  margin: 4px 0 0;
-  font-size: 0.65em;
+  margin: 0;
+  padding: 0 20px 12px;
+  font-size: 0.62em;
   color: var(--text3);
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .privacy-note a {
