@@ -15,6 +15,7 @@ import { fetchFMPDividendCalendar, fetchFMPStockSplits } from './fmpService.js';
 import { runMigrations } from './migrate.js';
 import { optionalAuth } from './middleware/auth.js';
 import { googleLogin, getMe, logout } from './routes/auth.js';
+import { getBulkTrades, refreshBulkTrades } from './routes/bulkTrades.js';
 
 dotenv.config();
 
@@ -217,6 +218,10 @@ app.get('/api/fund-managers', getFundManagers);
 // Fund screener - advanced filtering by sector, stock, AUM, etc.
 app.get('/api/fund-screener/sectors', getScreenerSectors);
 app.get('/api/fund-screener', fundScreener);
+
+// Bulk trades - mutual fund bulk/block deals
+app.get('/api/bulk-trades', getBulkTrades);
+app.post('/api/bulk-trades/refresh', refreshBulkTrades);
 
 // Stock ratings - serve from cache (fast) and refresh (on-demand)
 app.get('/api/stock-ratings', getStockRatings);

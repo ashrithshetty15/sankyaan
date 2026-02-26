@@ -108,6 +108,15 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-text">Fund Managers</span>
         </button>
 
+        <button
+          className={`nav-item ${viewMode === 'bulk-trades' ? 'active' : ''} ${!user ? 'locked' : ''}`}
+          onClick={() => user && handleNavClick('bulk-trades')}
+          title={!user ? 'Sign in to access' : ''}
+        >
+          <span className="nav-icon">📊</span>
+          <span className="nav-text">Bulk Trades</span>
+        </button>
+
       </nav>
 
         <UserProfile />

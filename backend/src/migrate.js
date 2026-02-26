@@ -227,6 +227,29 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     `
+  },
+  {
+    name: '011_create_bulk_trades_table',
+    sql: `
+      CREATE TABLE IF NOT EXISTS bulk_trades (
+        id SERIAL PRIMARY KEY,
+        trade_date DATE NOT NULL,
+        symbol VARCHAR(100) NOT NULL,
+        company_name VARCHAR(255),
+        client_name VARCHAR(255) NOT NULL,
+        exchange VARCHAR(10),
+        deal_type VARCHAR(10),
+        transaction_type VARCHAR(10),
+        quantity BIGINT,
+        price NUMERIC(12,2),
+        pct_traded NUMERIC(6,2),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(trade_date, symbol, client_name, deal_type, transaction_type, exchange)
+      );
+      CREATE INDEX IF NOT EXISTS idx_bulk_trades_date ON bulk_trades(trade_date DESC);
+      CREATE INDEX IF NOT EXISTS idx_bulk_trades_symbol ON bulk_trades(symbol);
+      CREATE INDEX IF NOT EXISTS idx_bulk_trades_client ON bulk_trades(client_name);
+    `
   }
 ];
 
