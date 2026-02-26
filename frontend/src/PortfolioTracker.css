@@ -1,0 +1,379 @@
+.pt-container {
+  padding: 0 20px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pt-loading, .pt-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+
+.pt-empty-hint {
+  font-size: 0.85em;
+  margin-top: 8px;
+}
+
+/* Add Fund Form */
+.pt-add-section {
+  margin-bottom: 20px;
+}
+
+.pt-add-form {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.pt-search-wrapper {
+  position: relative;
+  flex: 2;
+  min-width: 200px;
+}
+
+.pt-search-input,
+.pt-amount-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.88em;
+  box-sizing: border-box;
+}
+
+.pt-amount-input {
+  flex: 1;
+  min-width: 120px;
+  max-width: 180px;
+}
+
+.pt-search-input:focus,
+.pt-amount-input:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.pt-add-btn {
+  padding: 10px 24px;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.pt-add-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.pt-add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Suggestions Dropdown */
+.pt-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 0 0 8px 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.pt-suggestion-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid var(--bg4);
+}
+
+.pt-suggestion-item:hover {
+  background: var(--bg3);
+}
+
+.pt-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.pt-sug-name {
+  font-size: 0.85em;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.pt-sug-house {
+  font-size: 0.72em;
+  color: var(--text3);
+}
+
+/* Summary Cards */
+.pt-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pt-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pt-card-label {
+  font-size: 0.72em;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pt-card-value {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pt-card-value.gold { color: var(--gold); }
+.pt-card-value.green { color: var(--green); }
+.pt-card-value.red { color: var(--red); }
+
+/* Holdings Table */
+.pt-table-wrapper {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--bg4);
+  margin-bottom: 24px;
+}
+
+.pt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+
+.pt-table thead {
+  background: var(--bg2);
+  position: sticky;
+  top: 0;
+}
+
+.pt-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text2);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--bg4);
+  white-space: nowrap;
+}
+
+.pt-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--bg4);
+  color: var(--text);
+}
+
+.pt-table tbody tr:hover {
+  background: var(--bg2);
+}
+
+.num-col {
+  text-align: right !important;
+}
+
+.pt-fund-name {
+  font-weight: 600;
+  font-size: 0.92em;
+}
+
+.pt-fund-house {
+  font-size: 0.78em;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.green-text { color: var(--green); }
+.red-text { color: var(--red); }
+
+.pt-score {
+  font-weight: 700;
+}
+
+.pt-score.good { color: var(--green); }
+.pt-score.ok { color: var(--gold); }
+.pt-score.poor { color: var(--red); }
+
+.pt-delete-btn {
+  background: transparent;
+  border: 1px solid var(--bg4);
+  color: var(--text3);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.pt-delete-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* Analysis Section */
+.pt-analysis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.pt-analysis-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.pt-analysis-card h3 {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 16px;
+}
+
+/* Sector Bars */
+.pt-sector-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pt-sector-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pt-sector-name {
+  font-size: 0.8em;
+  color: var(--text2);
+  min-width: 100px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pt-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg4);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pt-bar-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.pt-sector-pct {
+  font-size: 0.78em;
+  color: var(--text3);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Overlap Table */
+.pt-overlap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+}
+
+.pt-overlap-table th {
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text3);
+  font-size: 0.82em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--bg4);
+}
+
+.pt-overlap-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--bg4);
+  color: var(--text);
+}
+
+.pt-stock-name {
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.pt-stock-symbol {
+  font-size: 0.75em;
+  color: var(--text3);
+  margin-left: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pt-container {
+    padding: 0 10px 10px;
+  }
+
+  .pt-add-form {
+    flex-direction: column;
+  }
+
+  .pt-amount-input {
+    max-width: none;
+  }
+
+  .pt-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pt-analysis {
+    grid-template-columns: 1fr;
+  }
+
+  .pt-table {
+    font-size: 0.78em;
+  }
+
+  .pt-table th,
+  .pt-table td {
+    padding: 8px 8px;
+  }
+}

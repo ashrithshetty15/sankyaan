@@ -117,6 +117,15 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-text">Bulk Trades</span>
         </button>
 
+        <button
+          className={`nav-item ${viewMode === 'portfolio-tracker' ? 'active' : ''} ${!user ? 'locked' : ''}`}
+          onClick={() => user && handleNavClick('portfolio-tracker')}
+          title={!user ? 'Sign in to access' : ''}
+        >
+          <span className="nav-icon">💰</span>
+          <span className="nav-text">My Portfolio</span>
+        </button>
+
       </nav>
 
         <UserProfile />

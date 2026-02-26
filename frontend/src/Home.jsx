@@ -10,6 +10,7 @@ import FundComparison from './FundComparison.jsx';
 import FundManagerAnalytics from './FundManagerAnalytics.jsx';
 import FundScreener from './FundScreener.jsx';
 import MutualFundBulkTrades from './MutualFundBulkTrades.jsx';
+import PortfolioTracker from './PortfolioTracker.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
 
@@ -496,6 +497,7 @@ export default function Home({ viewMode, setViewMode }) {
             : viewMode === 'fund-managers' ? 'Fund Manager Analytics'
             : viewMode === 'fund-screener' ? 'Fund Screener'
             : viewMode === 'bulk-trades' ? 'MF Bulk Trades'
+            : viewMode === 'portfolio-tracker' ? 'My Portfolio'
             : 'Stock Scores Rating'}
         </h1>
         <p className="subtitle">
@@ -511,6 +513,8 @@ export default function Home({ viewMode, setViewMode }) {
             ? 'Discover funds by sector, stock, AUM, and performance'
             : viewMode === 'bulk-trades'
             ? 'Mutual fund buy/sell activity from bulk and block deals'
+            : viewMode === 'portfolio-tracker'
+            ? 'Track your mutual fund holdings and portfolio analytics'
             : 'Rank stocks by quality scores'}
         </p>
       </header>
@@ -1051,6 +1055,11 @@ export default function Home({ viewMode, setViewMode }) {
       {/* Bulk Trades View */}
       {viewMode === 'bulk-trades' && (
         <MutualFundBulkTrades />
+      )}
+
+      {/* Portfolio Tracker View */}
+      {viewMode === 'portfolio-tracker' && (
+        <PortfolioTracker />
       )}
 
       {/* Stock Scores Rating View */}

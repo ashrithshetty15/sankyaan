@@ -250,6 +250,20 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_bulk_trades_symbol ON bulk_trades(symbol);
       CREATE INDEX IF NOT EXISTS idx_bulk_trades_client ON bulk_trades(client_name);
     `
+  },
+  {
+    name: '012_create_user_portfolio',
+    sql: `
+      CREATE TABLE IF NOT EXISTS user_portfolio_holdings (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        fund_name TEXT NOT NULL,
+        invested_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, fund_name)
+      );
+      CREATE INDEX IF NOT EXISTS idx_portfolio_user ON user_portfolio_holdings(user_id);
+    `
   }
 ];
 
