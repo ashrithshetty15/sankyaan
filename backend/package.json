@@ -24,6 +24,7 @@
     "jsonwebtoken": "^9.0.3",
     "node-fetch": "^3.3.2",
     "pg": "^8.11.3",
+    "resend": "^6.9.2",
     "yahoo-finance2": "^2.11.3"
   }
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import UserProfile from './components/UserProfile';
+import NewsletterSubscribe from './components/NewsletterSubscribe';
 import './Sidebar.css';
 
 export default function Sidebar({ viewMode, onViewModeChange }) {
@@ -119,6 +120,7 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
 
       </nav>
 
+        <NewsletterSubscribe />
         <UserProfile />
         <div className="sidebar-footer">
           <a href="mailto:contact@sankyaan.com" className="footer-email">contact@sankyaan.com</a>

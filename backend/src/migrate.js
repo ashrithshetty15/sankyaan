@@ -250,6 +250,21 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_bulk_trades_symbol ON bulk_trades(symbol);
       CREATE INDEX IF NOT EXISTS idx_bulk_trades_client ON bulk_trades(client_name);
     `
+  },
+  {
+    name: '012_create_newsletter_subscribers',
+    sql: `
+      CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255),
+        subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        unsubscribed_at TIMESTAMP,
+        is_active BOOLEAN DEFAULT true,
+        unsubscribe_token VARCHAR(64) UNIQUE NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_newsletter_active ON newsletter_subscribers(is_active) WHERE is_active = true;
+    `
   }
 ];
 

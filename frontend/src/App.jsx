@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import Home from './Home';
 import StockDetail from './StockDetail';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import Unsubscribe from './components/Unsubscribe';
 import './AppLayout.css';
 import './accessibility.css';
 
@@ -14,12 +15,13 @@ function AppContent() {
   const location = useLocation();
 
   const isStockDetailPage = location.pathname.startsWith('/stock/');
-  const isFullPage = location.pathname === '/privacy';
+  const isFullPage = location.pathname === '/privacy' || location.pathname === '/unsubscribe';
 
   if (isFullPage) {
     return (
       <Routes>
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/unsubscribe" element={<Unsubscribe />} />
       </Routes>
     );
   }

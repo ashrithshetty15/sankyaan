@@ -16,6 +16,7 @@ import { runMigrations } from './migrate.js';
 import { optionalAuth } from './middleware/auth.js';
 import { googleLogin, getMe, logout } from './routes/auth.js';
 import { getBulkTrades, refreshBulkTrades } from './routes/bulkTrades.js';
+import { subscribe, unsubscribe, sendDigest } from './routes/newsletter.js';
 
 dotenv.config();
 
@@ -222,6 +223,11 @@ app.get('/api/fund-screener', fundScreener);
 // Bulk trades - mutual fund bulk/block deals
 app.get('/api/bulk-trades', getBulkTrades);
 app.post('/api/bulk-trades/refresh', refreshBulkTrades);
+
+// Newsletter subscription
+app.post('/api/newsletter/subscribe', subscribe);
+app.get('/api/newsletter/unsubscribe', unsubscribe);
+app.post('/api/newsletter/send-digest', sendDigest);
 
 // Stock ratings - serve from cache (fast) and refresh (on-demand)
 app.get('/api/stock-ratings', getStockRatings);
