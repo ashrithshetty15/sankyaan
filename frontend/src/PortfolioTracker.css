@@ -346,6 +346,91 @@
   margin-left: 6px;
 }
 
+/* Diversification Tips */
+.pt-tips-section {
+  margin-top: 24px;
+}
+
+.pt-tips-header {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px;
+}
+
+.pt-tips-subtitle {
+  font-size: 0.78em;
+  color: var(--text3);
+  margin: 0 0 16px;
+}
+
+.pt-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.pt-tip-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.pt-tip-sector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pt-tip-sector-name {
+  font-size: 0.9em;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pt-tip-badge {
+  font-size: 0.68em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--red);
+  font-weight: 600;
+}
+
+.pt-tip-funds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pt-tip-fund {
+  border-left: 2px solid var(--gold);
+  padding-left: 10px;
+}
+
+.pt-tip-fund-name {
+  font-size: 0.82em;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.pt-tip-fund-meta {
+  font-size: 0.72em;
+  color: var(--text3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pt-tip-fund-stats strong {
+  color: var(--green);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .pt-container {
@@ -365,6 +450,10 @@
   }
 
   .pt-analysis {
+    grid-template-columns: 1fr;
+  }
+
+  .pt-tips-grid {
     grid-template-columns: 1fr;
   }
 

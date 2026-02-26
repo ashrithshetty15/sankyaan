@@ -310,6 +310,39 @@ export default function PortfolioTracker() {
           )}
         </div>
       )}
+
+      {/* Diversification Tips */}
+      {analysis?.diversificationTips?.length > 0 && (
+        <div className="pt-tips-section">
+          <h3 className="pt-tips-header">Diversification Tips</h3>
+          <p className="pt-tips-subtitle">Sectors your portfolio has little or no exposure to</p>
+          <div className="pt-tips-grid">
+            {analysis.diversificationTips.map((tip, i) => (
+              <div key={i} className="pt-tip-card">
+                <div className="pt-tip-sector">
+                  <span className="pt-tip-sector-name">{tip.sector}</span>
+                  <span className="pt-tip-badge">
+                    {tip.currentExposure > 0 ? `${tip.currentExposure}%` : 'No exposure'}
+                  </span>
+                </div>
+                <div className="pt-tip-funds">
+                  {tip.suggestedFunds.map((f, j) => (
+                    <div key={j} className="pt-tip-fund">
+                      <div className="pt-tip-fund-name">{f.schemeName}</div>
+                      <div className="pt-tip-fund-meta">
+                        <span>{f.fundHouse}</span>
+                        <span className="pt-tip-fund-stats">
+                          Quality: <strong>{f.qualityScore}</strong> | {tip.sector}: <strong>{f.sectorExposure}%</strong>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -203,6 +203,60 @@ export async function getPortfolioAnalysis(req, res) {
       .sort((a, b) => b.totalWeight - a.totalWeight)
       .slice(0, 20);
 
+    // Diversification tips: find sectors user is missing or underweight in
+    const userSectorMap = {};
+    for (const s of sectors) userSectorMap[s.sector] = s.percentage;
+
+    // Get all major sectors (with 5+ stocks in the market)
+    const allSectorsResult = await db.query(`
+      SELECT sector, COUNT(*)::integer AS stock_count
+      FROM stock_ratings_cache
+      WHERE sector IS NOT NULL AND sector != ''
+      GROUP BY sector
+      HAVING COUNT(*) >= 5
+      ORDER BY COUNT(*) DESC
+    `);
+
+    // Find sectors with <2% exposure
+    const gapSectors = allSectorsResult.rows
+      .filter(s => (userSectorMap[s.sector] || 0) < 2)
+      .slice(0, 4);
+
+    // For each gap sector, suggest top funds with high exposure + good quality
+    const diversificationTips = [];
+    for (const gap of gapSectors) {
+      const fundsResult = await db.query(`
+        SELECT fqs.fund_name, fqs.scheme_name, fqs.fund_house,
+               fqs.overall_quality_score,
+               ROUND(SUM(mp.percent_nav)::numeric, 2) AS sector_exposure
+        FROM fund_quality_scores fqs
+        JOIN mutualfund_portfolio mp ON mp.fund_name = fqs.fund_name
+        JOIN stocks s ON s.id = mp.stock_id
+        WHERE s.sector = $1
+          AND fqs.overall_quality_score IS NOT NULL
+          AND fqs.fund_name != ALL($2)
+        GROUP BY fqs.fund_name, fqs.scheme_name, fqs.fund_house, fqs.overall_quality_score
+        HAVING SUM(mp.percent_nav) >= 5
+        ORDER BY fqs.overall_quality_score DESC, SUM(mp.percent_nav) DESC
+        LIMIT 2
+      `, [gap.sector, fundNames]);
+
+      if (fundsResult.rows.length > 0) {
+        diversificationTips.push({
+          sector: gap.sector,
+          currentExposure: userSectorMap[gap.sector] || 0,
+          stockCount: gap.stock_count,
+          suggestedFunds: fundsResult.rows.map(f => ({
+            fundName: f.fund_name,
+            schemeName: f.scheme_name || f.fund_name,
+            fundHouse: f.fund_house,
+            qualityScore: parseFloat(f.overall_quality_score),
+            sectorExposure: parseFloat(f.sector_exposure),
+          })),
+        });
+      }
+    }
+
     res.json({
       fundCount: fundNames.length,
       totalInvested,
@@ -215,6 +269,7 @@ export async function getPortfolioAnalysis(req, res) {
       sectors,
       overlap,
       overlapCount: overlap.length,
+      diversificationTips,
     });
   } catch (error) {
     console.error('Error computing portfolio analysis:', error);
