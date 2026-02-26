@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleLoginButton from './GoogleLoginButton';
 import './UserProfile.css';
@@ -24,6 +25,9 @@ export default function UserProfile() {
         )}
         <div className="user-profile-login">
           <GoogleLoginButton />
+          <p className="privacy-note">
+            We only use your name and email for login. No data is shared. <Link to="/privacy">Privacy Policy</Link>
+          </p>
         </div>
       </div>
     );

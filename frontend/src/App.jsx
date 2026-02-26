@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import Sidebar from './Sidebar';
 import Home from './Home';
 import StockDetail from './StockDetail';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import './AppLayout.css';
 import './accessibility.css';
 
@@ -13,6 +14,15 @@ function AppContent() {
   const location = useLocation();
 
   const isStockDetailPage = location.pathname.startsWith('/stock/');
+  const isFullPage = location.pathname === '/privacy';
+
+  if (isFullPage) {
+    return (
+      <Routes>
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+      </Routes>
+    );
+  }
 
   return (
     <div className="app-layout">

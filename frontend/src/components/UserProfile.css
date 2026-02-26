@@ -96,6 +96,23 @@
   background: var(--bg4);
 }
 
+.privacy-note {
+  margin: 4px 0 0;
+  font-size: 0.65em;
+  color: var(--text3);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.privacy-note a {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.privacy-note a:hover {
+  text-decoration: underline;
+}
+
 .logout-btn-full {
   background: transparent;
   border: 1px solid var(--bg4);
