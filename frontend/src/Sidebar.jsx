@@ -73,6 +73,15 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
         <div className="nav-section-label">ANALYSIS {!user && <span className="lock-badge">🔒</span>}</div>
 
         <button
+          className={`nav-item ${viewMode === 'portfolio-tracker' ? 'active' : ''} ${!user ? 'locked' : ''}`}
+          onClick={() => user && handleNavClick('portfolio-tracker')}
+          title={!user ? 'Sign in to access' : ''}
+        >
+          <span className="nav-icon">💰</span>
+          <span className="nav-text">My Portfolio</span>
+        </button>
+
+        <button
           className={`nav-item ${viewMode === 'stock-scores' ? 'active' : ''} ${!user ? 'locked' : ''}`}
           onClick={() => user && handleNavClick('stock-scores')}
           title={!user ? 'Sign in to access' : ''}
@@ -115,15 +124,6 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
         >
           <span className="nav-icon">📊</span>
           <span className="nav-text">Bulk Trades</span>
-        </button>
-
-        <button
-          className={`nav-item ${viewMode === 'portfolio-tracker' ? 'active' : ''} ${!user ? 'locked' : ''}`}
-          onClick={() => user && handleNavClick('portfolio-tracker')}
-          title={!user ? 'Sign in to access' : ''}
-        >
-          <span className="nav-icon">💰</span>
-          <span className="nav-text">My Portfolio</span>
         </button>
 
       </nav>
