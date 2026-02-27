@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from './context/AuthContext';
 import Sidebar from './Sidebar';
 import Home from './Home';
@@ -47,6 +48,7 @@ export default function App() {
       <Router>
         <AppContent />
       </Router>
+      <Analytics />
     </AuthProvider>
   );
 
