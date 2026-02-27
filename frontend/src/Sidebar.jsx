@@ -95,7 +95,7 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           title={!user ? 'Sign in to access' : ''}
         >
           <span className="nav-icon">⭐</span>
-          <span className="nav-text">Stock Scores Rating</span>
+          <span className="nav-text">Stock Scores</span>
         </button>
 
         <button

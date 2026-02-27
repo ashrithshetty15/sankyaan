@@ -55,10 +55,10 @@
 
 .sidebar-nav {
   flex: 1;
-  padding: 20px 15px;
+  padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   overflow-y: auto;
   min-height: 0;
 }
@@ -68,26 +68,27 @@
   font-weight: 700;
   color: var(--text3);
   letter-spacing: 0.12em;
-  padding: 12px 20px 4px;
+  padding: 14px 16px 4px;
   text-transform: uppercase;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 16px 20px;
+  gap: 12px;
+  padding: 10px 16px;
   background: transparent;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--text2);
-  font-size: 1em;
+  font-size: 0.9em;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: left;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 .nav-item::before {
@@ -119,7 +120,7 @@
 }
 
 .nav-icon {
-  font-size: 1.4em;
+  font-size: 1.2em;
   flex-shrink: 0;
 }
 
