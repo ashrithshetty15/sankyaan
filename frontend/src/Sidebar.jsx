@@ -70,6 +70,14 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-text">Stocks</span>
         </button>
 
+        <button
+          className="nav-item"
+          onClick={() => { window.location.href = '/blog'; }}
+        >
+          <span className="nav-icon">✍️</span>
+          <span className="nav-text">Blog</span>
+        </button>
+
         <div className="nav-section-label">ANALYSIS {!user && <span className="lock-badge">🔒</span>}</div>
 
         <button
