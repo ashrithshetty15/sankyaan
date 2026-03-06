@@ -266,7 +266,7 @@
     const views = data.views || {};
     document.querySelectorAll('.article-card').forEach(card => {
       const href = card.getAttribute('href') || '';
-      const slug = href.replace(/^/blog//, '').replace(//$/, '');
+      const slug = href.replace(/^\/blog\//, '').replace(/\/$/, '');
       const count = views[slug] || 0;
       const meta = card.querySelector('.article-meta');
       if (meta && count > 0) {
