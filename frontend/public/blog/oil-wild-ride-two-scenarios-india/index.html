@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oil's Wild Ride: Two Scenarios That Could Shake India — Sankyaan</title>
+<meta name="description" content="What happens to India when crude goes haywire — from $150 to $65? Scenario analysis covering Sensex, Rupee, inflation, and sectors most affected by oil price swings.">
+<meta property="og:title" content="Oil's Wild Ride: Two Scenarios That Could Shake India">
+<meta property="og:description" content="India imports 85% of its crude. We run two scenarios — $150 nightmare and $65 dream — and trace the impact on markets, currency, inflation, and your portfolio.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://sankyaan.com/blog/oil-wild-ride-two-scenarios-india">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1209;
+    --paper: #f5f0e8;
+    --gold: #c8860a;
+    --amber: #e8a020;
+    --red: #c0392b;
+    --green: #1a6b3a;
+    --green-light: #e8f5ed;
+    --red-light: #fdf0ee;
+    --muted: #7a6a52;
+    --rule: #d4c9b0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* Texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.5;
+  }
+
+  /* BACK NAV */
+  .back-nav {
+    background: var(--ink);
+    padding: 10px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .back-nav a {
+    color: var(--amber);
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: opacity 0.2s;
+  }
+  .back-nav a:hover { opacity: 0.8; }
+  .back-nav .brand {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--amber);
+    text-decoration: none;
+  }
+
+  /* MASTHEAD */
+  .masthead {
+    border-bottom: 3px double var(--ink);
+    padding: 20px 0 12px;
+    text-align: center;
+    position: relative;
+  }
+
+  .masthead-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 48px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .pub-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-style: italic;
+    letter-spacing: 0.05em;
+    color: var(--gold);
+  }
+
+  .masthead-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 0 48px 16px;
+  }
+
+  /* HERO */
+  .hero {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 48px 40px;
+    text-align: center;
+    position: relative;
+  }
+
+  .kicker {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .kicker::before, .kicker::after {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .headline {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .headline em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .subhead {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--muted);
+    margin: 20px auto;
+    max-width: 680px;
+    line-height: 1.5;
+  }
+
+  .byline-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 28px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .byline-strip span { color: var(--ink); font-weight: 500; }
+  .dot { color: var(--gold); font-size: 16px; }
+
+  /* INTRO */
+  .intro-band {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 40px 48px;
+    margin: 0;
+  }
+
+  .intro-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    font-size: 1.15rem;
+    line-height: 1.85;
+    font-weight: 300;
+  }
+
+  .intro-inner strong {
+    color: var(--amber);
+    font-weight: 500;
+  }
+
+  /* DROP CAP */
+  .dropcap::first-letter {
+    font-family: 'Playfair Display', serif;
+    float: left;
+    font-size: 4.5em;
+    line-height: 0.75;
+    margin: 8px 12px 0 0;
+    color: var(--amber);
+    font-weight: 900;
+  }
+
+  /* MAIN LAYOUT */
+  .main-wrapper {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 48px 80px;
+  }
+
+  /* SCENARIO CARDS */
+  .scenario {
+    margin: 64px 0;
+    position: relative;
+  }
+
+  .scenario-header {
+    padding: 36px 48px;
+    margin: 0 -48px;
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scenario-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 8px,
+      rgba(255,255,255,0.04) 8px,
+      rgba(255,255,255,0.04) 16px
+    );
+  }
+
+  .scenario-header.doom { background: var(--red); color: white; }
+  .scenario-header.boom { background: var(--green); color: white; }
+
+  .price-badge {
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 1;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .scenario-title-group {
+    position: relative;
+    z-index: 1;
+  }
+
+  .scenario-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    opacity: 0.8;
+    margin-bottom: 8px;
+  }
+
+  .scenario-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+    font-weight: 900;
+    line-height: 1.1;
+  }
+
+  .scenario-title em { font-style: italic; opacity: 0.85; }
+
+  /* CONTENT SECTIONS */
+  .section {
+    margin: 40px 0;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .section:first-child { border-top: none; }
+
+  .section-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+
+  .section-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.25;
+  }
+
+  p {
+    font-size: 1.02rem;
+    line-height: 1.85;
+    color: #2a2010;
+    margin-bottom: 1.2em;
+  }
+
+  /* PULL QUOTES */
+  .pullquote {
+    float: right;
+    width: 42%;
+    margin: 8px 0 24px 36px;
+    padding: 24px 28px;
+    border-left: 4px solid;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+
+  .pullquote.doom-quote { border-color: var(--red); background: var(--red-light); }
+  .pullquote.boom-quote { border-color: var(--green); background: var(--green-light); }
+
+  .pullquote cite {
+    display: block;
+    margin-top: 12px;
+    font-style: normal;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* IMPACT GRID */
+  .impact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    margin: 32px -48px;
+  }
+
+  .impact-cell {
+    padding: 28px 32px;
+    font-size: 0.92rem;
+  }
+
+  .impact-cell.doom-cell { background: var(--red-light); }
+  .impact-cell.boom-cell { background: var(--green-light); }
+
+  .impact-icon {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .impact-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .impact-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  /* DIVIDER */
+  .ornamental-divider {
+    text-align: center;
+    margin: 64px 0;
+    color: var(--gold);
+    font-size: 1.4rem;
+    letter-spacing: 0.5em;
+    position: relative;
+  }
+
+  .ornamental-divider::before, .ornamental-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: calc(50% - 60px);
+    height: 1px;
+    background: linear-gradient(to var(--dir, right), var(--gold), transparent);
+  }
+
+  .ornamental-divider::before { left: 0; --dir: right; }
+  .ornamental-divider::after { right: 0; --dir: left; }
+
+  /* TICKER */
+  .ticker-bar {
+    background: var(--ink);
+    color: var(--amber);
+    padding: 12px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    margin: 48px -48px;
+    position: relative;
+  }
+
+  .ticker-inner {
+    display: inline-block;
+    animation: ticker 30s linear infinite;
+  }
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* CONCLUSION */
+  .conclusion {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 56px 64px;
+    margin: 64px -48px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .conclusion::before {
+    content: '\20B9';
+    position: absolute;
+    right: -20px;
+    top: -40px;
+    font-family: 'Playfair Display', serif;
+    font-size: 20rem;
+    color: rgba(255,255,255,0.04);
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .conclusion-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: var(--amber);
+    margin-bottom: 24px;
+    line-height: 1.2;
+  }
+
+  .conclusion p {
+    color: rgba(245, 240, 232, 0.85);
+    font-size: 1.05rem;
+    max-width: 640px;
+  }
+
+  .conclusion strong { color: var(--amber); font-weight: 500; }
+
+  /* FOOTNOTE */
+  .footnote {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.9;
+  }
+
+  /* CLEARFIX */
+  .clearfix::after { content: ''; display: table; clear: both; }
+
+  @media (max-width: 640px) {
+    .hero, .main-wrapper { padding-left: 24px; padding-right: 24px; }
+    .masthead-top { padding: 0 24px; }
+    .back-nav { padding: 10px 24px; }
+    .scenario-header { padding: 24px; margin: 0 -24px; }
+    .impact-grid { margin: 24px -24px; grid-template-columns: 1fr; }
+    .pullquote { float: none; width: 100%; margin: 0 0 24px; }
+    .ticker-bar { margin: 32px -24px; }
+    .conclusion { padding: 40px 32px; margin: 40px -24px 0; }
+    .intro-band { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- BACK NAV -->
+<div class="back-nav">
+  <a href="/blog">&larr; Back to Blog</a>
+  <a href="https://sankyaan.com" class="brand">Sankyaan</a>
+</div>
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div class="masthead-top">
+    <span class="pub-name">The Crude Chronicles</span>
+    <span>Oil Markets &amp; India &middot; Special Edition</span>
+    <span>March 2026</span>
+  </div>
+  <hr class="masthead-rule">
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="kicker">&diams; Urgent Scenario Analysis &diams;</div>
+  <h1 class="headline">
+    The <em>Oily</em> Tale of<br>Two Prices
+  </h1>
+  <p class="subhead">
+    What happens to India when crude goes haywire &mdash; from &#8377; hell at $150 to &#8377; heaven at $65 &mdash; and why your petrol pump guy might be the most important man in the country.
+  </p>
+  <div class="byline-strip">
+    <span>By Sankyaan Research</span>
+    <span class="dot">&bull;</span>
+    <span>2&ndash;3 Week Outlook</span>
+    <span class="dot">&bull;</span>
+    <span>Brace Yourselves</span>
+  </div>
+</div>
+
+<!-- INTRO BAND -->
+<div class="intro-band">
+  <div class="intro-inner">
+    <p class="dropcap">India and oil have a relationship more complicated than a Bollywood love triangle. We <strong>import over 85% of our crude</strong>, which means every barrel pumped in Riyadh, every pipeline drama in Eastern Europe, and every OPEC mood swing lands directly in your wallet, your grocery bill, and &mdash; if you're an investor &mdash; your portfolio. So buckle up. We're running two wildly different simulations for the next 2&ndash;3 weeks, and neither is boring.</p>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-bar" style="margin: 0;">
+  <div class="ticker-inner">
+    CRUDE OIL SCENARIO ALERT &nbsp;&bull;&nbsp; INDIA IMPACT ANALYSIS &nbsp;&bull;&nbsp; SENSEX WATCHING &nbsp;&bull;&nbsp; INR ON EDGE &nbsp;&bull;&nbsp; FUEL PRICES IN FOCUS &nbsp;&bull;&nbsp; OPEC UNPREDICTABLE AS EVER &nbsp;&bull;&nbsp; YOUR PETROL BILL MAY VARY &nbsp;&bull;&nbsp; RBI PROBABLY NERVOUS &nbsp;&bull;&nbsp; CRUDE OIL SCENARIO ALERT &nbsp;&bull;&nbsp; INDIA IMPACT ANALYSIS &nbsp;&bull;&nbsp; SENSEX WATCHING &nbsp;&bull;&nbsp; INR ON EDGE &nbsp;&bull;&nbsp; FUEL PRICES IN FOCUS &nbsp;&bull;&nbsp; OPEC UNPREDICTABLE AS EVER &nbsp;&bull;&nbsp; YOUR PETROL BILL MAY VARY &nbsp;&bull;&nbsp; RBI PROBABLY NERVOUS &nbsp;&bull;&nbsp;
+  </div>
+</div>
+
+<div class="main-wrapper">
+
+  <!-- ======================== SCENARIO 1: $150 ======================== -->
+  <div class="scenario">
+    <div class="scenario-header doom">
+      <div class="price-badge">$150</div>
+      <div class="scenario-title-group">
+        <div class="scenario-label">&#9312; Scenario One &middot; The Nightmare</div>
+        <div class="scenario-title">Oil Becomes Liquid Gold<br><em>(And Not In a Good Way)</em></div>
+      </div>
+    </div>
+
+    <!-- Markets -->
+    <div class="section clearfix">
+      <div class="section-eyebrow">&#128200; Equity Markets</div>
+      <h2 class="section-heading">The Sensex Does Its Best Impression of a Cliff</h2>
+      <div class="pullquote doom-quote">
+        "When oil crosses $150, the Sensex doesn't just fall &mdash; it books a one-way ticket to the basement and sends you a postcard."
+        <cite>&mdash; A Trader, Probably Crying</cite>
+      </div>
+      <p>If Brent crude somehow rockets to $150 in the next two to three weeks &mdash; think major Middle East escalation, a drone strike on a Saudi mega-field, or OPEC deciding to collectively ghost the world &mdash; the Dalal Street reaction will be swift, brutal, and deeply unpleasant to watch.</p>
+      <p>Oil-sensitive sectors get torched first: <strong>airlines, paints, tyres, logistics, and petrochemicals</strong> &mdash; all of which use crude as either fuel or raw material &mdash; would see their margins crushed like sugarcane in a mill. IndiGo's stock would channel everyone's post-flight baggage trauma. Asian Paints would look as colorless as its own White Blush shade.</p>
+      <p>Foreign Institutional Investors (FIIs), always looking for an excuse to flee emerging markets when things get uncomfortable, would begin pulling money out faster than you can say "current account deficit." The selloff wouldn't be polite. It would be a fire sale where everything's 20% off and nobody wants to buy.</p>
+    </div>
+
+    <!-- Rupee -->
+    <div class="section clearfix">
+      <div class="section-eyebrow">&#128184; Currency</div>
+      <h2 class="section-heading">The Rupee: A Slow-Motion Tragedy</h2>
+      <p>India's import bill for oil would balloon by an extraordinary amount. We currently spend roughly <strong>$130&ndash;140 billion a year on crude imports</strong>. At $150 a barrel, that number jumps by tens of billions &mdash; money that flows out of the country and directly pressures the Rupee.</p>
+      <p>Expect USD/INR to test <strong>87&ndash;90+</strong>, maybe beyond. The RBI would step in to defend the currency, burning through forex reserves like a startup burning through Series A funding &mdash; confidently, rapidly, and with dwindling options. Every imported good &mdash; electronics, edible oils, fertilisers, defence equipment &mdash; becomes more expensive. Inflation, already a dinner-table complaint, becomes a full dining experience nobody ordered.</p>
+    </div>
+
+    <!-- Inflation & Rates -->
+    <div class="section clearfix">
+      <div class="section-eyebrow">&#128293; Inflation &amp; Interest Rates</div>
+      <h2 class="section-heading">The RBI's Unenviable Friday Afternoon</h2>
+      <div class="pullquote doom-quote">
+        "The RBI's MPC would face every central banker's nightmare: stagflation knocking, with no good door to open."
+        <cite>&mdash; Economic Theory, Living Its Worst Life</cite>
+      </div>
+      <p>Here's where it gets spicy for the bond market. High oil means high fuel costs, which ripples into everything &mdash; from trucking tomatoes to manufacturing steel. <strong>CPI inflation could surge past 6&ndash;7%</strong>, putting the RBI well outside its comfort zone. The MPC, which was just beginning to flirt with rate cuts, would have to immediately ghost that idea and perhaps even hike.</p>
+      <p>Higher interest rates would further dampen corporate earnings, squeeze real estate, and make equity valuations look uncomfortably stretched. The government, already managing a fiscal tightrope, would face the impossible choice between subsidising fuel to keep voters calm or letting prices pass through to keep the fiscal deficit in check. Either way, someone is unhappy. Usually everyone.</p>
+    </div>
+
+    <!-- Winners -->
+    <div class="section">
+      <div class="section-eyebrow">&#127942; The (Very Few) Winners</div>
+      <h2 class="section-heading">Not Everyone Cries at $150</h2>
+      <p>There are, believe it or not, some beneficiaries. <strong>ONGC and Oil India</strong> &mdash; India's upstream producers &mdash; would see revenues surge as the price they realise per barrel explodes. Gas distribution companies would also benefit from relative pricing dynamics. And if you had quietly bought puts on aviation stocks three weeks ago, you'd be having a very good week indeed. Congratulations, you contrarian genius, no one believed you at the party.</p>
+    </div>
+
+  </div>
+  <!-- end scenario 1 -->
+
+  <!-- IMPACT GRID - DOOM -->
+  <div class="impact-grid">
+    <div class="impact-cell doom-cell">
+      <span class="impact-icon">&#9992;&#65039;</span>
+      <div class="impact-label">Aviation</div>
+      <div class="impact-title">Airlines In Freefall</div>
+      <p>ATF costs account for 35&ndash;40% of airline expenses. At $150 oil, IndiGo and Air India would bleed cash with every departure. Ticket prices would rise; travel demand would slow.</p>
+    </div>
+    <div class="impact-cell doom-cell">
+      <span class="impact-icon">&#127959;&#65039;</span>
+      <div class="impact-label">Infrastructure</div>
+      <div class="impact-title">Project Costs Balloon</div>
+      <p>Bitumen, cement, steel logistics &mdash; all tied to oil. Government capex projects get costlier. The infra push that was driving GDP growth faces headwinds.</p>
+    </div>
+    <div class="impact-cell doom-cell">
+      <span class="impact-icon">&#127806;</span>
+      <div class="impact-label">Agriculture</div>
+      <div class="impact-title">Farmers Squeezed</div>
+      <p>Diesel runs tractors and irrigation pumps. Fertiliser prices (petrochem-linked) also spike. Rural India &mdash; which votes in large numbers &mdash; gets angry. Quickly.</p>
+    </div>
+    <div class="impact-cell doom-cell">
+      <span class="impact-icon">&#129489;</span>
+      <div class="impact-label">Fiscal Deficit</div>
+      <div class="impact-title">Government's Nightmare Budget</div>
+      <p>Subsidy bills on LPG and kerosene balloon. Tax revenue from corporate earnings (hurt by high input costs) falls. The fiscal math goes from tight to genuinely alarming.</p>
+    </div>
+  </div>
+
+  <div class="ornamental-divider">&diams; &diams; &diams;</div>
+
+  <!-- ======================== SCENARIO 2: $65 ======================== -->
+  <div class="scenario">
+    <div class="scenario-header boom">
+      <div class="price-badge">$65</div>
+      <div class="scenario-title-group">
+        <div class="scenario-label">&#127774; Scenario Two &middot; The Dream</div>
+        <div class="scenario-title">Cheap Oil: India's Unexpected<br><em>Birthday Present</em></div>
+      </div>
+    </div>
+
+    <!-- Markets -->
+    <div class="section clearfix">
+      <div class="section-eyebrow">&#128200; Equity Markets</div>
+      <h2 class="section-heading">Dalal Street Puts on Its Dancing Shoes</h2>
+      <div class="pullquote boom-quote">
+        "Cheap oil is to the Indian economy what a surprise holiday is to an office &mdash; everyone's mood improves immediately and productivity follows."
+        <cite>&mdash; An Economist, Cautiously Optimistic</cite>
+      </div>
+      <p>If Brent crude crashes to $65 &mdash; perhaps due to a demand shock from China slowing, a surprise OPEC production glut, or a sudden geopolitical ceasefire nobody saw coming &mdash; India's stock market would react like it just got an unexpected Diwali bonus.</p>
+      <p><strong>Paints, aviation, logistics, FMCG, cement, tyres</strong> &mdash; all those companies whose cost sheets are haunted by crude prices &mdash; would see margin expansion without doing anything clever. Asian Paints' management would sleep better. IndiGo would finally have more to talk about than surcharges. The broader market rally would likely be led by mid-caps and consumption-oriented businesses.</p>
+      <p>FIIs who had been sitting on the fence about India would see the macro-risk-reward tilt favorably, and flows into Indian equities would pick up. The Sensex and Nifty could run 3&ndash;6% in a matter of weeks on this news alone, fuelled by both genuine earnings improvement and pure sentiment.</p>
+    </div>
+
+    <!-- Rupee -->
+    <div class="section clearfix">
+      <div class="section-eyebrow">&#128176; Currency &amp; CAD</div>
+      <h2 class="section-heading">The Rupee Gets a Lifeline</h2>
+      <p>India's current account deficit (CAD) &mdash; essentially how much more we spend abroad than we earn &mdash; would narrow significantly. <strong>Every $10 fall in crude saves India approximately $12&ndash;15 billion annually</strong> in import bills. That's real money, and it shows up in the trade balance relatively quickly.</p>
+      <p>The Rupee would likely appreciate or at least stabilise meaningfully. USD/INR testing 82&ndash;83 wouldn't be unrealistic in this scenario. For companies repaying dollar debt, this is manna from heaven. For importers across industries, this is a double-win: cheaper raw materials AND a stronger currency. For the RBI, it's the rarest of gifts &mdash; breathing room.</p>
+    </div>
+
+    <!-- Inflation & Rates -->
+    <div class="section clearfix">
+      <div class="section-eyebrow">&#128201; Inflation &amp; Rate Cuts</div>
+      <h2 class="section-heading">The RBI Finally Gets to Be the Hero</h2>
+      <div class="pullquote boom-quote">
+        "Rate cuts, stable inflation, cheap fuel &mdash; it's the economic equivalent of clear roads, no traffic, and your favourite song on the radio."
+        <cite>&mdash; A Happy Commuter, Also An Investor</cite>
+      </div>
+      <p>With fuel prices falling, inflation would cool. CPI could drift toward or below the <strong>4% target</strong>, giving the RBI's MPC not just room but genuine justification for a rate-cutting cycle. Lower borrowing costs would boost corporate capex, ease home loan burdens, and stimulate consumption. The virtuous cycle India's economy loves so much would spin up nicely.</p>
+      <p>The government would also benefit enormously. Lower oil subsidies mean fiscal savings that can be redirected to infrastructure, healthcare, or simply not widening the deficit. GST collections, driven by a more active economy, would hold up well. In short: <strong>the government would look like a genius</strong>, even though the only thing that happened was oil got cheap.</p>
+    </div>
+
+    <!-- Losers -->
+    <div class="section clearfix">
+      <div class="section-eyebrow">&#128172; The Unlucky Few</div>
+      <h2 class="section-heading">Someone Always Has a Bad Day</h2>
+      <p>Not everyone pops the champagne. <strong>ONGC and Oil India</strong> would see upstream revenues nosedive &mdash; their realisation per barrel drops with global prices, and E&amp;P economics become painful. City gas distribution companies face margin pressures too. And if you had made a leveraged bet on oil PSUs at $100+ crude, you'd be quietly rethinking your life choices.</p>
+      <p>There's also the paradox that very cheap oil sometimes signals a global demand slowdown &mdash; which would hurt India's exports and IT sector indirectly, given that global discretionary spending may be tightening. <strong>Be careful what you wish for</strong> &mdash; though in India's case, the net benefit of cheap oil is so large it generally wins the calculation every time.</p>
+    </div>
+
+  </div>
+  <!-- end scenario 2 -->
+
+  <!-- IMPACT GRID - BOOM -->
+  <div class="impact-grid">
+    <div class="impact-cell boom-cell">
+      <span class="impact-icon">&#128723;&#65039;</span>
+      <div class="impact-label">Consumer Spending</div>
+      <div class="impact-title">More Money in Pockets</div>
+      <p>Lower fuel costs mean households spend less on petrol and LPG. That saved money flows into discretionary spending &mdash; clothes, electronics, restaurants, holidays. FMCG and retail rejoice.</p>
+    </div>
+    <div class="impact-cell boom-cell">
+      <span class="impact-icon">&#127968;</span>
+      <div class="impact-label">Real Estate</div>
+      <div class="impact-title">Rate Cuts Fuel Housing</div>
+      <p>If the RBI cuts rates on the back of low inflation, home loan EMIs drop. Real estate, already on a recovery path, gets an additional tailwind. Builders breathe easier.</p>
+    </div>
+    <div class="impact-cell boom-cell">
+      <span class="impact-icon">&#127981;</span>
+      <div class="impact-label">Manufacturing</div>
+      <div class="impact-title">Input Costs Plunge</div>
+      <p>Lower energy and logistics costs improve margins across the manufacturing sector. India's Make in India competitiveness improves. Export sectors get a boost in cost efficiency.</p>
+    </div>
+    <div class="impact-cell boom-cell">
+      <span class="impact-icon">&#128230;</span>
+      <div class="impact-label">Logistics &amp; Supply Chain</div>
+      <div class="impact-title">Delivery Gets Cheaper</div>
+      <p>Diesel is the heartbeat of India's supply chain. Cheaper diesel means cheaper freight, lower warehousing costs, and better margins for e-commerce, FMCG, and retail distribution.</p>
+    </div>
+  </div>
+
+  <!-- CONCLUSION -->
+  <div class="conclusion">
+    <div class="conclusion-heading">So, What's the Verdict?</div>
+    <p>India is structurally an oil-importing economy, which means the <strong>$65 scenario is unambiguously better</strong> for the nation's macro health, market sentiment, and everyday life. The $150 scenario is a stress test nobody wants to take, but for which the RBI, Finance Ministry, and every CFO in the country quietly has a contingency plan tucked away &mdash; usually labelled something calming like "Framework for Resilience."</p>
+    <br>
+    <p>In both cases, the smart money watches the <strong>Rupee, the 10-year G-Sec yield, and the RBI's next move</strong> as the real indicators of how India is coping. And in both cases, the most important number in the room isn't the Sensex &mdash; it's the price at your nearest petrol pump. Because in India, as always, <strong>it starts with oil and ends with everyone having an opinion at dinner.</strong></p>
+    <br>
+    <p style="color: rgba(245,240,232,0.45); font-size: 0.88rem; font-family: 'DM Mono', monospace; letter-spacing: 0.05em;">Stay hedged. Stay curious. And maybe carpool.</p>
+  </div>
+
+  <!-- TICKER 2 -->
+  <div class="ticker-bar" style="margin: 0;">
+    <div class="ticker-inner">
+      DISCLAIMER: THIS IS SCENARIO ANALYSIS, NOT INVESTMENT ADVICE &nbsp;&bull;&nbsp; DO NOT SHORT YOUR PORTFOLIO BASED ON THIS ARTICLE &nbsp;&bull;&nbsp; OIL PRICES ARE NOTORIOUSLY UNPREDICTABLE &nbsp;&bull;&nbsp; OPEC DOES WHAT OPEC WANTS &nbsp;&bull;&nbsp; CONSULT A REGISTERED FINANCIAL ADVISOR &nbsp;&bull;&nbsp; THE AUTHOR ACCEPTS NO LIABILITY FOR PETROL PRICES &nbsp;&bull;&nbsp; DISCLAIMER: THIS IS SCENARIO ANALYSIS, NOT INVESTMENT ADVICE &nbsp;&bull;&nbsp; DO NOT SHORT YOUR PORTFOLIO BASED ON THIS ARTICLE &nbsp;&bull;&nbsp; OIL PRICES ARE NOTORIOUSLY UNPREDICTABLE &nbsp;&bull;&nbsp; OPEC DOES WHAT OPEC WANTS &nbsp;&bull;&nbsp; CONSULT A REGISTERED FINANCIAL ADVISOR &nbsp;&bull;&nbsp; THE AUTHOR ACCEPTS NO LIABILITY FOR PETROL PRICES &nbsp;&bull;&nbsp;
+    </div>
+  </div>
+
+  <div class="footnote">
+    The Crude Chronicles &middot; Scenario Analysis Edition &middot; March 2026<br>
+    All figures are illustrative. Past crude shocks are not indicative of future shocks, though they rhyme horribly well.<br>
+    &#8377; &middot; &#128738;&#65039; &middot; &#8377; &middot; &#128738;&#65039; &middot; &#8377;
+  </div>
+
+</div>
+</body>
+</html>
