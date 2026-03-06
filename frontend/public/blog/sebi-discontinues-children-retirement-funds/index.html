@@ -682,5 +682,15 @@
     });
   });
 </script>
+
+<script>
+(function() {
+  var API = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.onrender.com/api';
+  var slug = window.location.pathname.replace(/^/blog//, '').replace(//$/, '').replace(//index.html$/, '');
+  if (slug) {
+    fetch(API + '/blog/views/' + slug, { method: 'POST' }).catch(function(){});
+  }
+})();
+</script>
 </body>
 </html>

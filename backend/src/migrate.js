@@ -264,6 +264,48 @@ const MIGRATIONS = [
       );
       CREATE INDEX IF NOT EXISTS idx_portfolio_user ON user_portfolio_holdings(user_id);
     `
+  },
+  {
+    name: '013_create_trade_alerts',
+    sql: `
+      CREATE TABLE IF NOT EXISTS trade_alerts (
+        id SERIAL PRIMARY KEY,
+        strategy VARCHAR(50) NOT NULL,
+        underlying VARCHAR(30) NOT NULL,
+        expiry DATE NOT NULL,
+        legs JSONB NOT NULL,
+        max_profit NUMERIC(12,2),
+        max_loss NUMERIC(12,2),
+        breakeven JSONB,
+        probability_score INTEGER,
+        risk_level VARCHAR(10),
+        iv_rank NUMERIC(8,2),
+        status VARCHAR(20) DEFAULT 'active',
+        entry_price NUMERIC(12,2),
+        exit_price NUMERIC(12,2),
+        pnl NUMERIC(12,2),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        expired_at TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS idx_trade_alerts_status ON trade_alerts(status);
+      CREATE INDEX IF NOT EXISTS idx_trade_alerts_underlying ON trade_alerts(underlying);
+      CREATE INDEX IF NOT EXISTS idx_trade_alerts_strategy ON trade_alerts(strategy);
+      CREATE INDEX IF NOT EXISTS idx_trade_alerts_created ON trade_alerts(created_at DESC);
+    `
+  },
+  {
+    name: '014_seed_trade_alerts_demo',
+    sql: `SELECT 1`
+  },
+  {
+    name: '015_create_blog_views',
+    sql: `
+      CREATE TABLE IF NOT EXISTS blog_views (
+        slug VARCHAR(255) PRIMARY KEY,
+        view_count INTEGER DEFAULT 0,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `
   }
 ];
 

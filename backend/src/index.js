@@ -13,10 +13,15 @@ import { getFundManagers } from './routes/fundManagers.js';
 import { fundScreener, getScreenerSectors } from './routes/fundScreener.js';
 import { fetchFMPDividendCalendar, fetchFMPStockSplits } from './fmpService.js';
 import { runMigrations } from './migrate.js';
+import pool from './db.js';
 import { optionalAuth } from './middleware/auth.js';
 import { googleLogin, getMe, logout } from './routes/auth.js';
 import { getBulkTrades, refreshBulkTrades } from './routes/bulkTrades.js';
 import { addHolding, getPortfolio, deleteHolding, getPortfolioAnalysis } from './routes/portfolio.js';
+import { getTradeAlerts, getTradeAlertHistory, triggerScan, getOptionsChainEndpoint } from './routes/tradeAlerts.js';
+import { initFyers, getAuthUrl, handleAuthCallback, isReady as isFyersReady } from './fyersService.js';
+import { initTelegramBot } from './telegramBot.js';
+import { startAutoScanner } from './autoScanner.js';
 
 dotenv.config();
 
@@ -234,6 +239,33 @@ app.get('/api/portfolio/analysis', getPortfolioAnalysis);
 app.get('/api/stock-ratings', getStockRatings);
 app.post('/api/stock-ratings/refresh', refreshStockRatings);
 
+// Trade alerts - high probability options strategies
+app.get('/api/trade-alerts', getTradeAlerts);
+app.get('/api/trade-alerts/history', getTradeAlertHistory);
+app.post('/api/trade-alerts/scan', triggerScan);
+app.get('/api/trade-alerts/options-chain/:symbol', getOptionsChainEndpoint);
+// Fyers auth routes
+app.get('/api/fyers/auth', (req, res) => {
+  const url = getAuthUrl();
+  if (!url) return res.status(500).json({ error: 'Fyers not configured' });
+  res.json({ authUrl: url });
+});
+
+app.get('/api/fyers/callback', async (req, res) => {
+  try {
+    const authCode = req.query.auth_code;
+    if (!authCode) return res.status(400).json({ error: 'Missing auth_code' });
+    await handleAuthCallback(authCode);
+    res.send('<html><body><h2>Fyers authenticated!</h2><p>You can close this window.</p></body></html>');
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/fyers/status', (req, res) => {
+  res.json({ connected: isFyersReady() });
+});
+
 // Refresh all caches in correct order (stocks first, then funds)
 app.post('/api/refresh-all', async (req, res) => {
   try {
@@ -330,6 +362,38 @@ app.get('/api/stocks/:symbol/events', async (req, res) => {
   }
 });
 
+
+// Blog view counter
+app.post('/api/blog/views/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug || slug.length > 255) return res.status(400).json({ error: 'Invalid slug' });
+    const result = await pool.query(
+      `INSERT INTO blog_views (slug, view_count, updated_at)
+       VALUES ($1, 1, NOW())
+       ON CONFLICT (slug) DO UPDATE SET view_count = blog_views.view_count + 1, updated_at = NOW()
+       RETURNING view_count`,
+      [slug]
+    );
+    res.json({ views: result.rows[0].view_count });
+  } catch (err) {
+    console.error('Blog view error:', err.message);
+    res.json({ views: 0 });
+  }
+});
+
+app.get('/api/blog/views', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT slug, view_count FROM blog_views');
+    const views = {};
+    for (const row of result.rows) views[row.slug] = row.view_count;
+    res.json({ views });
+  } catch (err) {
+    console.error('Blog views fetch error:', err.message);
+    res.json({ views: {} });
+  }
+});
+
 // Start server with auto-migration
 async function startServer() {
   console.log('🚀 Starting Sankyaan server...');
@@ -338,10 +402,33 @@ async function startServer() {
   console.log('📦 Checking database migrations...');
   await runMigrations();
 
+  // Initialize Fyers API (loads saved token if available)
+  const fyersReady = initFyers();
+  if (fyersReady) {
+    console.log("Trade alerts engine ready (Fyers)");
+  } else {
+    console.log("Fyers: visit /api/fyers/auth to authenticate");
+  }
+
+  // Initialize Telegram bot
+  initTelegramBot();
+
+  // Start auto-scanner (runs every 15 min during market hours)
+  if (fyersReady) {
+    startAutoScanner();
+  }
+
+
+
+
+
+
+
   app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
     console.log(`📊 Try: http://localhost:${PORT}/api/search?ticker=INFY`);
     console.log(`🔄 Refresh all caches: POST http://localhost:${PORT}/api/refresh-all`);
+    console.log(`🎯 Trade alerts: GET http://localhost:${PORT}/api/trade-alerts`);
   });
 }
 
