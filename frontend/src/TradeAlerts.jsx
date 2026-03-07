@@ -53,6 +53,15 @@ const STRATEGY_COLORS = {
   short_strangle: '#ffd166',
 };
 
+const LOT_SIZES = { NIFTY: 75, BANKNIFTY: 15 };
+
+const getLotSize = (underlying) => LOT_SIZES[underlying] || 50;
+
+const formatINR = (val) => {
+  if (val == null) return '-';
+  return '₹' + Number(val).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+};
+
 const formatNumber = (val, decimals = 2) => {
   if (val == null) return '-';
   return Number(val).toFixed(decimals);
@@ -278,20 +287,32 @@ export default function TradeAlerts() {
 
                 <div className="ta-alert-metrics">
                   <div className="ta-metric">
-                    <span className="ta-metric-label">Max Profit</span>
-                    <span className="ta-metric-value green">{formatNumber(alert.max_profit)}</span>
+                    <span className="ta-metric-label">Max Profit (1 lot)</span>
+                    <span className="ta-metric-value green">
+                      {formatINR(alert.max_profit * getLotSize(alert.underlying))}
+                    </span>
                   </div>
                   <div className="ta-metric">
-                    <span className="ta-metric-label">Max Loss</span>
+                    <span className="ta-metric-label">Max Loss (1 lot)</span>
                     <span className="ta-metric-value red">
-                      {alert.max_loss != null ? formatNumber(alert.max_loss) : 'Unlimited'}
+                      {alert.max_loss != null ? formatINR(alert.max_loss * getLotSize(alert.underlying)) : 'Unlimited'}
                     </span>
                   </div>
                   <div className="ta-metric">
-                    <span className="ta-metric-label">R:R Ratio</span>
+                    <span className="ta-metric-label">Margin Req.</span>
                     <span className="ta-metric-value">
-                      {alert.max_loss ? `1:${formatNumber(alert.max_loss / alert.max_profit, 1)}` : '-'}
+                      {(() => {
+                        const lot = getLotSize(alert.underlying);
+                        if (alert.strategy === 'short_strangle' && Array.isArray(alert.breakeven)) {
+                          return formatINR(alert.breakeven[1] * 0.12 * lot);
+                        }
+                        return alert.max_loss != null ? formatINR(alert.max_loss * lot) : '-';
+                      })()}
                     </span>
+                  </div>
+                  <div className="ta-metric">
+                    <span className="ta-metric-label">Lot Size</span>
+                    <span className="ta-metric-value">{getLotSize(alert.underlying)}</span>
                   </div>
                   <div className="ta-metric">
                     <span className="ta-metric-label">IV Rank</span>
