@@ -298,18 +298,7 @@ export default function TradeAlerts() {
                       {alert.max_loss != null ? formatINR(alert.max_loss * getLotSize(alert.underlying)) : 'Unlimited'}
                     </span>
                   </div>
-                  <div className="ta-metric">
-                    <span className="ta-metric-label">Margin Req.</span>
-                    <span className="ta-metric-value">
-                      {(() => {
-                        const lot = getLotSize(alert.underlying);
-                        if (alert.strategy === 'short_strangle' && Array.isArray(alert.breakeven)) {
-                          return formatINR(alert.breakeven[1] * 0.12 * lot);
-                        }
-                        return alert.max_loss != null ? formatINR(alert.max_loss * lot) : '-';
-                      })()}
-                    </span>
-                  </div>
+
                   <div className="ta-metric">
                     <span className="ta-metric-label">Lot Size</span>
                     <span className="ta-metric-value">{getLotSize(alert.underlying)}</span>
