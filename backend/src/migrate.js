@@ -306,6 +306,17 @@ const MIGRATIONS = [
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `
+  },
+  {
+    name: '016_add_event_columns_to_trade_alerts',
+    sql: `
+      ALTER TABLE trade_alerts
+        ADD COLUMN IF NOT EXISTS event_type VARCHAR(50),
+        ADD COLUMN IF NOT EXISTS event_date DATE,
+        ADD COLUMN IF NOT EXISTS event_name VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS days_to_event INTEGER,
+        ADD COLUMN IF NOT EXISTS exit_rules JSONB;
+    `
   }
 ];
 

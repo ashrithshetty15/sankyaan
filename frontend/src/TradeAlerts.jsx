@@ -44,6 +44,7 @@ const STRATEGY_LABELS = {
   bull_put_spread: 'Bull Put Spread',
   bear_call_spread: 'Bear Call Spread',
   short_strangle: 'Short Strangle',
+  iv_crush: 'IV Crush',
 };
 
 const STRATEGY_COLORS = {
@@ -51,6 +52,7 @@ const STRATEGY_COLORS = {
   bull_put_spread: '#3ddc84',
   bear_call_spread: '#ff6b6b',
   short_strangle: '#ffd166',
+  iv_crush: '#e040fb',
 };
 
 const LOT_SIZES = { NIFTY: 75, BANKNIFTY: 15 };
@@ -188,14 +190,16 @@ export default function TradeAlerts() {
               <option value="bull_put_spread">Bull Put Spread</option>
               <option value="bear_call_spread">Bear Call Spread</option>
               <option value="short_strangle">Short Strangle</option>
+              <option value="iv_crush">IV Crush</option>
             </select>
           </div>
           <div className="ta-filter-group">
             <label>Underlying</label>
             <select value={underlyingFilter} onChange={e => setUnderlyingFilter(e.target.value)}>
               <option value="all">All</option>
-              <option value="NIFTY">NIFTY</option>
-              <option value="BANKNIFTY">BANKNIFTY</option>
+              {[...new Set(alerts.map(a => a.underlying))].sort().map(u => (
+                <option key={u} value={u}>{u}</option>
+              ))}
             </select>
           </div>
           <div className="ta-filter-group">
@@ -254,6 +258,11 @@ export default function TradeAlerts() {
                       {STRATEGY_LABELS[alert.strategy] || alert.strategy}
                     </span>
                     <span className="ta-underlying">{alert.underlying}</span>
+                    {alert.event_type && (
+                      <span className="ta-event-badge">
+                        {alert.event_type === 'earnings' ? 'Earnings' : 'RBI Policy'} in {alert.days_to_event}d
+                      </span>
+                    )}
                     <span className="ta-expiry">Exp: {formatDate(alert.expiry)}</span>
                   </div>
                   <div className="ta-alert-right">
@@ -330,6 +339,14 @@ export default function TradeAlerts() {
                         ))}
                       </tbody>
                     </table>
+                    {alert.exit_rules && (
+                      <div className="ta-exit-rules">
+                        <strong>Exit Rules:</strong>{' '}
+                        {alert.exit_rules.profit_target_pct}% profit target |{' '}
+                        {alert.exit_rules.stop_loss_multiplier}x credit stop-loss |{' '}
+                        Exit {alert.exit_rules.exit_post_event_mins} min post-event
+                      </div>
+                    )}
                     <div className="ta-alert-time">
                       Generated: {new Date(alert.created_at).toLocaleString('en-IN')}
                     </div>

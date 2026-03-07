@@ -502,3 +502,32 @@
   font-size: 0.8em;
   opacity: 0.75;
 }
+
+
+/* ─── IV Crush Event Badge ──────────────────────────────────────────── */
+
+.ta-event-badge {
+  background: rgba(224, 64, 251, 0.15);
+  color: #e040fb;
+  border: 1px solid rgba(224, 64, 251, 0.3);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ta-exit-rules {
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: rgba(224, 64, 251, 0.08);
+  border: 1px solid rgba(224, 64, 251, 0.2);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #b0b8c8;
+  line-height: 1.5;
+}
+
+.ta-exit-rules strong {
+  color: #e040fb;
+}

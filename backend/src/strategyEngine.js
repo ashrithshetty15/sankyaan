@@ -2,7 +2,9 @@ import {
   getCachedOptionsChain,
   getCachedUnderlyingData,
   getCachedVIX,
+  getFyersSymbol,
 } from "./fyersService.js";
+import { isLargeCap, daysUntilEvent } from "./eventCalendar.js";
 
 /**
  * Options Strategy Scanner & Scoring Engine
@@ -17,6 +19,8 @@ import {
 const MIN_OI = 50000;       // Minimum open interest for liquidity
 const MIN_VOLUME = 500;     // Minimum volume
 const MAX_SPREAD_PCT = 2;   // Max bid-ask spread as % of LTP
+const IV_CRUSH_MIN_OI = 500000; // 5L OI for IV Crush
+const IV_CRUSH_MAX_SPREAD_PCT = 5; // 5% bid-ask for IV Crush
 
 /**
  * Run a full scan across underlyings and return scored trade alerts.
@@ -24,11 +28,11 @@ const MAX_SPREAD_PCT = 2;   // Max bid-ask spread as % of LTP
  * @param {string} expiry - e.g. '27MAR2026'
  * @returns {Array} Array of scored trade alert objects
  */
-export async function scanStrategies(underlyings, expiry) {
+export async function scanStrategies(underlyings, expiry, eventMap) {
   const alerts = [];
 
   for (const underlying of underlyings) {
-    const fyersSymbol = underlying === "NIFTY" ? "NSE:NIFTY50-INDEX" : underlying === "BANKNIFTY" ? "NSE:NIFTYBANK-INDEX" : "NSE:" + underlying + "-INDEX";
+    const fyersSymbol = getFyersSymbol(underlying);
     const chain = getCachedOptionsChain(fyersSymbol);
     const spot = getCachedUnderlyingData(fyersSymbol);
 
@@ -48,7 +52,11 @@ export async function scanStrategies(underlyings, expiry) {
     const bearCalls = scanBearCallSpreads(chain, spot.ltp, ivRank, underlying, expiry);
     const strangles = scanShortStrangles(chain, spot.ltp, ivRank, underlying, expiry);
 
-    alerts.push(...ironCondors, ...bullPuts, ...bearCalls, ...strangles);
+    // Check if this underlying has an upcoming event for IV Crush
+    const eventInfo = eventMap ? eventMap.get(underlying) : null;
+    const ivCrush = eventInfo ? scanIVCrush(chain, spot.ltp, ivRank, underlying, expiry, eventInfo) : [];
+
+    alerts.push(...ironCondors, ...bullPuts, ...bearCalls, ...strangles, ...ivCrush);
   }
 
   // Enrich with margin, lot size, and percentages
@@ -434,6 +442,217 @@ function scanShortStrangles(chain, spotPrice, ivRank, underlying, expiry) {
   return alerts;
 }
 
+
+// ─── IV Crush Scanner ────────────────────────────────────────────────
+
+/**
+ * Scan for IV Crush setups — sell premium before events (earnings, RBI policy).
+ * Defined risk only: Iron Condors and credit spreads.
+ * Requires IVR > 50, event within 1-5 days, high OI, tight spreads.
+ */
+function scanIVCrush(chain, spotPrice, ivRank, underlying, expiry, eventInfo) {
+  if (ivRank < 70) return []; // IVR must be > 70
+
+  const daysToEvent = daysUntilEvent(eventInfo.date);
+  if (daysToEvent < 1 || daysToEvent > 5) return [];
+
+  // Entry window: 10:15 AM - 11:30 AM IST only
+  const now = new Date();
+  const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const mins = ist.getHours() * 60 + ist.getMinutes();
+  if (mins < 615 || mins > 690) return []; // 10:15=615, 11:30=690
+
+  const alerts = [];
+  const largeCap = isLargeCap(underlying) || underlying === 'NIFTY' || underlying === 'BANKNIFTY';
+  const otmPctMin = largeCap ? 0.02 : 0.03;
+  const otmPctMax = largeCap ? 0.03 : 0.04;
+
+  const stepSize = underlying === 'NIFTY' ? 50 : underlying === 'BANKNIFTY' ? 100 : 50;
+  const wingWidth = stepSize * 2;
+
+  // IV Crush liquidity check (stricter OI, looser spread than standard)
+  function isIVCrushLiquid(option) {
+    if (!option) return false;
+    if ((option.oi || 0) < IV_CRUSH_MIN_OI) return false;
+    if (option.ltp > 0 && option.spread) {
+      if ((option.spread / option.ltp) * 100 > IV_CRUSH_MAX_SPREAD_PCT) return false;
+    }
+    return true;
+  }
+
+  function buildExitRules() {
+    return {
+      profit_target_pct: 50,
+      stop_loss_multiplier: 1.5,
+      exit_post_event_mins: 60,
+      no_hold_past_expiry_week: true,
+    };
+  }
+
+  function buildEventMeta() {
+    return {
+      event_type: eventInfo.event_type,
+      event_date: eventInfo.date,
+      days_to_event: daysToEvent,
+      event_name: eventInfo.name,
+      exit_rules: buildExitRules(),
+    };
+  }
+
+  // --- Iron Condor (preferred for IV Crush) ---
+  const putSellCandidates = chain.filter(r => {
+    if (!r.pe || r.strike >= spotPrice) return false;
+    const dist = (spotPrice - r.strike) / spotPrice;
+    return dist >= otmPctMin && dist <= otmPctMax && isIVCrushLiquid(r.pe);
+  });
+
+  const callSellCandidates = chain.filter(r => {
+    if (!r.ce || r.strike <= spotPrice) return false;
+    const dist = (r.strike - spotPrice) / spotPrice;
+    return dist >= otmPctMin && dist <= otmPctMax && isIVCrushLiquid(r.ce);
+  });
+
+  for (const putSell of putSellCandidates) {
+    for (const callSell of callSellCandidates) {
+      const putBuyStrike = putSell.strike - wingWidth;
+      const callBuyStrike = callSell.strike + wingWidth;
+      const putBuy = chain.find(r => r.strike === putBuyStrike);
+      const callBuy = chain.find(r => r.strike === callBuyStrike);
+
+      if (!putBuy?.pe || !callBuy?.ce) continue;
+      if (!putBuy.pe.ltp || !callBuy.ce.ltp) continue;
+
+      const premiumCollected =
+        (putSell.pe.ltp || 0) + (callSell.ce.ltp || 0) -
+        (putBuy.pe.ltp || 0) - (callBuy.ce.ltp || 0);
+
+      if (premiumCollected <= 0) continue;
+
+      const maxLoss = wingWidth - premiumCollected;
+      if (maxLoss <= 0) continue;
+
+      const riskReward = premiumCollected / maxLoss;
+      if (riskReward < 0.5) continue; // R:R >= 1:2
+
+      const putDist = (spotPrice - putSell.strike) / spotPrice;
+      const callDist = (callSell.strike - spotPrice) / spotPrice;
+      const score = scoreStrategy({
+        ivRank,
+        riskReward,
+        sellPutDelta: putDist < 0.02 ? 0.30 : putDist < 0.03 ? 0.22 : 0.17,
+        sellCallDelta: callDist < 0.02 ? 0.30 : callDist < 0.03 ? 0.22 : 0.17,
+        putOI: putSell.pe.oi || 0,
+        callOI: callSell.ce.oi || 0,
+        premiumCollected,
+        maxLoss,
+        strategy: 'iv_crush',
+      });
+
+      if (score < 50) continue;
+
+      alerts.push({
+        strategy: 'iv_crush',
+        underlying,
+        expiry,
+        legs: [
+          { strike: putBuyStrike, type: 'PE', action: 'BUY', ltp: putBuy.pe.ltp, iv: putBuy.pe.iv, delta: putBuy.pe.delta, oi: putBuy.pe.oi },
+          { strike: putSell.strike, type: 'PE', action: 'SELL', ltp: putSell.pe.ltp, iv: putSell.pe.iv, delta: putSell.pe.delta, oi: putSell.pe.oi },
+          { strike: callSell.strike, type: 'CE', action: 'SELL', ltp: callSell.ce.ltp, iv: callSell.ce.iv, delta: callSell.ce.delta, oi: callSell.ce.oi },
+          { strike: callBuyStrike, type: 'CE', action: 'BUY', ltp: callBuy.ce.ltp, iv: callBuy.ce.iv, delta: callBuy.ce.delta, oi: callBuy.ce.oi },
+        ],
+        max_profit: premiumCollected,
+        max_loss: maxLoss,
+        breakeven: [putSell.strike - premiumCollected, callSell.strike + premiumCollected],
+        probability_score: score,
+        risk_level: score >= 70 ? 'Low' : score >= 50 ? 'Medium' : 'High',
+        iv_rank: ivRank,
+        entry_price: premiumCollected,
+        ...buildEventMeta(),
+      });
+
+      if (alerts.filter(a => a.strategy === 'iv_crush').length >= 3) break;
+    }
+    if (alerts.filter(a => a.strategy === 'iv_crush').length >= 3) break;
+  }
+
+  // --- Credit Spreads (fallback if not enough Iron Condors) ---
+  if (alerts.length < 2) {
+    // Bull Put Spread
+    for (const sell of putSellCandidates) {
+      if (alerts.length >= 3) break;
+      const buyStrike = sell.strike - wingWidth;
+      const buy = chain.find(r => r.strike === buyStrike);
+      if (!buy?.pe?.ltp) continue;
+
+      const premium = (sell.pe.ltp || 0) - (buy.pe.ltp || 0);
+      if (premium <= 0) continue;
+      const loss = wingWidth - premium;
+      if (loss <= 0 || premium / loss < 0.5) continue;
+
+      const putDist = (spotPrice - sell.strike) / spotPrice;
+      const score = scoreStrategy({
+        ivRank, riskReward: premium / loss,
+        sellPutDelta: putDist < 0.02 ? 0.30 : putDist < 0.03 ? 0.22 : 0.17,
+        putOI: sell.pe.oi || 0, premiumCollected: premium, maxLoss: loss,
+        strategy: 'iv_crush',
+      });
+      if (score < 50) continue;
+
+      alerts.push({
+        strategy: 'iv_crush', underlying, expiry,
+        legs: [
+          { strike: buyStrike, type: 'PE', action: 'BUY', ltp: buy.pe.ltp, iv: buy.pe.iv, delta: buy.pe.delta, oi: buy.pe.oi },
+          { strike: sell.strike, type: 'PE', action: 'SELL', ltp: sell.pe.ltp, iv: sell.pe.iv, delta: sell.pe.delta, oi: sell.pe.oi },
+        ],
+        max_profit: premium, max_loss: loss,
+        breakeven: [sell.strike - premium],
+        probability_score: score,
+        risk_level: score >= 70 ? 'Low' : score >= 50 ? 'Medium' : 'High',
+        iv_rank: ivRank, entry_price: premium,
+        ...buildEventMeta(),
+      });
+    }
+
+    // Bear Call Spread
+    for (const sell of callSellCandidates) {
+      if (alerts.length >= 3) break;
+      const buyStrike = sell.strike + wingWidth;
+      const buy = chain.find(r => r.strike === buyStrike);
+      if (!buy?.ce?.ltp) continue;
+
+      const premium = (sell.ce.ltp || 0) - (buy.ce.ltp || 0);
+      if (premium <= 0) continue;
+      const loss = wingWidth - premium;
+      if (loss <= 0 || premium / loss < 0.5) continue;
+
+      const callDist = (sell.strike - spotPrice) / spotPrice;
+      const score = scoreStrategy({
+        ivRank, riskReward: premium / loss,
+        sellCallDelta: callDist < 0.02 ? 0.30 : callDist < 0.03 ? 0.22 : 0.17,
+        callOI: sell.ce.oi || 0, premiumCollected: premium, maxLoss: loss,
+        strategy: 'iv_crush',
+      });
+      if (score < 50) continue;
+
+      alerts.push({
+        strategy: 'iv_crush', underlying, expiry,
+        legs: [
+          { strike: sell.strike, type: 'CE', action: 'SELL', ltp: sell.ce.ltp, iv: sell.ce.iv, delta: sell.ce.delta, oi: sell.ce.oi },
+          { strike: buyStrike, type: 'CE', action: 'BUY', ltp: buy.ce.ltp, iv: buy.ce.iv, delta: buy.ce.delta, oi: buy.ce.oi },
+        ],
+        max_profit: premium, max_loss: loss,
+        breakeven: [sell.strike + premium],
+        probability_score: score,
+        risk_level: score >= 70 ? 'Low' : score >= 50 ? 'Medium' : 'High',
+        iv_rank: ivRank, entry_price: premium,
+        ...buildEventMeta(),
+      });
+    }
+  }
+
+  return alerts;
+}
+
 // ─── Scoring Engine ──────────────────────────────────────────────────
 
 /**
@@ -507,6 +726,12 @@ function scoreStrategy(params) {
       score += Math.min(10, riskReward * 15);
       break;
 
+    case 'iv_crush':
+      // Bonus for high IV (main edge for crush)
+      score += Math.min(10, (ivRank - 50) * 0.5);
+      // Defined risk bonus
+      score += 10;
+      break;
     case 'short_strangle':
       // Penalty for undefined risk, but bonus for very high IV
       score += Math.min(10, (ivRank - 55) * 0.5);

@@ -1,15 +1,11 @@
-import { isReady, getOptionChain, getQuotes, autoAuthenticate } from './fyersService.js';
+import { isReady, getOptionChain, getQuotes, autoAuthenticate, getFyersSymbol } from './fyersService.js';
 import { scanStrategies, getNextExpiry } from './strategyEngine.js';
+import { getAllUpcomingEvents } from './eventCalendar.js';
 import { sendTradeAlert, sendScanSummary, isBotReady } from './telegramBot.js';
 import db from './db.js';
 
 const SCAN_INTERVAL = 15 * 60 * 1000; // 15 minutes
 const DEFAULT_UNDERLYINGS = ['NIFTY', 'BANKNIFTY'];
-
-const FYERS_SYMBOLS = {
-  NIFTY: 'NSE:NIFTY50-INDEX',
-  BANKNIFTY: 'NSE:NIFTYBANK-INDEX',
-};
 
 let scanTimer = null;
 
@@ -41,26 +37,47 @@ async function runScan() {
     const expiry = getNextExpiry('NIFTY');
     console.log('Auto-scan starting for ' + DEFAULT_UNDERLYINGS.join(', ') + ' expiry ' + expiry);
 
-    // Fetch fresh data
-    for (const u of DEFAULT_UNDERLYINGS) {
-      const fyersSymbol = FYERS_SYMBOLS[u] || `NSE:${u}-INDEX`;
+    // Fetch upcoming events for IV Crush scanning
+    let events = [];
+    try {
+      events = await getAllUpcomingEvents(5);
+      if (events.length > 0) console.log('Auto-scan: ' + events.length + ' upcoming events found');
+    } catch (err) {
+      console.warn('Auto-scan: failed to fetch events:', err.message);
+    }
+
+    // Build event map (symbol -> event info)
+    const eventMap = new Map();
+    for (const ev of events) {
+      if (!eventMap.has(ev.symbol)) eventMap.set(ev.symbol, ev);
+    }
+
+    // Collect all underlyings to scan (defaults + stocks with events)
+    const allUnderlyings = [...DEFAULT_UNDERLYINGS];
+    for (const ev of events) {
+      if (!allUnderlyings.includes(ev.symbol)) allUnderlyings.push(ev.symbol);
+    }
+
+    // Fetch fresh data for all underlyings
+    for (const u of allUnderlyings) {
+      const fyersSymbol = getFyersSymbol(u);
       await getOptionChain(fyersSymbol, 15);
       await getQuotes([fyersSymbol]);
     }
 
-    // Run scanner
-    const alerts = await scanStrategies(DEFAULT_UNDERLYINGS, expiry);
+    // Run scanner with event map
+    const alerts = await scanStrategies(allUnderlyings, expiry, eventMap);
 
     if (alerts.length === 0) {
       console.log('Auto-scan: no qualifying trades');
-      if (isBotReady()) await sendScanSummary(0, DEFAULT_UNDERLYINGS);
+      if (isBotReady()) await sendScanSummary(0, allUnderlyings);
       return;
     }
 
     // Expire old alerts
     await db.query(
       `UPDATE trade_alerts SET status = 'expired', expired_at = NOW() WHERE status = 'active' AND underlying = ANY($1)`,
-      [DEFAULT_UNDERLYINGS]
+      [allUnderlyings]
     );
 
     // Insert new alerts
@@ -70,8 +87,9 @@ async function runScan() {
       await db.query(`
         INSERT INTO trade_alerts
           (strategy, underlying, expiry, legs, max_profit, max_loss, breakeven,
-           probability_score, risk_level, iv_rank, entry_price)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           probability_score, risk_level, iv_rank, entry_price,
+           event_type, event_date, event_name, days_to_event, exit_rules)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       `, [
         alert.strategy,
         alert.underlying,
@@ -84,6 +102,11 @@ async function runScan() {
         alert.risk_level,
         alert.iv_rank,
         alert.entry_price,
+        alert.event_type || null,
+        alert.event_date || null,
+        alert.event_name || null,
+        alert.days_to_event || null,
+        alert.exit_rules ? JSON.stringify(alert.exit_rules) : null,
       ]);
       inserted++;
 
@@ -92,7 +115,7 @@ async function runScan() {
     }
 
     console.log('Auto-scan complete: ' + inserted + ' alerts inserted');
-    if (isBotReady()) await sendScanSummary(inserted, DEFAULT_UNDERLYINGS);
+    if (isBotReady()) await sendScanSummary(inserted, allUnderlyings);
   } catch (err) {
     console.error('Auto-scan error:', err.message);
   }

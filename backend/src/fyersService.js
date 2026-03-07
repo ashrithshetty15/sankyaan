@@ -333,6 +333,19 @@ export async function autoAuthenticate() {
   }
 }
 
+
+/**
+ * Map NSE symbol to Fyers format for quotes and option chains.
+ * Indices: NIFTY -> NSE:NIFTY50-INDEX, BANKNIFTY -> NSE:NIFTYBANK-INDEX
+ * Stocks: RELIANCE -> NSE:RELIANCE-EQ
+ */
+export function getFyersSymbol(nseSymbol) {
+  const INDEX_MAP = {
+    NIFTY: 'NSE:NIFTY50-INDEX',
+    BANKNIFTY: 'NSE:NIFTYBANK-INDEX',
+  };
+  return INDEX_MAP[nseSymbol] || 'NSE:' + nseSymbol + '-EQ';
+}
 export function disconnect() {
   isConnected = false;
   accessToken = null;

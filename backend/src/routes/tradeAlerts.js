@@ -139,8 +139,9 @@ export async function triggerScan(req, res) {
       await db.query(`
         INSERT INTO trade_alerts
           (strategy, underlying, expiry, legs, max_profit, max_loss, breakeven,
-           probability_score, risk_level, iv_rank, entry_price)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           probability_score, risk_level, iv_rank, entry_price,
+           event_type, event_date, event_name, days_to_event, exit_rules)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       `, [
         alert.strategy,
         alert.underlying,
@@ -153,6 +154,11 @@ export async function triggerScan(req, res) {
         alert.risk_level,
         alert.iv_rank,
         alert.entry_price,
+        alert.event_type || null,
+        alert.event_date || null,
+        alert.event_name || null,
+        alert.days_to_event || null,
+        alert.exit_rules ? JSON.stringify(alert.exit_rules) : null,
       ]);
       inserted++;
     }
