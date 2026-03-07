@@ -25,6 +25,7 @@
     "jsonwebtoken": "^9.0.3",
     "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.67.0",
+    "otplib": "^13.3.0",
     "pg": "^8.11.3",
     "truedata-nodejs": "^1.1.0",
     "yahoo-finance2": "^2.11.3"

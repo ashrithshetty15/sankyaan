@@ -1,4 +1,4 @@
-import { isReady, getOptionChain, getQuotes } from './fyersService.js';
+import { isReady, getOptionChain, getQuotes, autoAuthenticate } from './fyersService.js';
 import { scanStrategies, getNextExpiry } from './strategyEngine.js';
 import { sendTradeAlert, sendScanSummary, isBotReady } from './telegramBot.js';
 import db from './db.js';
@@ -24,8 +24,12 @@ function isMarketHours() {
 
 async function runScan() {
   if (!isReady()) {
-    console.log('Auto-scan skipped: Fyers not connected');
-    return;
+    console.log('Auto-scan: Fyers not connected, attempting auto-auth...');
+    const authed = await autoAuthenticate();
+    if (!authed) {
+      console.log('Auto-scan skipped: auto-auth failed');
+      return;
+    }
   }
 
   if (!isMarketHours()) {

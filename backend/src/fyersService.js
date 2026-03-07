@@ -1,4 +1,7 @@
 import { fyersModel } from 'fyers-api-v3';
+import { authenticator } from 'otplib';
+import crypto from 'crypto';
+import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -225,6 +228,109 @@ function loadToken() {
     }
   } catch (_) {}
   return null;
+}
+
+
+/**
+ * Headless auto-authentication using TOTP + PIN.
+ * No browser needed — authenticates programmatically.
+ */
+export async function autoAuthenticate() {
+  const fyId = process.env.FYERS_USER_ID;
+  const pin = process.env.FYERS_PIN;
+  const totpSecret = process.env.FYERS_TOTP_SECRET;
+  const appId = process.env.FYERS_APP_ID;
+  const secretKey = process.env.FYERS_SECRET_KEY;
+  const redirectUrl = process.env.FYERS_REDIRECT_URL || 'http://localhost:5000/api/fyers/callback';
+
+  if (!fyId || !pin || !totpSecret || !appId || !secretKey) {
+    console.warn('Fyers auto-auth: missing credentials (FYERS_USER_ID, FYERS_PIN, FYERS_TOTP_SECRET)');
+    return false;
+  }
+
+  try {
+    if (!fyers) {
+      fyers = new fyersModel();
+      fyers.setAppId(appId);
+      fyers.setRedirectUrl(redirectUrl);
+    }
+
+    console.log('Fyers auto-auth: starting headless authentication...');
+
+    // Step 1: Send login OTP request
+    const step1 = await axios.post('https://api-t2.fyers.in/vagator/v2/send_login_otp_v2', {
+      fy_id: fyId,
+      app_id: '2',
+    });
+    if (!step1.data?.request_key) throw new Error('Step 1 failed: ' + JSON.stringify(step1.data));
+    let requestKey = step1.data.request_key;
+
+    // Step 2: Verify TOTP
+    const totp = authenticator.generate(totpSecret);
+    const step2 = await axios.post('https://api-t2.fyers.in/vagator/v2/verify_otp', {
+      request_key: requestKey,
+      otp: totp,
+    });
+    if (!step2.data?.request_key) throw new Error('Step 2 failed: ' + JSON.stringify(step2.data));
+    requestKey = step2.data.request_key;
+
+    // Step 3: Verify PIN
+    const pinHash = crypto.createHash('sha256').update(pin).digest('hex');
+    const step3 = await axios.post('https://api-t2.fyers.in/vagator/v2/verify_pin_v2', {
+      request_key: requestKey,
+      identity_type: 'pin',
+      identifier: pinHash,
+      recaptcha_token: '',
+    });
+    if (!step3.data?.data?.access_token) throw new Error('Step 3 failed: ' + JSON.stringify(step3.data));
+    const bearerToken = step3.data.data.access_token;
+
+    // Step 4: Get auth code via token endpoint
+    const appIdBase = appId.split('-')[0];
+    const step4 = await axios.post('https://api-t1.fyers.in/api/v3/token', {
+      fyers_id: fyId,
+      app_id: appIdBase,
+      redirect_uri: redirectUrl,
+      appType: '100',
+      code_challenge: '',
+      state: 'auto_auth',
+      scope: '',
+      nonce: '',
+      response_type: 'code',
+      create_cookie: true,
+    }, {
+      headers: { Authorization: 'Bearer ' + bearerToken },
+    });
+
+    const authUrl = step4.data?.Url;
+    if (!authUrl) throw new Error('Step 4 failed: ' + JSON.stringify(step4.data));
+
+    // Extract auth_code from URL
+    const url = new URL(authUrl);
+    const authCode = url.searchParams.get('auth_code');
+    if (!authCode) throw new Error('No auth_code in redirect URL: ' + authUrl);
+
+    // Step 5: Exchange auth code for access token
+    const response = await fyers.generate_access_token({
+      client_id: appId,
+      secret_key: secretKey,
+      auth_code: authCode,
+    });
+
+    if (response.s === 'ok' && response.access_token) {
+      accessToken = response.access_token;
+      fyers.setAccessToken(accessToken);
+      isConnected = true;
+      saveToken({ access_token: accessToken, created_at: new Date().toISOString() });
+      console.log('Fyers auto-auth: authenticated successfully');
+      return true;
+    }
+
+    throw new Error('Token exchange failed: ' + (response.message || JSON.stringify(response)));
+  } catch (err) {
+    console.error('Fyers auto-auth failed:', err.message);
+    return false;
+  }
 }
 
 export function disconnect() {

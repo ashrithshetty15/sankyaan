@@ -19,7 +19,7 @@ import { googleLogin, getMe, logout } from './routes/auth.js';
 import { getBulkTrades, refreshBulkTrades } from './routes/bulkTrades.js';
 import { addHolding, getPortfolio, deleteHolding, getPortfolioAnalysis } from './routes/portfolio.js';
 import { getTradeAlerts, getTradeAlertHistory, triggerScan, getOptionsChainEndpoint } from './routes/tradeAlerts.js';
-import { initFyers, getAuthUrl, handleAuthCallback, isReady as isFyersReady } from './fyersService.js';
+import { initFyers, getAuthUrl, handleAuthCallback, isReady as isFyersReady, autoAuthenticate } from './fyersService.js';
 import { initTelegramBot } from './telegramBot.js';
 import { startAutoScanner } from './autoScanner.js';
 
@@ -403,20 +403,24 @@ async function startServer() {
   await runMigrations();
 
   // Initialize Fyers API (loads saved token if available)
-  const fyersReady = initFyers();
+  let fyersReady = initFyers();
   if (fyersReady) {
     console.log("Trade alerts engine ready (Fyers)");
   } else {
-    console.log("Fyers: visit /api/fyers/auth to authenticate");
+    console.log("Fyers: no saved token, attempting auto-auth...");
+    fyersReady = await autoAuthenticate();
+    if (fyersReady) {
+      console.log("Trade alerts engine ready (Fyers auto-auth)");
+    } else {
+      console.log("Fyers: auto-auth failed. Visit /api/fyers/auth or check credentials.");
+    }
   }
 
   // Initialize Telegram bot
   initTelegramBot();
 
-  // Start auto-scanner (runs every 15 min during market hours)
-  if (fyersReady) {
-    startAutoScanner();
-  }
+  // Always start auto-scanner (it will self-auth when needed)
+  startAutoScanner();
 
 
 
