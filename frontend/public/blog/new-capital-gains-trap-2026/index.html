@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Capital Gains Trap: What the Income Tax Act 2025 Means for Your Mutual Fund Exits | Sankyaan</title>
+<meta name="description" content="The final Income Tax Act 2025 removed the one-time LTCL-STCG set-off relief. From April 2026, long-term capital losses can only offset long-term gains. Here's what every mutual fund investor needs to know.">
+<meta name="keywords" content="new income tax act 2025 capital gains, LTCL set off against STCG removed, mutual fund tax rules April 2026, capital gains loss set off rules India 2026, SGB tax exemption secondary market, tax loss harvesting India, Sankyaan">
+<meta property="og:title" content="New Capital Gains Trap: What Changes from April 2026 Mean for Your Mutual Fund Exits">
+<meta property="og:description" content="The LTCL-STCG set-off relief was quietly dropped from the final Income Tax Act. Here's how it affects your mutual fund strategy.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://sankyaan.com/blog/new-capital-gains-trap-2026">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="New Capital Gains Trap: Income Tax Act 2025 Changes for MF Investors">
+<meta name="twitter:description" content="Long-term losses can no longer offset short-term gains. Here's what to do before April 1, 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:    #0d1117;
+    --bg2:   #161c26;
+    --bg3:   #1e2736;
+    --bg4:   #252d3d;
+    --gold:  #f0b429;
+    --gold2: #ffd166;
+    --gold-dim: rgba(240,180,41,0.12);
+    --green: #3ddc84;
+    --red:   #ff6b6b;
+    --blue:  #4d9de0;
+    --text:  #e8edf5;
+    --text2: #8b95a8;
+    --text3: #545f72;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--gold); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .progress-bar {
+    position: fixed; top: 0; left: 0; width: 0; height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    z-index: 200; transition: width 0.1s;
+  }
+
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(13,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--bg4);
+    padding: 12px 0;
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none;
+  }
+  .nav-logo-img {
+    width: 36px; height: 36px; border-radius: 8px;
+    filter: drop-shadow(0 2px 6px rgba(240,180,41,0.4));
+  }
+  .nav-logo-text {
+    font-size: 1.3em; font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .nav-links { display: flex; align-items: center; gap: 20px; }
+  .nav-link {
+    font-size: 0.85em; font-weight: 500; color: var(--text2);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .nav-link:hover { color: var(--gold); text-decoration: none; }
+  .nav-cta {
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #0d1117; padding: 8px 20px; border-radius: 8px;
+    font-size: 0.85em; font-weight: 700;
+    text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(240,180,41,0.35); text-decoration: none; }
+
+  .hero {
+    max-width: 820px; margin: 0 auto; padding: 60px 24px 44px;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,107,107,0.12); color: var(--red);
+    border: 1px solid rgba(255,107,107,0.25);
+    padding: 5px 16px; border-radius: 100px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; margin-bottom: 24px;
+  }
+  .hero-badge::before {
+    content: ""; width: 7px; height: 7px;
+    background: var(--red); border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 50px);
+    font-weight: 800; line-height: 1.15; letter-spacing: -0.5px;
+    color: var(--text); margin-bottom: 18px;
+  }
+  .hero h1 span { color: var(--red); }
+  .hero-sub {
+    font-size: 17px; color: var(--text2); max-width: 620px;
+    margin: 0 auto 28px; line-height: 1.7;
+  }
+  .hero-meta {
+    display: flex; align-items: center; justify-content: center;
+    gap: 24px; flex-wrap: wrap;
+    font-size: 13px; color: var(--text3); font-weight: 500;
+  }
+
+  .article-wrap {
+    max-width: 740px; margin: 0 auto; padding: 0 24px 80px;
+  }
+
+  .article-wrap h2 {
+    font-size: 26px; font-weight: 700; line-height: 1.25;
+    margin: 52px 0 18px; color: var(--text);
+    padding-top: 14px; border-top: 1px solid var(--bg4);
+  }
+  .article-wrap h2:first-of-type { border-top: none; }
+
+  .article-wrap h3 {
+    font-size: 17px; font-weight: 700;
+    margin: 32px 0 12px; color: var(--gold);
+  }
+
+  .article-wrap p { margin-bottom: 18px; color: var(--text2); }
+  .article-wrap strong { color: var(--text); }
+
+  .stat-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px; margin: 28px 0;
+  }
+  .stat-box {
+    background: var(--bg2); border: 1px solid var(--bg4);
+    border-radius: 12px; padding: 20px; text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .stat-box:hover { border-color: var(--gold); transform: translateY(-2px); }
+  .stat-num {
+    font-size: 36px; font-weight: 800; color: var(--red);
+    line-height: 1; margin-bottom: 6px;
+  }
+  .stat-num.gold { color: var(--gold); }
+  .stat-label { font-size: 12px; color: var(--text3); font-weight: 500; }
+
+  .callout {
+    background: var(--bg2); border-left: 3px solid var(--green);
+    border-radius: 0 10px 10px 0; padding: 20px 24px;
+    margin: 28px 0; font-size: 15px;
+  }
+  .callout.warning { border-left-color: var(--red); }
+  .callout.highlight { border-left-color: var(--gold); }
+  .callout-title {
+    font-weight: 700; margin-bottom: 8px; color: var(--text);
+    display: flex; align-items: center; gap: 8px; font-size: 14px;
+  }
+  .callout p { margin: 0; color: var(--text2); }
+
+  .table-wrap {
+    overflow-x: auto; margin: 28px 0;
+    border-radius: 10px; border: 1px solid var(--bg4);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead { background: var(--bg3); }
+  th {
+    padding: 12px 18px; text-align: left; font-weight: 700;
+    font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--text3);
+  }
+  td { padding: 12px 18px; border-bottom: 1px solid var(--bg4); color: var(--text2); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+  .tag-yes {
+    background: rgba(61,220,132,0.12); color: var(--green);
+    padding: 2px 10px; border-radius: 100px; font-size: 11px; font-weight: 700;
+  }
+  .tag-no {
+    background: rgba(255,107,107,0.12); color: var(--red);
+    padding: 2px 10px; border-radius: 100px; font-size: 11px; font-weight: 700;
+  }
+
+  .example-box {
+    background: var(--bg2); border: 1px solid var(--bg4);
+    border-radius: 12px; padding: 24px; margin: 28px 0;
+  }
+  .example-box h4 {
+    font-size: 15px; font-weight: 700; color: var(--gold);
+    margin-bottom: 12px;
+  }
+  .example-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--bg4);
+    font-size: 14px; color: var(--text2);
+  }
+  .example-row:last-child { border-bottom: none; }
+  .example-row strong { color: var(--text); }
+  .example-result {
+    margin-top: 16px; padding: 14px; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+  }
+  .example-result.loss { background: rgba(255,107,107,0.1); color: var(--red); border: 1px solid rgba(255,107,107,0.2); }
+  .example-result.gain { background: rgba(61,220,132,0.1); color: var(--green); border: 1px solid rgba(61,220,132,0.2); }
+
+  .checklist { list-style: none; margin: 24px 0; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 16px 0; border-bottom: 1px solid var(--bg4); font-size: 15px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-icon {
+    flex-shrink: 0; width: 26px; height: 26px;
+    background: var(--gold-dim); border: 1px solid rgba(240,180,41,0.3);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    color: var(--gold); font-size: 13px; font-weight: 700; margin-top: 2px;
+  }
+  .checklist li div { color: var(--text2); }
+  .checklist li strong { color: var(--text); display: block; margin-bottom: 4px; }
+
+  .cta-banner {
+    background: var(--bg2); border: 1px solid rgba(240,180,41,0.2);
+    border-radius: 16px; padding: 44px 36px;
+    margin: 52px 0; text-align: center; position: relative; overflow: hidden;
+  }
+  .cta-banner::before {
+    content: ""; position: absolute; top: -60px; right: -60px;
+    width: 200px; height: 200px; background: var(--gold);
+    border-radius: 50%; opacity: 0.06; filter: blur(40px);
+  }
+  .cta-banner h3 {
+    font-size: 24px; font-weight: 800; margin-bottom: 10px;
+    color: var(--text); position: relative;
+  }
+  .cta-banner p {
+    color: var(--text2); margin-bottom: 24px; font-size: 15px;
+    max-width: 460px; margin-left: auto; margin-right: auto;
+    position: relative;
+  }
+  .cta-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #0d1117; padding: 13px 32px; border-radius: 10px;
+    text-decoration: none; font-weight: 700; font-size: 15px;
+    transition: transform 0.2s, box-shadow 0.2s; position: relative;
+  }
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(240,180,41,0.3); text-decoration: none; }
+
+  .faq-item {
+    border: 1px solid var(--bg4); border-radius: 10px;
+    margin-bottom: 10px; overflow: hidden; background: var(--bg2);
+    transition: border-color 0.2s;
+  }
+  .faq-q {
+    padding: 16px 20px; font-weight: 700; font-size: 15px;
+    cursor: pointer; display: flex; justify-content: space-between;
+    align-items: center; user-select: none; color: var(--text);
+    transition: background 0.2s;
+  }
+  .faq-q:hover { background: var(--bg3); }
+  .faq-q::after { content: "+"; font-size: 20px; color: var(--gold); transition: transform 0.3s; flex-shrink: 0; margin-left: 12px; }
+  .faq-item.open .faq-q::after { transform: rotate(45deg); }
+  .faq-item.open { border-color: rgba(240,180,41,0.25); }
+  .faq-a {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s;
+    padding: 0 20px; font-size: 14px; color: var(--text2); line-height: 1.7;
+  }
+  .faq-item.open .faq-a { max-height: 300px; padding: 0 20px 18px; }
+
+  .share-bar {
+    display: flex; align-items: center; gap: 12px;
+    margin: 36px 0; padding: 18px 0;
+    border-top: 1px solid var(--bg4); border-bottom: 1px solid var(--bg4);
+  }
+  .share-bar span { font-size: 13px; font-weight: 600; color: var(--text3); }
+  .share-btn {
+    width: 38px; height: 38px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none; font-size: 14px; font-weight: 700;
+    transition: transform 0.2s; border: 1px solid var(--bg4);
+    background: var(--bg2); color: var(--text2);
+  }
+  .share-btn:hover { transform: translateY(-2px); text-decoration: none; }
+  .share-btn.twitter { background: #1DA1F2; color: white; border-color: #1DA1F2; }
+  .share-btn.whatsapp { background: #25D366; color: white; border-color: #25D366; }
+  .share-btn.linkedin { background: #0A66C2; color: white; border-color: #0A66C2; }
+
+  .footer {
+    background: var(--bg2); border-top: 1px solid var(--bg4);
+    padding: 36px 24px; text-align: center; font-size: 13px; color: var(--text3);
+  }
+  .footer-brand {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .footer-brand img { width: 28px; height: 28px; border-radius: 6px; }
+  .footer-brand span {
+    font-size: 1.1em; font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .footer p { margin: 4px 0; }
+  .footer a { color: var(--gold); }
+
+  .disclaimer {
+    font-size: 12px; color: var(--text3); margin-top: 32px;
+    padding-top: 18px; border-top: 1px solid var(--bg4); line-height: 1.6;
+  }
+
+  @media (max-width: 640px) {
+    .hero { padding: 40px 16px 28px; }
+    .hero h1 { font-size: 24px; }
+    .article-wrap { padding: 0 16px 60px; }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .cta-banner { padding: 32px 20px; }
+    .hero-meta { flex-direction: column; gap: 6px; }
+    .nav-links .nav-link { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="https://sankyaan.com" class="nav-brand">
+      <img src="/sankyaan-logo.svg" alt="Sankyaan" class="nav-logo-img">
+      <span class="nav-logo-text">Sankyaan</span>
+    </a>
+    <div class="nav-links">
+      <a href="/blog" class="nav-link">Blog</a>
+      <a href="https://sankyaan.com" class="nav-cta">Analyze Portfolio &rarr;</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">Tax Alert &middot; Effective April 1, 2026</div>
+  <h1>New Capital Gains Trap: <span>What the Income Tax Act 2025 Means for Your Mutual Fund Exits</span></h1>
+  <p class="hero-sub">The government quietly dropped a key relief provision from the final law. If you hold equity mutual funds with unrealized losses, your tax strategy just changed. Here's what happened and what to do before April 1.</p>
+  <div class="hero-meta">
+    <span>March 7, 2026</span>
+    <span>8 min read</span>
+    <span>By Sankyaan Research</span>
+  </div>
+</header>
+
+<main class="article-wrap">
+
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num">12.5%</div><div class="stat-label">LTCG Tax Rate (unchanged)</div></div>
+    <div class="stat-box"><div class="stat-num">20%</div><div class="stat-label">STCG Tax Rate on Equity</div></div>
+    <div class="stat-box"><div class="stat-num gold">1.25L</div><div class="stat-label">LTCG Exemption Limit</div></div>
+    <div class="stat-box"><div class="stat-num">Apr 1</div><div class="stat-label">New Law Effective Date</div></div>
+  </div>
+
+  <h2>What Changed &mdash; And Why Nobody Noticed</h2>
+  <p>When the Income Tax Bill 2025 was first introduced in Parliament, it contained a <strong>one-time transitional relief</strong>: investors could set off long-term capital losses (LTCL) against short-term capital gains (STCG). This was a significant benefit, especially for mutual fund investors sitting on losses from the 2024 market correction.</p>
+  <p>But here's what happened next: the <strong>final Income Tax Act 2025</strong>, as passed and notified, <strong>quietly removed this provision</strong>. The revised savings clause (Section 536) now states that carried-forward capital losses must be set off "in accordance with the manner provided in the repealed Income-tax Act, 1961."</p>
+  <p>Translation: <strong>the old, stricter rules still apply.</strong></p>
+
+  <div class="callout warning">
+    <div class="callout-title">The Core Change</div>
+    <p><strong>Long-term capital losses can ONLY be set off against long-term capital gains.</strong> The proposed one-time cross-category relief (LTCL against STCG) has been removed from the final law. If you were planning your March 2026 transactions around this relief, you need to recalculate immediately.</p>
+  </div>
+
+  <h2>Old Rules vs. New Rules: Side-by-Side</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Scenario</th><th>Proposed Bill (Draft)</th><th>Final Act (What Applies)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>LTCL set off against LTCG</strong></td>
+          <td><span class="tag-yes">Allowed</span></td>
+          <td><span class="tag-yes">Allowed</span></td>
+        </tr>
+        <tr>
+          <td><strong>LTCL set off against STCG</strong></td>
+          <td><span class="tag-yes">Allowed (one-time)</span></td>
+          <td><span class="tag-no">NOT Allowed</span></td>
+        </tr>
+        <tr>
+          <td><strong>STCL set off against STCG</strong></td>
+          <td><span class="tag-yes">Allowed</span></td>
+          <td><span class="tag-yes">Allowed</span></td>
+        </tr>
+        <tr>
+          <td><strong>STCL set off against LTCG</strong></td>
+          <td><span class="tag-yes">Allowed</span></td>
+          <td><span class="tag-yes">Allowed</span></td>
+        </tr>
+        <tr>
+          <td><strong>Carry forward period</strong></td>
+          <td>8 years</td>
+          <td><strong>8 years</strong> (per 1961 Act rules)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The critical row is the second one. Short-term losses remain flexible &mdash; you can use them against both short-term and long-term gains. But long-term losses are <strong>locked into long-term gains only</strong>.</p>
+
+  <h2>Example 1: The Tax-Loss Harvester</h2>
+  <div class="example-box">
+    <h4>Priya's Situation</h4>
+    <div class="example-row"><span>Long-term capital loss (equity MF held &gt;1 year)</span><strong style="color:var(--red)">- Rs 2,00,000</strong></div>
+    <div class="example-row"><span>Short-term capital gain (debt MF held &lt;1 year)</span><strong style="color:var(--green)">+ Rs 3,00,000</strong></div>
+    <div class="example-row"><span>Long-term capital gain</span><strong>Rs 0</strong></div>
+    <div class="example-result loss">Under the proposed bill: Priya could set off Rs 2L LTCL against her Rs 3L STCG, paying tax on only Rs 1L.<br><br>Under the final act: Priya CANNOT use her LTCL against STCG. She pays 20% tax on the full Rs 3L STCG = Rs 60,000. The Rs 2L LTCL carries forward, usable only when she has LTCG in future years.</div>
+  </div>
+  <p>That's <strong>Rs 60,000 in tax</strong> that Priya expected to partially avoid. For investors with larger portfolios, the difference could be in lakhs.</p>
+
+  <h2>Example 2: The SGB Investor</h2>
+  <div class="example-box">
+    <h4>Rahul's SGB Scenario</h4>
+    <div class="example-row"><span>Bought Sovereign Gold Bonds</span><strong>Secondary market (stock exchange)</strong></div>
+    <div class="example-row"><span>Purchase price</span><strong>Rs 4,800/gram</strong></div>
+    <div class="example-row"><span>Current value</span><strong>Rs 7,200/gram</strong></div>
+    <div class="example-row"><span>Capital gain</span><strong style="color:var(--green)">Rs 2,400/gram</strong></div>
+    <div class="example-result loss">Before April 2026: Rahul assumed SGB redemption gains would be tax-free.<br><br>After April 2026: Tax exemption on SGB capital gains applies ONLY to investors who purchased directly from RBI during the original issue. Secondary market buyers like Rahul will pay LTCG tax at 12.5% on gains above Rs 1.25 lakh.</div>
+  </div>
+
+  <div class="callout highlight">
+    <div class="callout-title">Why This Matters for SGB Holders</div>
+    <p>Millions of investors bought SGBs through stock exchanges at a discount, expecting tax-free returns. From April 1, 2026, only original RBI subscribers get the exemption. If you bought SGBs on the secondary market, factor in 12.5% LTCG tax on your exit strategy.</p>
+  </div>
+
+  <h2>What This Means for SIP Investors</h2>
+  <p>If you run SIPs in equity mutual funds, the loss set-off restriction has practical implications for how you manage your portfolio:</p>
+  <p><strong>Tax-loss harvesting becomes harder.</strong> Previously, investors could sell underperforming equity funds (booking LTCL) and redeploy into similar funds, planning to use those losses against any future gains. Now, those long-term losses can only be useful against <em>long-term</em> gains &mdash; which means you need LTCG in the same or future years to benefit.</p>
+  <p><strong>Switching funds has a tax cost.</strong> If you switch from one equity fund to another and book a short-term gain, you cannot offset it with carried-forward long-term losses. You'll pay 20% STCG tax on the switch, even if your overall portfolio is in the red.</p>
+  <p><strong>Timing of exits matters more.</strong> Whether a gain is classified as short-term (&lt;12 months for equity MF) or long-term (&gt;12 months) now significantly affects which losses you can use to offset it. Plan your redemptions accordingly.</p>
+
+  <h2>3 Things to Do Before April 1, 2026</h2>
+  <ul class="checklist">
+    <li>
+      <div class="check-icon">1</div>
+      <div><strong>Audit Your Unrealized Losses</strong>Log into your mutual fund platforms and check which holdings are sitting at a long-term loss. If you have both LTCL and STCG positions, consider whether booking gains/losses before April 1 could save you tax under the current (more flexible) rules.</div>
+    </li>
+    <li>
+      <div class="check-icon">2</div>
+      <div><strong>Review Your SGB Holdings</strong>If you bought Sovereign Gold Bonds on the secondary market, calculate your expected gains. You may want to plan your exit timing differently now that the tax-free exemption won't apply to you.</div>
+    </li>
+    <li>
+      <div class="check-icon">3</div>
+      <div><strong>Re-evaluate Your Fund Portfolio</strong>Use Sankyaan's Fund Screener to check whether any funds in your portfolio have significant overlap, poor risk-adjusted returns, or would be better off consolidated &mdash; especially if a switch might trigger short-term gains you can't offset.</div>
+    </li>
+  </ul>
+
+  <div class="cta-banner">
+    <h3>Is Your Portfolio Tax-Efficient?</h3>
+    <p>Analyze your mutual fund holdings for overlap, risk alignment, and capital gains exposure before the new rules kick in.</p>
+    <a href="https://sankyaan.com" class="cta-btn">Analyze My Portfolio Free &rarr;</a>
+  </div>
+
+  <h2>Frequently Asked Questions</h2>
+
+  <div class="faq-item">
+    <div class="faq-q">Can I still carry forward long-term capital losses?</div>
+    <div class="faq-a">Yes. You can carry forward LTCL for up to 8 assessment years. However, they can only be set off against long-term capital gains in those years &mdash; not against short-term gains.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Does this affect equity mutual fund LTCG taxation?</div>
+    <div class="faq-a">The tax rate itself hasn't changed &mdash; LTCG on equity MFs above Rs 1.25 lakh is still taxed at 12.5%. What changed is the loss set-off rule: you can no longer use LTCL to offset STCG.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">When does the new Income Tax Act take effect?</div>
+    <div class="faq-a">The Income Tax Act 2025 replaces the 1961 Act from April 1, 2026 (Assessment Year 2027-28). All transactions from FY 2026-27 onwards will be governed by the new law.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Are debt mutual fund gains affected?</div>
+    <div class="faq-a">Debt mutual funds are already taxed at slab rate (no LTCG benefit for funds bought after April 2023). The loss set-off rules apply primarily to equity and equity-oriented funds where the LTCG/STCG distinction matters most.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Should I sell my equity funds before April 1?</div>
+    <div class="faq-a">Not necessarily. Selling just for tax reasons can hurt long-term returns. But if you have specific positions with both unrealized long-term losses and short-term gains, booking them before April 1 (under the current rules) could be beneficial. Consult a tax advisor for your specific situation.</div>
+  </div>
+
+  <div class="share-bar">
+    <span>Share:</span>
+    <a href="https://twitter.com/intent/tweet?text=The%20new%20Income%20Tax%20Act%20quietly%20removed%20a%20key%20capital%20gains%20relief.%20Long-term%20losses%20can%20no%20longer%20offset%20short-term%20gains%20from%20April%202026.%20Here%27s%20what%20to%20do%20%E2%86%92&url=https://sankyaan.com/blog/new-capital-gains-trap-2026" target="_blank" class="share-btn twitter" title="Share on Twitter">X</a>
+    <a href="https://api.whatsapp.com/send?text=New%20capital%20gains%20trap%20from%20April%202026%20%E2%80%94%20long-term%20losses%20can%27t%20offset%20short-term%20gains%20anymore.%20Read%20more%3A%20https://sankyaan.com/blog/new-capital-gains-trap-2026" target="_blank" class="share-btn whatsapp" title="Share on WhatsApp">W</a>
+    <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://sankyaan.com/blog/new-capital-gains-trap-2026" target="_blank" class="share-btn linkedin" title="Share on LinkedIn">in</a>
+  </div>
+
+  <p class="disclaimer"><em><strong>Disclaimer:</strong> This article is published by Sankyaan for informational and educational purposes only. It should not be considered tax or investment advice. Tax laws are subject to change and interpretation. Please consult a SEBI-registered financial advisor or a qualified Chartered Accountant for advice specific to your situation.</em></p>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-brand">
+    <img src="/sankyaan-logo.svg" alt="Sankyaan">
+    <span>Sankyaan</span>
+  </div>
+  <p>Mutual Fund Portfolio Analytics &mdash; Built for Indian Investors</p>
+  <p style="margin-top: 10px;">
+    <a href="https://sankyaan.com">Home</a> &middot;
+    <a href="/blog">Blog</a>
+  </p>
+  <p style="margin-top: 16px; font-size: 11px;">&copy; 2026 Sankyaan. All rights reserved.</p>
+</footer>
+
+<script>
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+  });
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement;
+      document.querySelectorAll('.faq-item').forEach(i => { if (i !== item) i.classList.remove('open'); });
+      item.classList.toggle('open');
+    });
+  });
+</script>
+
+<script>
+(function() {
+  var API = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-production.up.railway.app/api';
+  var slug = window.location.pathname.replace(/^\/blog\//, '').replace(/\/$/, '').replace(/\/index\.html$/, '');
+  if (slug) {
+    fetch(API + '/blog/views/' + slug, { method: 'POST' }).catch(function(){});
+  }
+})();
+</script>
+</body>
+</html>
