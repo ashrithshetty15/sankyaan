@@ -78,60 +78,64 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-text">Blog</span>
         </button>
 
-        <div className="nav-section-label">ANALYSIS {!user && <span className="lock-badge">🔒</span>}</div>
+        <div className="nav-section-label">ANALYSIS</div>
 
         <button
-          className={`nav-item ${viewMode === 'portfolio-tracker' ? 'active' : ''} ${!user ? 'locked' : ''}`}
-          onClick={() => user && handleNavClick('portfolio-tracker')}
-          title={!user ? 'Sign in to access' : ''}
+          className={`nav-item ${viewMode === 'portfolio-tracker' ? 'active' : ''} `}
+          onClick={() => handleNavClick('portfolio-tracker')}
         >
           <span className="nav-icon">💰</span>
           <span className="nav-text">My Portfolio</span>
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'stock-scores' ? 'active' : ''} ${!user ? 'locked' : ''}`}
-          onClick={() => user && handleNavClick('stock-scores')}
-          title={!user ? 'Sign in to access' : ''}
+          className={`nav-item ${viewMode === 'stock-scores' ? 'active' : ''} `}
+          onClick={() => handleNavClick('stock-scores')}
         >
           <span className="nav-icon">⭐</span>
           <span className="nav-text">Stock Scores</span>
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'fund-screener' ? 'active' : ''} ${!user ? 'locked' : ''}`}
-          onClick={() => user && handleNavClick('fund-screener')}
-          title={!user ? 'Sign in to access' : ''}
+          className={`nav-item ${viewMode === 'fund-screener' ? 'active' : ''} `}
+          onClick={() => handleNavClick('fund-screener')}
         >
           <span className="nav-icon">🔍</span>
           <span className="nav-text">Fund Screener</span>
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'fund-comparison' ? 'active' : ''} ${!user ? 'locked' : ''}`}
-          onClick={() => user && handleNavClick('fund-comparison')}
-          title={!user ? 'Sign in to access' : ''}
+          className={`nav-item ${viewMode === 'fund-comparison' ? 'active' : ''} `}
+          onClick={() => handleNavClick('fund-comparison')}
         >
           <span className="nav-icon">⚖️</span>
           <span className="nav-text">Compare Funds</span>
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'fund-managers' ? 'active' : ''} ${!user ? 'locked' : ''}`}
-          onClick={() => user && handleNavClick('fund-managers')}
-          title={!user ? 'Sign in to access' : ''}
+          className={`nav-item ${viewMode === 'fund-managers' ? 'active' : ''} `}
+          onClick={() => handleNavClick('fund-managers')}
         >
           <span className="nav-icon">👤</span>
           <span className="nav-text">Fund Managers</span>
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'bulk-trades' ? 'active' : ''} ${!user ? 'locked' : ''}`}
-          onClick={() => user && handleNavClick('bulk-trades')}
-          title={!user ? 'Sign in to access' : ''}
+          className={`nav-item ${viewMode === 'bulk-trades' ? 'active' : ''} `}
+          onClick={() => handleNavClick('bulk-trades')}
         >
           <span className="nav-icon">📊</span>
           <span className="nav-text">Bulk Trades</span>
+        </button>
+
+        <div className="nav-section-label">TRADING</div>
+
+        <button
+          className={`nav-item ${viewMode === 'trade-alerts' ? 'active' : ''}`}
+          onClick={() => handleNavClick('trade-alerts')}
+        >
+          <span className="nav-icon">🎯</span>
+          <span className="nav-text">Trade Alerts</span>
         </button>
 
       </nav>

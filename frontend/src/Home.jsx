@@ -10,6 +10,7 @@ import FundComparison from './FundComparison.jsx';
 import FundManagerAnalytics from './FundManagerAnalytics.jsx';
 import FundScreener from './FundScreener.jsx';
 import MutualFundBulkTrades from './MutualFundBulkTrades.jsx';
+import TradeAlerts from './TradeAlerts.jsx';
 import PortfolioTracker from './PortfolioTracker.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
@@ -498,6 +499,7 @@ export default function Home({ viewMode, setViewMode }) {
             : viewMode === 'fund-screener' ? 'Fund Screener'
             : viewMode === 'bulk-trades' ? 'MF Bulk Trades'
             : viewMode === 'portfolio-tracker' ? 'My Portfolio'
+            : viewMode === 'trade-alerts' ? 'Trade Alerts'
             : 'Stock Scores Rating'}
         </h1>
         <p className="subtitle">
@@ -515,6 +517,8 @@ export default function Home({ viewMode, setViewMode }) {
             ? 'Mutual fund buy/sell activity from bulk and block deals'
             : viewMode === 'portfolio-tracker'
             ? 'Track your mutual fund holdings and portfolio analytics'
+            : viewMode === 'trade-alerts'
+            ? 'High-probability options strategies'
             : 'Rank stocks by quality scores'}
         </p>
       </header>
@@ -1055,6 +1059,10 @@ export default function Home({ viewMode, setViewMode }) {
       {/* Bulk Trades View */}
       {viewMode === 'bulk-trades' && (
         <MutualFundBulkTrades />
+      )}
+
+      {viewMode === 'trade-alerts' && (
+        <TradeAlerts />
       )}
 
       {/* Portfolio Tracker View */}
