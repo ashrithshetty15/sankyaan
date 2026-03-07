@@ -1,5 +1,5 @@
 import { fyersModel } from 'fyers-api-v3';
-import { authenticator } from 'otplib';
+import { generateSync } from 'otplib';
 import crypto from 'crypto';
 import axios from 'axios';
 import fs from 'fs';
@@ -266,7 +266,7 @@ export async function autoAuthenticate() {
     let requestKey = step1.data.request_key;
 
     // Step 2: Verify TOTP
-    const totp = authenticator.generate(totpSecret);
+    const totp = generateSync({ secret: totpSecret });
     const step2 = await axios.post('https://api-t2.fyers.in/vagator/v2/verify_otp', {
       request_key: requestKey,
       otp: totp,
