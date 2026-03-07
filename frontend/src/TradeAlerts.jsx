@@ -78,7 +78,6 @@ export default function TradeAlerts() {
   const [stats, setStats] = useState({});
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' | 'history'
   const [expandedAlert, setExpandedAlert] = useState(null);
@@ -119,17 +118,6 @@ export default function TradeAlerts() {
     }
   };
 
-  const handleScan = async () => {
-    try {
-      setScanning(true);
-      await axios.post(`${API_URL}/trade-alerts/scan`, {}, { withCredentials: true });
-      await fetchAlerts();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Scan failed. Connect to Fyers first.');
-    } finally {
-      setScanning(false);
-    }
-  };
 
   useEffect(() => {
     fetchAlerts();
@@ -171,13 +159,6 @@ export default function TradeAlerts() {
           </div>
           <div className="ta-stat-label">Win Rate ({stats.total_closed || 0} trades)</div>
         </div>
-        <button
-          className={`ta-scan-btn ${scanning ? 'scanning' : ''}`}
-          onClick={handleScan}
-          disabled={scanning}
-        >
-          {scanning ? 'Scanning...' : 'Scan Now'}
-        </button>
       </div>
 
       {/* Tabs */}
@@ -244,7 +225,7 @@ export default function TradeAlerts() {
                 <>
                   <div className="ta-empty-icon">{String.fromCodePoint(0x1F3AF)}</div>
                   <p>No active trade alerts.</p>
-                  <p className="ta-empty-sub">Hit "Scan Now" to scan for high-probability options setups.</p>
+                  <p className="ta-empty-sub">Scans run automatically during market hours.</p>
                 </>
               ) : (
                 <>
