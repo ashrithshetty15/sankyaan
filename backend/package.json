@@ -1,0 +1,33 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "build": "echo 'Backend is ready'",
+    "migrate": "node src/run-migrate.js",
+    "refresh": "node compute_stock_ratings_cache.js && node compute_fund_ratings.js",
+    "deploy": "node src/run-migrate.js && node compute_stock_ratings_cache.js && node compute_fund_ratings.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.5",
+    "cheerio": "^1.2.0",
+    "commander": "^14.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "fyers-api-v3": "^1.7.0",
+    "google-auth-library": "^10.6.1",
+    "jsonwebtoken": "^9.0.3",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^8.0.2",
+    "otplib": "^13.3.0",
+    "pg": "^8.11.3",
+    "truedata-nodejs": "^1.1.0",
+    "yahoo-finance2": "^2.11.3"
+  }
+}

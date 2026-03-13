@@ -1,0 +1,584 @@
+.fund-comparison {
+  padding: 32px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Fund Selector ── */
+.comparison-selector {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.selector-slots {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.selector-slot {
+  flex: 1;
+  min-width: 220px;
+  max-width: 340px;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.slot-label {
+  font-size: 0.82em;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.slot-remove {
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-size: 1em;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.slot-remove:hover {
+  color: var(--red);
+  background: rgba(255, 107, 107, 0.1);
+}
+
+/* Fund house dropdown */
+.slot-fund-house {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.85em;
+  cursor: pointer;
+  outline: none;
+  margin-bottom: 8px;
+  appearance: auto;
+}
+
+.slot-fund-house:focus {
+  border-color: var(--gold);
+}
+
+.slot-fund-house option {
+  background: var(--bg2);
+  color: var(--text);
+}
+
+/* Search input */
+.slot-search-wrap {
+  position: relative;
+}
+
+.slot-search-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.85em;
+  outline: none;
+}
+
+.slot-search-input:focus {
+  border-color: var(--gold);
+}
+
+.slot-search-input::placeholder {
+  color: var(--text3);
+}
+
+/* Dropdown */
+.slot-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  margin-top: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.slot-dropdown-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--bg4);
+  transition: background 0.15s;
+}
+
+.slot-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.slot-dropdown-item:hover {
+  background: var(--bg3);
+}
+
+.dropdown-fund-name {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.dropdown-fund-house {
+  font-size: 0.75em;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+/* Selected fund tag */
+.slot-selected {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: var(--gold-dim);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  color: var(--gold);
+  font-size: 0.8em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Add slot button */
+.add-slot-btn {
+  min-width: 120px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg3);
+  border: 2px dashed var(--bg4);
+  border-radius: 10px;
+  color: var(--text3);
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: stretch;
+}
+
+.add-slot-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold-dim);
+}
+
+/* Compare button */
+.compare-btn {
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--bg4);
+  border: 1px solid var(--bg4);
+  border-radius: 10px;
+  color: var(--text3);
+  font-size: 1em;
+  font-weight: 700;
+  cursor: not-allowed;
+  transition: all 0.25s;
+}
+
+.compare-btn.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #000;
+  cursor: pointer;
+}
+
+.compare-btn.active:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px rgba(240, 180, 41, 0.3);
+}
+
+.compare-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error */
+.comparison-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 14px 20px;
+  color: #ef4444;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 0.9em;
+}
+
+/* ── Comparison Results ── */
+.comparison-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comparison-section-title {
+  font-size: 0.82em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  padding: 20px 0 8px 4px;
+  border-top: 1px solid var(--bg4);
+  margin-top: 8px;
+}
+
+.comparison-section-title:first-child {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Grid rows */
+.comparison-row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bg4);
+}
+
+.comparison-row.fund-headers {
+  border-bottom: 2px solid var(--bg4);
+  padding: 0 0 16px;
+}
+
+.row-label {
+  font-size: 0.88em;
+  font-weight: 600;
+  color: var(--text2);
+  padding-left: 4px;
+}
+
+/* Fund header cells */
+.fund-header-cell {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+
+.fund-header-name {
+  font-size: 0.92em;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.fund-header-house {
+  font-size: 0.78em;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.fund-header-manager {
+  font-size: 0.75em;
+  color: var(--text2);
+  background: var(--bg3);
+  border-radius: 4px;
+  padding: 3px 8px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* Score cells */
+.score-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+}
+
+.score-cell.mini {
+  padding: 4px 8px;
+}
+
+.score-big {
+  font-family: 'DM Mono', monospace;
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-max {
+  font-size: 0.75em;
+  color: var(--text3);
+  margin-top: -4px;
+}
+
+.score-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+.score-suffix {
+  font-size: 0.7em;
+  color: var(--text3);
+  font-weight: 400;
+}
+
+/* Score bar */
+.score-bar {
+  width: 100%;
+  max-width: 120px;
+  height: 6px;
+  background: var(--bg4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+/* CAGR values */
+.cagr-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.05em;
+  font-weight: 700;
+}
+
+/* ── Sector Exposure ── */
+.comparison-row.sectors-row {
+  align-items: flex-start;
+  padding: 12px 0;
+}
+
+.sector-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sector-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sector-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sector-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: var(--bg4);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sector-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.sector-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.78em;
+  color: var(--text2);
+  min-width: 42px;
+  text-align: right;
+}
+
+.sector-name {
+  font-size: 0.75em;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Top Holdings ── */
+.comparison-row.holdings-row {
+  align-items: flex-start;
+  padding: 12px 0;
+}
+
+.holdings-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.holding-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 5px;
+  transition: background 0.15s;
+}
+
+.holding-item:hover {
+  background: var(--bg3);
+}
+
+.holding-name {
+  font-size: 0.82em;
+  color: var(--text);
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+}
+
+.holding-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8em;
+  color: var(--text2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Holdings Overlap ── */
+.overlap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  padding: 8px 0 16px;
+}
+
+.overlap-item {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.overlap-name {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overlap-weights {
+  display: flex;
+  gap: 10px;
+}
+
+.overlap-weight {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8em;
+  font-weight: 700;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .fund-comparison {
+    padding: 20px 12px;
+  }
+
+  .comparison-selector {
+    padding: 16px;
+  }
+
+  .selector-slots {
+    flex-direction: column;
+  }
+
+  .selector-slot {
+    max-width: 100%;
+  }
+
+  .add-slot-btn {
+    width: 100%;
+    height: 50px;
+  }
+
+  .comparison-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  .comparison-row.fund-headers {
+    grid-template-columns: 1fr !important;
+  }
+
+  .row-label {
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 0.8em;
+    text-transform: uppercase;
+  }
+
+  .fund-header-cell {
+    padding: 12px;
+  }
+
+  .score-cell {
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .score-bar {
+    max-width: 80px;
+  }
+
+  .overlap-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .fund-comparison {
+    padding: 16px 8px;
+  }
+
+  .comparison-selector {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .selector-slot {
+    padding: 10px;
+  }
+
+  .score-big {
+    font-size: 1.6em;
+  }
+}

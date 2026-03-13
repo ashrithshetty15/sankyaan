@@ -1,0 +1,18 @@
+{
+  "name": "mutual-fund-stock-analyzer",
+  "version": "1.0.0",
+  "description": "Cloud-friendly prototype for analyzing mutual fund holdings in stocks",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "start": "npm start --workspace=backend"
+  },
+  "dependencies": {
+    "yahoo-finance2": "^3.13.0"
+  }
+}

@@ -1,0 +1,297 @@
+/**
+ * Accessibility Enhancements
+ *
+ * Focus states, reduced motion, and keyboard navigation improvements
+ */
+
+/* ========================================
+   FOCUS STATES
+   ======================================== */
+
+/* Global focus outline for all interactive elements */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove outline for mouse users (still shows for keyboard) */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible),
+[role="tab"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Specific focus styles for tabs */
+.tab-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--bg2);
+}
+
+/* Specific focus styles for timeframe buttons */
+.timeframe-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Specific focus styles for table rows */
+.peer-row.clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--bg);
+}
+
+/* ========================================
+   REDUCED MOTION
+   ======================================== */
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========================================
+   SCREEN READER ONLY
+   ======================================== */
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ========================================
+   SKIP LINKS
+   ======================================== */
+
+/* Skip to main content link (appears on focus) */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 8px 16px;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 4px 0;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ========================================
+   HIGH CONTRAST MODE
+   ======================================== */
+
+/* Enhance borders in high contrast mode */
+@media (prefers-contrast: high) {
+  .stock-header,
+  .stock-chart-container,
+  .stock-tabs-container,
+  .events-timeline-container,
+  .peer-comparison-container {
+    border-width: 2px;
+  }
+
+  .tab-button.active::after {
+    height: 4px;
+  }
+
+  .event-dot {
+    border-width: 4px;
+  }
+}
+
+/* ========================================
+   KEYBOARD NAVIGATION HINTS
+   ======================================== */
+
+/* Add subtle hint for keyboard-navigable elements */
+[role="button"],
+[role="tab"],
+.clickable {
+  position: relative;
+}
+
+/* Show keyboard hint on focus */
+[role="button"]:focus-visible::after,
+[role="tab"]:focus-visible::after,
+.clickable:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px dashed var(--accent);
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ========================================
+   LOADING & ERROR STATES
+   ======================================== */
+
+/* Skeleton loader for content loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg3) 0%,
+    var(--bg4) 50%,
+    var(--bg3) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Skeleton variants */
+.skeleton-text {
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-heading {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 16px;
+}
+
+.skeleton-card {
+  height: 120px;
+  margin-bottom: 16px;
+}
+
+/* Error state styling */
+.error-message {
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  color: #fca5a5;
+  text-align: center;
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
+@media print {
+  /* Hide interactive elements when printing */
+  .refresh-btn,
+  .timeframe-selector,
+  .tabs-header,
+  .back-button {
+    display: none !important;
+  }
+
+  /* Show all tab content when printing */
+  .tab-content {
+    display: block !important;
+  }
+
+  /* Ensure good contrast for printing */
+  * {
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  /* Show borders for structure */
+  .stock-header,
+  .stock-chart-container,
+  .events-timeline-container,
+  .peer-comparison-container {
+    border: 1px solid #000 !important;
+    margin-bottom: 20px;
+  }
+}
+
+/* ========================================
+   TOOLTIP ACCESSIBILITY
+   ======================================== */
+
+/* Ensure tooltips are keyboard accessible */
+[title]:focus::after,
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--bg);
+  border: 1px solid var(--bg3);
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* ========================================
+   COLOR BLINDNESS SUPPORT
+   ======================================== */
+
+/* Use patterns in addition to colors for critical info */
+.positive::before {
+  content: '▲ ';
+  font-size: 0.8em;
+}
+
+.negative::before {
+  content: '▼ ';
+  font-size: 0.8em;
+}
+
+/* ========================================
+   TOUCH TARGET SIZES
+   ======================================== */
+
+/* Ensure minimum 44x44px touch targets on mobile */
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Exception for table cells - use padding instead */
+  .peer-row {
+    min-height: 44px;
+  }
+}
