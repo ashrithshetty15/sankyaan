@@ -22,8 +22,9 @@ function buildFuturesSymbol(underlying, expiryDate) {
  * Tries Fyers first; falls back to Yahoo Finance for equity symbols.
  */
 async function fetchLivePrice(symbol) {
-  // If looks like a full Fyers symbol (NSE:...) use getQuotes directly
-  const fyersSymbol = symbol.includes(':') ? symbol : getFyersSymbol(symbol);
+  // Strip Yahoo Finance suffix if present before building Fyers symbol
+  const cleanSym = symbol.replace(/\.(NS|BO)$/i, '');
+  const fyersSymbol = cleanSym.includes(':') ? cleanSym : getFyersSymbol(cleanSym.toUpperCase());
 
   if (isFyersReady()) {
     try {
@@ -382,8 +383,9 @@ export async function getLeaderboard(req, res) {
 export async function getOptionChainForTrading(req, res) {
   const { underlying } = req.params;
   const { expiry } = req.query;
-  // Indices have a fixed map; stocks use NSE:SYMBOL-EQ format
-  const fyersSymbol = UNDERLYING_MAP[underlying.toUpperCase()] || getFyersSymbol(underlying.toUpperCase());
+  // Strip Yahoo Finance suffixes (.NS, .BO) if user accidentally typed them
+  const cleanUnderlying = underlying.toUpperCase().replace(/\.(NS|BO)$/, '');
+  const fyersSymbol = UNDERLYING_MAP[cleanUnderlying] || getFyersSymbol(cleanUnderlying);
 
   if (!isFyersReady()) {
     return res.status(503).json({ error: 'Fyers not connected. Please authenticate via /api/fyers/auth.' });

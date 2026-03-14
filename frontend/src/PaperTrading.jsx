@@ -118,10 +118,13 @@ function UnderlyingSearchInput({ value, onChange }) {
   const [searching, setSearching] = useState(false);
   const debounceRef = React.useRef(null);
 
+  const clean = (v) => v.toUpperCase().replace(/\.(NS|BO)$/, '');
+
   const handleInput = (e) => {
-    const val = e.target.value.toUpperCase();
-    setQuery(val);
+    const raw = e.target.value.toUpperCase();
+    setQuery(raw);
     clearTimeout(debounceRef.current);
+    const val = clean(raw);
     if (!val) { setResults(INDEX_SUGGESTIONS); setShowDropdown(true); return; }
     // Check if matches an index first
     const idxMatch = INDEX_SUGGESTIONS.filter(i => i.symbol.startsWith(val));
@@ -141,8 +144,9 @@ function UnderlyingSearchInput({ value, onChange }) {
   };
 
   const select = (sym) => {
-    setQuery(sym);
-    onChange(sym);
+    const s = clean(sym);
+    setQuery(s);
+    onChange(s);
     setShowDropdown(false);
     setResults([]);
   };
@@ -152,7 +156,7 @@ function UnderlyingSearchInput({ value, onChange }) {
       <input type="text" value={query}
         onChange={handleInput}
         onFocus={() => { if (!query) { setResults(INDEX_SUGGESTIONS); setShowDropdown(true); } else if (results.length) setShowDropdown(true); }}
-        onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+        onBlur={() => { const s = clean(query); if (s !== query) { setQuery(s); onChange(s); } setTimeout(() => setShowDropdown(false), 150); }}
         placeholder="NIFTY, BANKNIFTY, RELIANCE..."
         autoComplete="off" />
       {searching && <div className="pt-sym-searching">Searching...</div>}
