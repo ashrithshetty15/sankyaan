@@ -21,7 +21,7 @@ import { googleLogin, getMe, logout } from './routes/auth.js';
 import { getBulkTrades, refreshBulkTrades } from './routes/bulkTrades.js';
 import { subscribe, confirm, unsubscribe, sendNewsletter, getStats } from './routes/newsletter.js';
 import { getMarketSentiment } from './routes/marketSentiment.js';
-import { getPortfolio as getPaperPortfolio, enterTrade, closeTrade, getHistory as getPaperHistory, getStats as getPaperStats, getLeaderboard } from './routes/paperTrading.js';
+import { getPortfolio as getPaperPortfolio, enterTrade, closeTrade, getHistory as getPaperHistory, getStats as getPaperStats, getLeaderboard, getOptionChainForTrading } from './routes/paperTrading.js';
 import { addHolding, getPortfolio, deleteHolding, getPortfolioAnalysis } from './routes/portfolio.js';
 import { getTradeAlerts, getTradeAlertHistory, triggerScan, getOptionsChainEndpoint } from './routes/tradeAlerts.js';
 import { initFyers, getAuthUrl, handleAuthCallback, isReady as isFyersReady, autoAuthenticate, getSpanMargin } from './fyersService.js';
@@ -415,6 +415,7 @@ app.put('/api/paper-trading/trade/:id/close', optionalAuth, closeTrade);
 app.get('/api/paper-trading/history', optionalAuth, getPaperHistory);
 app.get('/api/paper-trading/stats', optionalAuth, getPaperStats);
 app.get('/api/paper-trading/leaderboard', getLeaderboard);
+app.get('/api/paper-trading/option-chain/:underlying', getOptionChainForTrading);
 
 // Blog view counter
 app.post('/api/blog/views/:slug', async (req, res) => {

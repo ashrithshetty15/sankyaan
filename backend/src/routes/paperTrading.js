@@ -1,5 +1,47 @@
 import db from '../db.js';
 import { fetchStockQuote } from '../stockDataFetcher.js';
+import { getQuotes, getFyersSymbol, isReady as isFyersReady, getOptionChain } from '../fyersService.js';
+
+const UNDERLYING_MAP = {
+  NIFTY: 'NSE:NIFTY50-INDEX',
+  BANKNIFTY: 'NSE:NIFTYBANK-INDEX',
+  MIDCPNIFTY: 'NSE:MIDCPNIFTY-INDEX',
+  FINNIFTY: 'NSE:FINNIFTY-INDEX',
+};
+
+/** Build a futures symbol from underlying + expiry date string "YYYY-MM-DD" */
+function buildFuturesSymbol(underlying, expiryDate) {
+  const d = new Date(expiryDate);
+  const yy = String(d.getFullYear()).slice(2);
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  return `NSE:${underlying}${yy}${months[d.getMonth()]}FUT`;
+}
+
+/**
+ * Fetch live price for a symbol.
+ * Tries Fyers first; falls back to Yahoo Finance for equity symbols.
+ */
+async function fetchLivePrice(symbol) {
+  // If looks like a full Fyers symbol (NSE:...) use getQuotes directly
+  const fyersSymbol = symbol.includes(':') ? symbol : getFyersSymbol(symbol);
+
+  if (isFyersReady()) {
+    try {
+      const quotes = await getQuotes([fyersSymbol]);
+      if (Array.isArray(quotes) && quotes[0]?.v?.lp) {
+        return quotes[0].v.lp;
+      }
+    } catch (_) { /* fall through */ }
+  }
+
+  // Fallback: Yahoo Finance (equity NSE stocks only)
+  if (!symbol.includes(':')) {
+    const quote = await fetchStockQuote(`${symbol}.NS`).catch(() => null);
+    if (quote?.regularMarketPrice) return quote.regularMarketPrice;
+  }
+
+  return null;
+}
 
 const VIRTUAL_CAPITAL = 1000000; // ₹10,00,000
 
@@ -163,10 +205,8 @@ export async function enterTrade(req, res) {
   try {
     let price = parseFloat(entry_price);
     if (!price) {
-      // Auto-fetch current price
-      const quote = await fetchStockQuote(`${symbol}.NS`).catch(() => null);
-      price = quote?.regularMarketPrice || null;
-      if (!price) return res.status(400).json({ error: 'Could not fetch current price. Please provide entry_price.' });
+      price = await fetchLivePrice(symbol);
+      if (!price) return res.status(400).json({ error: 'Could not fetch current price. Please enter entry_price manually.' });
     }
 
     const cost = price * parseInt(quantity);
@@ -226,9 +266,8 @@ export async function closeTrade(req, res) {
 
     let exitPrice = parseFloat(exit_price);
     if (!exitPrice) {
-      const quote = await fetchStockQuote(`${trade.symbol}.NS`).catch(() => null);
-      exitPrice = quote?.regularMarketPrice || null;
-      if (!exitPrice) return res.status(400).json({ error: 'Could not fetch exit price. Please provide exit_price.' });
+      exitPrice = await fetchLivePrice(trade.symbol);
+      if (!exitPrice) return res.status(400).json({ error: 'Could not fetch exit price. Please provide exit_price manually.' });
     }
 
     const qty = parseInt(trade.quantity);
@@ -333,5 +372,62 @@ export async function getLeaderboard(req, res) {
   } catch (err) {
     console.error('Leaderboard error:', err.message);
     res.status(500).json({ error: 'Failed to load leaderboard' });
+  }
+}
+
+/**
+ * GET /api/paper-trading/option-chain/:underlying?expiry=YYYY-MM-DD
+ * Returns expiry list + strikes (with CE/PE LTPs) for Options & Futures pickers.
+ */
+export async function getOptionChainForTrading(req, res) {
+  const { underlying } = req.params;
+  const { expiry } = req.query;
+  const fyersSymbol = UNDERLYING_MAP[underlying.toUpperCase()];
+  if (!fyersSymbol) return res.status(400).json({ error: `Unsupported underlying: ${underlying}` });
+
+  if (!isFyersReady()) {
+    return res.status(503).json({ error: 'Fyers not connected. Please authenticate via /api/fyers/auth.' });
+  }
+
+  try {
+    const data = await getOptionChain(fyersSymbol, 15);
+    if (data?.error) return res.status(503).json({ error: data.error });
+
+    const underlyingLtp = data.underlyingData?.ltp || 0;
+    const optData = data.optionsChain || (Array.isArray(data) ? data : []);
+
+    // Collect all expiries
+    const expirySet = new Set(optData.map(o => o.expiry).filter(Boolean));
+    const expiries = Array.from(expirySet).sort();
+
+    // Filter by requested expiry (or use nearest)
+    const targetExpiry = expiry && expiries.includes(expiry) ? expiry : expiries[0];
+    const filtered = targetExpiry
+      ? optData.filter(o => o.expiry === targetExpiry)
+      : optData;
+
+    // Group by strike
+    const strikeMap = new Map();
+    for (const opt of filtered) {
+      const strike = opt.strike_price;
+      if (!strike) continue;
+      if (!strikeMap.has(strike)) strikeMap.set(strike, { strike, ce: null, pe: null });
+      const row = strikeMap.get(strike);
+      const side = opt.option_type === 'CE' ? 'ce' : 'pe';
+      row[side] = { ltp: opt.ltp || 0, symbol: opt.symbol || '', oi: opt.oi || 0 };
+    }
+
+    const strikes = Array.from(strikeMap.values()).sort((a, b) => a.strike - b.strike);
+    // ATM = strike closest to underlying LTP
+    const atm = underlyingLtp
+      ? strikes.reduce((prev, cur) =>
+          Math.abs(cur.strike - underlyingLtp) < Math.abs(prev.strike - underlyingLtp) ? cur : prev
+        , strikes[0] || {})?.strike
+      : null;
+
+    res.json({ expiries, strikes, underlyingLtp, targetExpiry, atm });
+  } catch (err) {
+    console.error('Option chain endpoint error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 }

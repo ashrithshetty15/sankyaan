@@ -15,6 +15,8 @@ const TIER_INFO = {
   Diamond: { icon: '💎', desc: '≥ 50 trades, Sharpe ≥ 1.0, return > 10%' },
 };
 
+const UNDERLYINGS = ['NIFTY', 'BANKNIFTY', 'MIDCPNIFTY', 'FINNIFTY'];
+
 function fmt(n, d = 2) { return n == null ? '—' : Number(n).toFixed(d); }
 function fmtINR(n) { return n == null ? '—' : `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`; }
 function fmtDate(ts) {
@@ -102,13 +104,198 @@ function PortfolioTab({ portfolio, onClose, refreshing }) {
   );
 }
 
+// ── Option Chain Picker ────────────────────────────────────────────────────
+function OptionChainPicker({ underlying, onSelect }) {
+  const [expiries, setExpiries] = useState([]);
+  const [selectedExpiry, setSelectedExpiry] = useState('');
+  const [strikes, setStrikes] = useState([]);
+  const [atm, setAtm] = useState(null);
+  const [underlyingLtp, setUnderlyingLtp] = useState(null);
+  const [selectedStrike, setSelectedStrike] = useState('');
+  const [optionType, setOptionType] = useState('CE');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchChain = useCallback(async (expiry) => {
+    setLoading(true);
+    setError('');
+    try {
+      const url = `${API}/paper-trading/option-chain/${underlying}${expiry ? `?expiry=${expiry}` : ''}`;
+      const res = await axios.get(url);
+      const { expiries: exps, strikes: stks, atm: atmVal, underlyingLtp: ltp, targetExpiry } = res.data;
+      setExpiries(exps || []);
+      setStrikes(stks || []);
+      setAtm(atmVal);
+      setUnderlyingLtp(ltp);
+      if (!expiry && exps?.length) setSelectedExpiry(exps[0]);
+      if (atmVal) setSelectedStrike(String(atmVal));
+    } catch (e) {
+      setError(e.response?.data?.error || 'Failed to load option chain');
+    } finally {
+      setLoading(false);
+    }
+  }, [underlying]);
+
+  useEffect(() => {
+    fetchChain('');
+  }, [fetchChain]);
+
+  const handleExpiryChange = (e) => {
+    const exp = e.target.value;
+    setSelectedExpiry(exp);
+    fetchChain(exp);
+  };
+
+  // Auto-notify parent when selection changes
+  useEffect(() => {
+    if (!selectedStrike || !selectedExpiry) return;
+    const strikeRow = strikes.find(s => String(s.strike) === selectedStrike);
+    if (!strikeRow) return;
+    const side = optionType === 'CE' ? 'ce' : 'pe';
+    const opt = strikeRow[side];
+    onSelect({
+      symbol: opt?.symbol || '',
+      ltp: opt?.ltp || '',
+      strike: selectedStrike,
+      optionType,
+      expiry: selectedExpiry,
+    });
+  }, [selectedStrike, optionType, strikes]);
+
+  if (error) return <div className="pt-chain-error">{error}</div>;
+
+  return (
+    <div className="pt-chain-picker">
+      <div className="pt-chain-row">
+        {underlyingLtp && (
+          <div className="pt-chain-ltp">
+            <span className="pt-chain-ltp-val">{fmtINR(underlyingLtp)}</span>
+            <span className="pt-chain-ltp-lbl">{underlying} LTP</span>
+          </div>
+        )}
+        <div className="pt-field">
+          <label>Expiry</label>
+          <select value={selectedExpiry} onChange={handleExpiryChange} disabled={loading}>
+            {expiries.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </div>
+        <div className="pt-field">
+          <label>Strike</label>
+          <select value={selectedStrike} onChange={e => setSelectedStrike(e.target.value)} disabled={loading || !strikes.length}>
+            {strikes.map(s => (
+              <option key={s.strike} value={String(s.strike)}>
+                {s.strike}{s.strike === atm ? ' (ATM)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="pt-field">
+          <label>Type</label>
+          <div className="pt-type-toggle">
+            <button type="button" className={`pt-type-btn ce ${optionType === 'CE' ? 'active' : ''}`}
+              onClick={() => setOptionType('CE')}>CE</button>
+            <button type="button" className={`pt-type-btn pe ${optionType === 'PE' ? 'active' : ''}`}
+              onClick={() => setOptionType('PE')}>PE</button>
+          </div>
+        </div>
+      </div>
+      {loading && <div className="pt-chain-loading">Loading chain...</div>}
+      {selectedStrike && strikes.length > 0 && (() => {
+        const row = strikes.find(s => String(s.strike) === selectedStrike);
+        const side = optionType === 'CE' ? 'ce' : 'pe';
+        const opt = row?.[side];
+        return opt ? (
+          <div className="pt-chain-preview">
+            <span className="pt-chain-sym">{opt.symbol}</span>
+            <span className="pt-chain-ltp-badge">LTP: {fmtINR(opt.ltp)}</span>
+            {opt.oi > 0 && <span className="pt-chain-oi">OI: {opt.oi.toLocaleString('en-IN')}</span>}
+          </div>
+        ) : <div className="pt-chain-na">No {optionType} data for this strike</div>;
+      })()}
+    </div>
+  );
+}
+
+// ── Futures Picker ─────────────────────────────────────────────────────────
+function FuturesPicker({ underlying, onSelect }) {
+  const [expiries, setExpiries] = useState([]);
+  const [selectedExpiry, setSelectedExpiry] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+    axios.get(`${API}/paper-trading/option-chain/${underlying}`)
+      .then(res => {
+        const exps = res.data.expiries || [];
+        setExpiries(exps);
+        setSelectedExpiry(exps[0] || '');
+      })
+      .catch(e => setError(e.response?.data?.error || 'Failed to load expiries'))
+      .finally(() => setLoading(false));
+  }, [underlying]);
+
+  useEffect(() => {
+    if (!selectedExpiry) return;
+    const d = new Date(selectedExpiry);
+    const yy = String(d.getFullYear()).slice(2);
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const symbol = `NSE:${underlying}${yy}${months[d.getMonth()]}FUT`;
+    onSelect({ symbol, expiry: selectedExpiry });
+  }, [selectedExpiry, underlying]);
+
+  if (error) return <div className="pt-chain-error">{error}</div>;
+
+  return (
+    <div className="pt-chain-picker">
+      <div className="pt-chain-row">
+        <div className="pt-field">
+          <label>Expiry</label>
+          <select value={selectedExpiry} onChange={e => setSelectedExpiry(e.target.value)} disabled={loading}>
+            {expiries.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </div>
+        {selectedExpiry && (
+          <div className="pt-chain-preview" style={{ marginTop: 0 }}>
+            <span className="pt-chain-sym">
+              {(() => {
+                const d = new Date(selectedExpiry);
+                const yy = String(d.getFullYear()).slice(2);
+                const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+                return `NSE:${underlying}${yy}${months[d.getMonth()]}FUT`;
+              })()}
+            </span>
+          </div>
+        )}
+      </div>
+      {loading && <div className="pt-chain-loading">Loading expiries...</div>}
+    </div>
+  );
+}
+
 // ── New Trade Tab ──────────────────────────────────────────────────────────
 function NewTradeTab({ onTradeEntered }) {
+  const [instrType, setInstrType] = useState('equity'); // equity | options | futures
   const [form, setForm] = useState({ symbol: '', trade_type: 'BUY', quantity: '', entry_price: '', notes: '' });
+  const [underlying, setUnderlying] = useState('NIFTY');
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleInstrChange = (type) => {
+    setInstrType(type);
+    setForm(f => ({ ...f, symbol: '', entry_price: '' }));
+  };
+
+  const handleOptionSelect = ({ symbol, ltp }) => {
+    setForm(f => ({ ...f, symbol, entry_price: ltp ? String(ltp) : f.entry_price }));
+  };
+
+  const handleFuturesSelect = ({ symbol }) => {
+    setForm(f => ({ ...f, symbol, entry_price: '' }));
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -118,7 +305,7 @@ function NewTradeTab({ onTradeEntered }) {
     try {
       await axios.post(`${API}/paper-trading/trade`, form, { withCredentials: true });
       setMsg({ text: `✓ ${form.trade_type} ${form.quantity} × ${form.symbol} entered!`, type: 'ok' });
-      setForm(f => ({ ...f, symbol: '', quantity: '', entry_price: '', notes: '' }));
+      setForm(f => ({ ...f, symbol: instrType === 'equity' ? '' : f.symbol, quantity: '', entry_price: '', notes: '' }));
       onTradeEntered();
     } catch (err) {
       setMsg({ text: err.response?.data?.error || 'Failed to enter trade', type: 'err' });
@@ -128,51 +315,120 @@ function NewTradeTab({ onTradeEntered }) {
   };
 
   return (
-    <div className="pt-form-card">
-      <form onSubmit={submit}>
-        <div className="pt-form-row">
-          <div className="pt-field">
-            <label>Symbol</label>
-            <input
-              type="text"
-              placeholder="e.g. RELIANCE"
-              value={form.symbol}
-              onChange={e => set('symbol', e.target.value.toUpperCase())}
-              required
-            />
-          </div>
-          <div className="pt-field">
-            <label>Trade Type</label>
-            <div className="pt-type-toggle">
-              <button type="button" className={`pt-type-btn buy ${form.trade_type === 'BUY' ? 'active' : ''}`}
-                onClick={() => set('trade_type', 'BUY')}>BUY</button>
-              <button type="button" className={`pt-type-btn sell ${form.trade_type === 'SELL' ? 'active' : ''}`}
-                onClick={() => set('trade_type', 'SELL')}>SELL</button>
+    <div className="pt-newtrade-wrap">
+      {/* Instrument type tabs */}
+      <div className="pt-instr-tabs">
+        {[['equity', '📊 Equity'], ['options', '🎯 Options'], ['futures', '🔮 Futures']].map(([val, label]) => (
+          <button key={val} type="button"
+            className={`pt-instr-tab ${instrType === val ? 'active' : ''}`}
+            onClick={() => handleInstrChange(val)}>{label}</button>
+        ))}
+      </div>
+
+      <div className="pt-form-card">
+        <form onSubmit={submit}>
+          {/* Equity: manual symbol */}
+          {instrType === 'equity' && (
+            <div className="pt-form-row">
+              <div className="pt-field">
+                <label>Symbol</label>
+                <input type="text" placeholder="e.g. RELIANCE" value={form.symbol}
+                  onChange={e => set('symbol', e.target.value.toUpperCase())} required />
+              </div>
+              <div className="pt-field">
+                <label>Trade Type</label>
+                <div className="pt-type-toggle">
+                  <button type="button" className={`pt-type-btn buy ${form.trade_type === 'BUY' ? 'active' : ''}`}
+                    onClick={() => set('trade_type', 'BUY')}>BUY</button>
+                  <button type="button" className={`pt-type-btn sell ${form.trade_type === 'SELL' ? 'active' : ''}`}
+                    onClick={() => set('trade_type', 'SELL')}>SELL</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Options: underlying + chain picker */}
+          {instrType === 'options' && (
+            <>
+              <div className="pt-form-row" style={{ marginBottom: 8 }}>
+                <div className="pt-field">
+                  <label>Underlying</label>
+                  <select value={underlying} onChange={e => setUnderlying(e.target.value)}>
+                    {UNDERLYINGS.map(u => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+                <div className="pt-field">
+                  <label>Direction</label>
+                  <div className="pt-type-toggle">
+                    <button type="button" className={`pt-type-btn buy ${form.trade_type === 'BUY' ? 'active' : ''}`}
+                      onClick={() => set('trade_type', 'BUY')}>BUY</button>
+                    <button type="button" className={`pt-type-btn sell ${form.trade_type === 'SELL' ? 'active' : ''}`}
+                      onClick={() => set('trade_type', 'SELL')}>SELL</button>
+                  </div>
+                </div>
+              </div>
+              <OptionChainPicker key={underlying} underlying={underlying} onSelect={handleOptionSelect} />
+              {form.symbol && (
+                <div className="pt-selected-sym">
+                  Selected: <strong>{form.symbol}</strong>
+                  {form.entry_price && <span> · LTP: {fmtINR(form.entry_price)}</span>}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Futures: underlying + expiry picker */}
+          {instrType === 'futures' && (
+            <>
+              <div className="pt-form-row" style={{ marginBottom: 8 }}>
+                <div className="pt-field">
+                  <label>Underlying</label>
+                  <select value={underlying} onChange={e => setUnderlying(e.target.value)}>
+                    {UNDERLYINGS.map(u => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+                <div className="pt-field">
+                  <label>Direction</label>
+                  <div className="pt-type-toggle">
+                    <button type="button" className={`pt-type-btn buy ${form.trade_type === 'BUY' ? 'active' : ''}`}
+                      onClick={() => set('trade_type', 'BUY')}>BUY</button>
+                    <button type="button" className={`pt-type-btn sell ${form.trade_type === 'SELL' ? 'active' : ''}`}
+                      onClick={() => set('trade_type', 'SELL')}>SELL</button>
+                  </div>
+                </div>
+              </div>
+              <FuturesPicker key={underlying} underlying={underlying} onSelect={handleFuturesSelect} />
+              {form.symbol && (
+                <div className="pt-selected-sym">Selected: <strong>{form.symbol}</strong></div>
+              )}
+            </>
+          )}
+
+          {/* Common fields */}
+          <div className="pt-form-row" style={{ marginTop: 14 }}>
+            <div className="pt-field">
+              <label>Quantity {instrType === 'options' ? '(lots)' : ''}</label>
+              <input type="number" min="1" placeholder={instrType === 'options' ? 'Lots' : 'e.g. 10'}
+                value={form.quantity} onChange={e => set('quantity', e.target.value)} required />
+            </div>
+            <div className="pt-field">
+              <label>Entry Price (optional)</label>
+              <input type="number" step="0.01"
+                placeholder={instrType === 'equity' ? 'Auto from Fyers/Yahoo' : 'Auto-fill from chain'}
+                value={form.entry_price} onChange={e => set('entry_price', e.target.value)} />
             </div>
           </div>
-        </div>
-        <div className="pt-form-row">
-          <div className="pt-field">
-            <label>Quantity</label>
-            <input type="number" min="1" placeholder="e.g. 10" value={form.quantity}
-              onChange={e => set('quantity', e.target.value)} required />
+          <div className="pt-field" style={{ marginBottom: 14 }}>
+            <label>Notes (optional)</label>
+            <input type="text" placeholder="Your thesis..." value={form.notes}
+              onChange={e => set('notes', e.target.value)} />
           </div>
-          <div className="pt-field">
-            <label>Entry Price (optional)</label>
-            <input type="number" step="0.01" placeholder="Auto-fill from market"
-              value={form.entry_price} onChange={e => set('entry_price', e.target.value)} />
-          </div>
-        </div>
-        <div className="pt-field" style={{ marginBottom: 14 }}>
-          <label>Notes (optional)</label>
-          <input type="text" placeholder="Your thesis..." value={form.notes}
-            onChange={e => set('notes', e.target.value)} />
-        </div>
-        <button type="submit" className="pt-submit-btn" disabled={loading}>
-          {loading ? 'Entering...' : `Enter ${form.trade_type} Trade`}
-        </button>
-        <div className={`pt-form-msg ${msg.type}`}>{msg.text}</div>
-      </form>
+          <button type="submit" className="pt-submit-btn" disabled={loading || !form.symbol}>
+            {loading ? 'Entering...' : `Enter ${form.trade_type} Trade`}
+          </button>
+          <div className={`pt-form-msg ${msg.type}`}>{msg.text}</div>
+        </form>
+      </div>
     </div>
   );
 }
