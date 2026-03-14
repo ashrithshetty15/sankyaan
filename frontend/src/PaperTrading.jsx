@@ -286,60 +286,61 @@ function OptionChainPicker({ underlying, onSelect }) {
   );
 }
 
+/** Generate NSE monthly F&O expiry dates (last Thursday of each month) */
+function getNSEFuturesExpiries(count = 4) {
+  const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const result = [];
+  const now = new Date();
+  for (let offset = 0; offset <= count + 1 && result.length < count; offset++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    // Last Thursday of this month
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const dow = lastDay.getDay(); // 0=Sun,4=Thu
+    const lastThursday = new Date(lastDay);
+    lastThursday.setDate(lastDay.getDate() - ((dow + 3) % 7));
+    if (lastThursday >= now) {
+      const yyyy = lastThursday.getFullYear();
+      const mm = String(lastThursday.getMonth() + 1).padStart(2, '0');
+      const dd = String(lastThursday.getDate()).padStart(2, '0');
+      const yy = String(yyyy).slice(2);
+      const mon = MONTHS[lastThursday.getMonth()];
+      result.push({ date: `${yyyy}-${mm}-${dd}`, label: `${dd} ${mon} ${yyyy}`, futSymbol: `NSE:${null}${yy}${mon}FUT` });
+    }
+  }
+  return result;
+}
+
 // ── Futures Picker ─────────────────────────────────────────────────────────
 function FuturesPicker({ underlying, onSelect }) {
-  const [expiries, setExpiries] = useState([]);
-  const [selectedExpiry, setSelectedExpiry] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const expiries = getNSEFuturesExpiries(4);
+  const [selectedExpiry, setSelectedExpiry] = useState(expiries[0]?.date || '');
 
-  useEffect(() => {
-    setLoading(true);
-    setError('');
-    axios.get(`${API}/paper-trading/option-chain/${underlying}`)
-      .then(res => {
-        const exps = res.data.expiries || [];
-        setExpiries(exps);
-        setSelectedExpiry(exps[0] || '');
-      })
-      .catch(e => setError(e.response?.data?.error || 'Failed to load expiries'))
-      .finally(() => setLoading(false));
-  }, [underlying]);
+  const buildSymbol = (dateStr) => {
+    const d = new Date(dateStr);
+    return `NSE:${underlying}${String(d.getFullYear()).slice(2)}${MONTHS[d.getMonth()]}FUT`;
+  };
 
   useEffect(() => {
     if (!selectedExpiry) return;
-    const d = new Date(selectedExpiry);
-    const yy = String(d.getFullYear()).slice(2);
-    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    const symbol = `NSE:${underlying}${yy}${months[d.getMonth()]}FUT`;
-    onSelect({ symbol, expiry: selectedExpiry });
+    onSelect({ symbol: buildSymbol(selectedExpiry), expiry: selectedExpiry });
   }, [selectedExpiry, underlying]);
-
-  if (error) return <div className="pt-chain-error">{error}</div>;
 
   return (
     <div className="pt-chain-picker">
       <div className="pt-chain-row">
         <div className="pt-field">
           <label>Expiry</label>
-          <select value={selectedExpiry} onChange={e => setSelectedExpiry(e.target.value)} disabled={loading}>
-            {expiries.map(e => <option key={e} value={e}>{e}</option>)}
+          <select value={selectedExpiry} onChange={e => setSelectedExpiry(e.target.value)}>
+            {expiries.map(e => <option key={e.date} value={e.date}>{e.label}</option>)}
           </select>
         </div>
         {selectedExpiry && (
           <div className="pt-chain-preview" style={{ marginTop: 0 }}>
-            <span className="pt-chain-sym">
-              {(() => {
-                const d = new Date(selectedExpiry);
-                const yy = String(d.getFullYear()).slice(2);
-                const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-                return `NSE:${underlying}${yy}${months[d.getMonth()]}FUT`;
-              })()}
-            </span>
+            <span className="pt-chain-sym">{buildSymbol(selectedExpiry)}</span>
           </div>
         )}
       </div>
-      {loading && <div className="pt-chain-loading">Loading expiries...</div>}
     </div>
   );
 }
