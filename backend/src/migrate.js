@@ -380,6 +380,42 @@ const MIGRATIONS = [
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `
+  },
+  {
+    name: '021_ensure_paper_trades',
+    sql: `
+      CREATE TABLE IF NOT EXISTS paper_trades (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        symbol VARCHAR(100) NOT NULL,
+        trade_type VARCHAR(10) NOT NULL,
+        quantity INTEGER NOT NULL,
+        entry_price DECIMAL(12,4) NOT NULL,
+        exit_price DECIMAL(12,4),
+        entry_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        exit_at TIMESTAMP,
+        status VARCHAR(10) DEFAULT 'open',
+        pnl DECIMAL(12,4),
+        notes TEXT
+      )
+    `
+  },
+  {
+    name: '022_ensure_paper_rankings',
+    sql: `
+      CREATE TABLE IF NOT EXISTS paper_rankings (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        total_trades INTEGER DEFAULT 0,
+        win_rate DECIMAL(5,2) DEFAULT 0,
+        total_pnl DECIMAL(14,4) DEFAULT 0,
+        return_pct DECIMAL(10,4) DEFAULT 0,
+        max_drawdown DECIMAL(10,4) DEFAULT 0,
+        sharpe_score DECIMAL(8,4) DEFAULT 0,
+        streak_days INTEGER DEFAULT 0,
+        rank_score DECIMAL(10,4) DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `
   }
 ];
 
