@@ -274,6 +274,61 @@ function FuturesPicker({ underlying, onSelect }) {
   );
 }
 
+// ── Symbol Search Input with Autocomplete ─────────────────────────────────
+function SymbolSearchInput({ value, onChange }) {
+  const [query, setQuery] = useState(value || '');
+  const [results, setResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = React.useRef(null);
+
+  const handleInput = (e) => {
+    const val = e.target.value.toUpperCase();
+    setQuery(val);
+    onChange(val);
+    setResults([]);
+    clearTimeout(debounceRef.current);
+    if (val.length < 2) { setShowDropdown(false); return; }
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await axios.get(`${API}/stocks/search/${encodeURIComponent(val)}`);
+        setResults(res.data.results || []);
+        setShowDropdown(true);
+      } catch (_) { setResults([]); }
+      finally { setSearching(false); }
+    }, 300);
+  };
+
+  const select = (sym) => {
+    setQuery(sym);
+    onChange(sym);
+    setShowDropdown(false);
+    setResults([]);
+  };
+
+  return (
+    <div className="pt-sym-wrap">
+      <input type="text" placeholder="e.g. RELIANCE" value={query}
+        onChange={handleInput}
+        onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+        onFocus={() => results.length > 0 && setShowDropdown(true)}
+        autoComplete="off" required />
+      {searching && <div className="pt-sym-searching">Searching...</div>}
+      {showDropdown && results.length > 0 && (
+        <div className="pt-sym-dropdown">
+          {results.map(r => (
+            <div key={r.symbol} className="pt-sym-item" onMouseDown={() => select(r.symbol)}>
+              <span className="pt-sym-ticker">{r.symbol}</span>
+              <span className="pt-sym-name">{r.company_name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── New Trade Tab ──────────────────────────────────────────────────────────
 function NewTradeTab({ onTradeEntered }) {
   const [instrType, setInstrType] = useState('equity'); // equity | options | futures
@@ -327,13 +382,12 @@ function NewTradeTab({ onTradeEntered }) {
 
       <div className="pt-form-card">
         <form onSubmit={submit}>
-          {/* Equity: manual symbol */}
+          {/* Equity: symbol with autocomplete */}
           {instrType === 'equity' && (
             <div className="pt-form-row">
               <div className="pt-field">
                 <label>Symbol</label>
-                <input type="text" placeholder="e.g. RELIANCE" value={form.symbol}
-                  onChange={e => set('symbol', e.target.value.toUpperCase())} required />
+                <SymbolSearchInput value={form.symbol} onChange={v => set('symbol', v)} />
               </div>
               <div className="pt-field">
                 <label>Trade Type</label>
