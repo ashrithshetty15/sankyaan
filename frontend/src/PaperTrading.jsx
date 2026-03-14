@@ -15,7 +15,6 @@ const TIER_INFO = {
   Diamond: { icon: '💎', desc: '≥ 50 trades, Sharpe ≥ 1.0, return > 10%' },
 };
 
-const UNDERLYINGS = ['NIFTY', 'BANKNIFTY', 'MIDCPNIFTY', 'FINNIFTY'];
 
 function fmt(n, d = 2) { return n == null ? '—' : Number(n).toFixed(d); }
 function fmtINR(n) { return n == null ? '—' : `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`; }
@@ -100,6 +99,73 @@ function PortfolioTab({ portfolio, onClose, refreshing }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+const INDEX_SUGGESTIONS = [
+  { symbol: 'NIFTY', label: 'Nifty 50' },
+  { symbol: 'BANKNIFTY', label: 'Bank Nifty' },
+  { symbol: 'MIDCPNIFTY', label: 'Midcap Nifty' },
+  { symbol: 'FINNIFTY', label: 'Fin Nifty' },
+];
+
+// ── Underlying Search (indices + stocks) ──────────────────────────────────
+function UnderlyingSearchInput({ value, onChange }) {
+  const [query, setQuery] = useState(value || 'NIFTY');
+  const [results, setResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = React.useRef(null);
+
+  const handleInput = (e) => {
+    const val = e.target.value.toUpperCase();
+    setQuery(val);
+    clearTimeout(debounceRef.current);
+    if (!val) { setResults(INDEX_SUGGESTIONS); setShowDropdown(true); return; }
+    // Check if matches an index first
+    const idxMatch = INDEX_SUGGESTIONS.filter(i => i.symbol.startsWith(val));
+    setResults(idxMatch);
+    setShowDropdown(true);
+    if (val.length < 2) return;
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await axios.get(`${API}/stocks/search/${encodeURIComponent(val)}`);
+        const stocks = (res.data.results || []).map(r => ({ symbol: r.symbol, label: r.company_name }));
+        setResults([...INDEX_SUGGESTIONS.filter(i => i.symbol.startsWith(val)), ...stocks]);
+        setShowDropdown(true);
+      } catch (_) {}
+      finally { setSearching(false); }
+    }, 300);
+  };
+
+  const select = (sym) => {
+    setQuery(sym);
+    onChange(sym);
+    setShowDropdown(false);
+    setResults([]);
+  };
+
+  return (
+    <div className="pt-sym-wrap">
+      <input type="text" value={query}
+        onChange={handleInput}
+        onFocus={() => { if (!query) { setResults(INDEX_SUGGESTIONS); setShowDropdown(true); } else if (results.length) setShowDropdown(true); }}
+        onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+        placeholder="NIFTY, BANKNIFTY, RELIANCE..."
+        autoComplete="off" />
+      {searching && <div className="pt-sym-searching">Searching...</div>}
+      {showDropdown && results.length > 0 && (
+        <div className="pt-sym-dropdown">
+          {results.map(r => (
+            <div key={r.symbol} className="pt-sym-item" onMouseDown={() => select(r.symbol)}>
+              <span className="pt-sym-ticker">{r.symbol}</span>
+              <span className="pt-sym-name">{r.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -401,15 +467,13 @@ function NewTradeTab({ onTradeEntered }) {
             </div>
           )}
 
-          {/* Options: underlying + chain picker */}
+          {/* Options: underlying (search) + chain picker */}
           {instrType === 'options' && (
             <>
               <div className="pt-form-row" style={{ marginBottom: 8 }}>
                 <div className="pt-field">
-                  <label>Underlying</label>
-                  <select value={underlying} onChange={e => setUnderlying(e.target.value)}>
-                    {UNDERLYINGS.map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
+                  <label>Underlying (index or stock)</label>
+                  <UnderlyingSearchInput value={underlying} onChange={setUnderlying} />
                 </div>
                 <div className="pt-field">
                   <label>Direction</label>
@@ -431,15 +495,13 @@ function NewTradeTab({ onTradeEntered }) {
             </>
           )}
 
-          {/* Futures: underlying + expiry picker */}
+          {/* Futures: underlying (search) + expiry picker */}
           {instrType === 'futures' && (
             <>
               <div className="pt-form-row" style={{ marginBottom: 8 }}>
                 <div className="pt-field">
-                  <label>Underlying</label>
-                  <select value={underlying} onChange={e => setUnderlying(e.target.value)}>
-                    {UNDERLYINGS.map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
+                  <label>Underlying (index or stock)</label>
+                  <UnderlyingSearchInput value={underlying} onChange={setUnderlying} />
                 </div>
                 <div className="pt-field">
                   <label>Direction</label>

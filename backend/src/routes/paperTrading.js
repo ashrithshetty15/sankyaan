@@ -382,8 +382,8 @@ export async function getLeaderboard(req, res) {
 export async function getOptionChainForTrading(req, res) {
   const { underlying } = req.params;
   const { expiry } = req.query;
-  const fyersSymbol = UNDERLYING_MAP[underlying.toUpperCase()];
-  if (!fyersSymbol) return res.status(400).json({ error: `Unsupported underlying: ${underlying}` });
+  // Indices have a fixed map; stocks use NSE:SYMBOL-EQ format
+  const fyersSymbol = UNDERLYING_MAP[underlying.toUpperCase()] || getFyersSymbol(underlying.toUpperCase());
 
   if (!isFyersReady()) {
     return res.status(503).json({ error: 'Fyers not connected. Please authenticate via /api/fyers/auth.' });
