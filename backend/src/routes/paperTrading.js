@@ -217,11 +217,11 @@ export async function enterTrade(req, res) {
       const pnlRes = await db.query(
         `SELECT COALESCE(SUM(pnl), 0) AS realised FROM paper_trades WHERE user_id = $1 AND status = 'closed'`,
         [userId]
-      );
+      ).catch(e => { throw new Error('balance_check: ' + e.message); });
       const openRes = await db.query(
         `SELECT COALESCE(SUM(entry_price * quantity), 0) AS used FROM paper_trades WHERE user_id = $1 AND status = 'open'`,
         [userId]
-      );
+      ).catch(e => { throw new Error('open_positions: ' + e.message); });
       const realised = parseFloat(pnlRes.rows[0].realised);
       const used = parseFloat(openRes.rows[0].used);
       const available = VIRTUAL_CAPITAL + realised - used;
@@ -236,7 +236,7 @@ export async function enterTrade(req, res) {
       `INSERT INTO paper_trades (user_id, symbol, trade_type, quantity, entry_price, notes)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
       [userId, symbol.toUpperCase(), trade_type.toUpperCase(), parseInt(quantity), price, notes || null]
-    );
+    ).catch(e => { throw new Error('insert_trade: ' + e.message); });
 
     res.json({ trade: result.rows[0], message: 'Trade entered successfully' });
   } catch (err) {
