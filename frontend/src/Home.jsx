@@ -12,6 +12,8 @@ import FundScreener from './FundScreener.jsx';
 import MutualFundBulkTrades from './MutualFundBulkTrades.jsx';
 import TradeAlerts from './TradeAlerts.jsx';
 import PortfolioTracker from './PortfolioTracker.jsx';
+import MarketSentiment from './MarketSentiment.jsx';
+import PaperTrading from './PaperTrading.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
 
@@ -509,6 +511,8 @@ export default function Home({ viewMode, setViewMode }) {
             : viewMode === 'bulk-trades' ? 'MF Bulk Trades'
             : viewMode === 'portfolio-tracker' ? 'My Portfolio'
             : viewMode === 'trade-alerts' ? 'Trade Alerts'
+            : viewMode === 'market-sentiment' ? 'Market Sentiment'
+            : viewMode === 'paper-trading' ? 'Paper Trading'
             : 'Stock Scores Rating'}
         </h1>
         <p className="subtitle">
@@ -528,6 +532,10 @@ export default function Home({ viewMode, setViewMode }) {
             ? 'Track your mutual fund holdings and portfolio analytics'
             : viewMode === 'trade-alerts'
             ? 'High-probability options strategies'
+            : viewMode === 'market-sentiment'
+            ? 'Live VIX, PCR, and crowd sentiment for Nifty & BankNifty'
+            : viewMode === 'paper-trading'
+            ? 'Trade with ₹10 lakh virtual capital and climb the leaderboard'
             : 'Rank stocks by quality scores'}
         </p>
       </header>
@@ -1173,6 +1181,14 @@ export default function Home({ viewMode, setViewMode }) {
 
       {viewMode === 'trade-alerts' && (
         <TradeAlerts />
+      )}
+
+      {viewMode === 'market-sentiment' && (
+        <MarketSentiment />
+      )}
+
+      {viewMode === 'paper-trading' && (
+        <PaperTrading />
       )}
 
       {/* Portfolio Tracker View */}

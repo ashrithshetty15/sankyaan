@@ -20,6 +20,8 @@ import { optionalAuth } from './middleware/auth.js';
 import { googleLogin, getMe, logout } from './routes/auth.js';
 import { getBulkTrades, refreshBulkTrades } from './routes/bulkTrades.js';
 import { subscribe, confirm, unsubscribe, sendNewsletter, getStats } from './routes/newsletter.js';
+import { getMarketSentiment } from './routes/marketSentiment.js';
+import { getPortfolio as getPaperPortfolio, enterTrade, closeTrade, getHistory as getPaperHistory, getStats as getPaperStats, getLeaderboard } from './routes/paperTrading.js';
 import { addHolding, getPortfolio, deleteHolding, getPortfolioAnalysis } from './routes/portfolio.js';
 import { getTradeAlerts, getTradeAlertHistory, triggerScan, getOptionsChainEndpoint } from './routes/tradeAlerts.js';
 import { initFyers, getAuthUrl, handleAuthCallback, isReady as isFyersReady, autoAuthenticate, getSpanMargin } from './fyersService.js';
@@ -402,6 +404,17 @@ app.get('/api/newsletter/confirm/:token', confirm);
 app.get('/api/newsletter/unsubscribe/:token', unsubscribe);
 app.post('/api/newsletter/send', sendNewsletter);
 app.get('/api/newsletter/stats', getStats);
+
+// Market Sentiment - live VIX, PCR, StockTwits, news
+app.get('/api/market-sentiment', getMarketSentiment);
+
+// Paper Trading
+app.get('/api/paper-trading/portfolio', optionalAuth, getPaperPortfolio);
+app.post('/api/paper-trading/trade', optionalAuth, enterTrade);
+app.put('/api/paper-trading/trade/:id/close', optionalAuth, closeTrade);
+app.get('/api/paper-trading/history', optionalAuth, getPaperHistory);
+app.get('/api/paper-trading/stats', optionalAuth, getPaperStats);
+app.get('/api/paper-trading/leaderboard', getLeaderboard);
 
 // Blog view counter
 app.post('/api/blog/views/:slug', async (req, res) => {

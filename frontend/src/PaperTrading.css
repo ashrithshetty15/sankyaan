@@ -1,0 +1,293 @@
+.pt-container {
+  padding: 0 20px 40px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+/* ── Stats Bar ── */
+.pt-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pt-stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.pt-stat-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.pt-stat-val.positive { color: var(--green); }
+.pt-stat-val.negative { color: var(--red); }
+.pt-stat-val.gold { color: var(--gold); }
+
+.pt-stat-lbl {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Tabs ── */
+.pt-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--bg4);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.pt-tab {
+  padding: 10px 18px;
+  border: none;
+  background: none;
+  color: var(--text3);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+
+.pt-tab:hover { color: var(--text2); }
+.pt-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ── Trade Table ── */
+.pt-table-wrap { overflow-x: auto; }
+
+.pt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.pt-table th {
+  background: var(--bg3);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  border-bottom: 1px solid var(--bg4);
+}
+
+.pt-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--bg4);
+  color: var(--text2);
+}
+
+.pt-table tr:last-child td { border-bottom: none; }
+.pt-table tr:hover td { background: var(--bg2); }
+
+.pt-table td.symbol { color: var(--text); font-weight: 700; font-size: 13px; }
+.pt-table td.positive { color: var(--green); font-weight: 700; }
+.pt-table td.negative { color: var(--red); font-weight: 700; }
+
+/* ── Type Badge ── */
+.pt-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.pt-badge.buy { background: rgba(61,220,132,0.12); color: var(--green); border: 1px solid rgba(61,220,132,0.25); }
+.pt-badge.sell { background: rgba(255,107,107,0.12); color: var(--red); border: 1px solid rgba(255,107,107,0.25); }
+.pt-badge.win { background: rgba(61,220,132,0.12); color: var(--green); border: 1px solid rgba(61,220,132,0.25); }
+.pt-badge.loss { background: rgba(255,107,107,0.12); color: var(--red); border: 1px solid rgba(255,107,107,0.25); }
+
+/* ── Close Button ── */
+.pt-close-btn {
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  color: var(--text2);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.pt-close-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── New Trade Form ── */
+.pt-form-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 520px;
+}
+
+.pt-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.pt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pt-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pt-field input, .pt-field select {
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.pt-field input:focus, .pt-field select:focus { border-color: var(--gold); }
+.pt-field input::placeholder { color: var(--text3); }
+
+.pt-type-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.pt-type-btn {
+  flex: 1;
+  padding: 9px;
+  border-radius: 8px;
+  border: 1px solid var(--bg4);
+  background: var(--bg3);
+  color: var(--text3);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.pt-type-btn.buy.active { background: rgba(61,220,132,0.12); color: var(--green); border-color: rgba(61,220,132,0.4); }
+.pt-type-btn.sell.active { background: rgba(255,107,107,0.12); color: var(--red); border-color: rgba(255,107,107,0.4); }
+
+.pt-submit-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  border: none;
+  border-radius: 8px;
+  color: #0d1117;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s;
+  margin-top: 6px;
+}
+
+.pt-submit-btn:disabled { opacity: 0.5; cursor: default; }
+
+.pt-form-msg {
+  margin-top: 10px;
+  font-size: 13px;
+  min-height: 18px;
+}
+
+.pt-form-msg.ok { color: var(--green); }
+.pt-form-msg.err { color: var(--red); }
+
+/* ── Leaderboard ── */
+.pt-lb-table th:first-child,
+.pt-lb-table td:first-child { text-align: center; width: 48px; }
+
+.pt-tier-badge {
+  font-size: 16px;
+  display: inline-block;
+}
+
+.pt-rank-num {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text3);
+}
+
+.pt-rank-num.top1 { color: var(--gold); }
+.pt-rank-num.top3 { color: var(--text2); }
+
+/* Tier legend */
+.pt-tier-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.pt-tier-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text3);
+}
+
+/* Login prompt */
+.pt-login-prompt {
+  text-align: center;
+  padding: 50px 20px;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: 12px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.pt-login-prompt h3 {
+  color: var(--text);
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.pt-login-prompt p {
+  color: var(--text3);
+  font-size: 14px;
+}
+
+.pt-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .pt-container { padding: 0 12px 32px; }
+  .pt-form-row { grid-template-columns: 1fr; }
+  .pt-stats-bar { grid-template-columns: repeat(2, 1fr); }
+}

@@ -128,6 +128,14 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-text">Bulk Trades</span>
         </button>
 
+        <button
+          className={`nav-item ${viewMode === 'market-sentiment' ? 'active' : ''}`}
+          onClick={() => handleNavClick('market-sentiment')}
+        >
+          <span className="nav-icon">🧭</span>
+          <span className="nav-text">Market Sentiment</span>
+        </button>
+
         <div className="nav-section-label">TRADING</div>
 
         <button
@@ -136,6 +144,14 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
         >
           <span className="nav-icon">🎯</span>
           <span className="nav-text">Trade Alerts</span>
+        </button>
+
+        <button
+          className={`nav-item ${viewMode === 'paper-trading' ? 'active' : ''}`}
+          onClick={() => handleNavClick('paper-trading')}
+        >
+          <span className="nav-icon">📝</span>
+          <span className="nav-text">Paper Trading</span>
         </button>
 
       </nav>
