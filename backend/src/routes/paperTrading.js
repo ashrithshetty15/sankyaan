@@ -241,7 +241,7 @@ export async function enterTrade(req, res) {
     res.json({ trade: result.rows[0], message: 'Trade entered successfully' });
   } catch (err) {
     console.error('Paper trade enter error:', err.message);
-    res.status(500).json({ error: 'Failed to enter trade' });
+    res.status(500).json({ error: err.message || 'Failed to enter trade' });
   }
 }
 
