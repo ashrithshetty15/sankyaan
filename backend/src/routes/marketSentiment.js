@@ -117,7 +117,9 @@ export async function getMarketSentiment(req, res) {
       return res.json(sentimentCache.data);
     }
 
-    const cookies = await getNSECookies();
+    // Get cookies — if NSE blocks, continue with empty string (partial data still ok)
+    let cookies = '';
+    try { cookies = await getNSECookies(); } catch (_) {}
 
     const [
       indicesResult,

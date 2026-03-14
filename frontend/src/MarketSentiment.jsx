@@ -147,8 +147,10 @@ export default function MarketSentiment() {
         setError(null);
         const res = await axios.get(`${API}/market-sentiment`);
         setData(res.data);
-      } catch {
-        setError('Failed to load market sentiment data. Please try again.');
+      } catch (err) {
+        // Show error but still try to display whatever data we got
+        const serverMsg = err.response?.data?.error;
+        setError(serverMsg || 'Some data sources are unavailable. Retrying may help.');
       } finally {
         setLoading(false);
       }
@@ -163,7 +165,18 @@ export default function MarketSentiment() {
     </div>
   );
 
-  if (error) return <div className="ms-error">{error}</div>;
+  // Show error inline (above content) but still render if we have partial data
+  if (error && !data) return (
+    <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+      <div className="ms-error" style={{ marginBottom: 16 }}>{error}</div>
+      <button
+        onClick={() => { setError(null); setLoading(true); axios.get(`${API}/market-sentiment`).then(r => setData(r.data)).catch(() => setError('Still unavailable. NSE may be blocking requests.')).finally(() => setLoading(false)); }}
+        style={{ padding: '8px 20px', background: 'var(--gold)', border: 'none', borderRadius: 8, color: '#0d1117', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+      >
+        Retry
+      </button>
+    </div>
+  );
   if (!data) return null;
 
   return (
