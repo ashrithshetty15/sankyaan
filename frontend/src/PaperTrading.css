@@ -4,6 +4,44 @@
   margin: 0 auto;
 }
 
+/* ── Live Price Display ── */
+.pt-price-display {
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: 8px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.pt-price-display.empty { border-color: var(--bg4); }
+
+.pt-price-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.pt-price-live {
+  font-size: 10px;
+  color: var(--green);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.pt-price-fetching {
+  font-size: 12px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+.pt-price-na {
+  font-size: 12px;
+  color: var(--text3);
+}
+
 /* ── Stats Bar ── */
 .pt-stats-bar {
   display: grid;

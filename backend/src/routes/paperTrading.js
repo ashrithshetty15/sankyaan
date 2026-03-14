@@ -377,6 +377,21 @@ export async function getLeaderboard(req, res) {
 }
 
 /**
+ * GET /api/paper-trading/price/:symbol
+ * Returns live price for an equity/index/futures/options symbol.
+ */
+export async function getLivePrice(req, res) {
+  const { symbol } = req.params;
+  try {
+    const price = await fetchLivePrice(symbol);
+    if (!price) return res.status(404).json({ error: 'Price unavailable for this symbol' });
+    res.json({ symbol, price });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+/**
  * GET /api/paper-trading/option-chain/:underlying?expiry=YYYY-MM-DD
  * Returns expiry list + strikes (with CE/PE LTPs) for Options & Futures pickers.
  */

@@ -406,20 +406,40 @@ function NewTradeTab({ onTradeEntered }) {
   const [underlying, setUnderlying] = useState('NIFTY');
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
+  const [priceLoading, setPriceLoading] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const fetchAndSetPrice = async (symbol) => {
+    if (!symbol) return;
+    setPriceLoading(true);
+    try {
+      const res = await axios.get(`${API}/paper-trading/price/${encodeURIComponent(symbol)}`);
+      setForm(f => ({ ...f, entry_price: String(res.data.price) }));
+    } catch (_) {
+      setForm(f => ({ ...f, entry_price: '' }));
+    } finally {
+      setPriceLoading(false);
+    }
+  };
 
   const handleInstrChange = (type) => {
     setInstrType(type);
     setForm(f => ({ ...f, symbol: '', entry_price: '' }));
   };
 
+  const handleEquitySymbolSelect = (sym) => {
+    set('symbol', sym);
+    fetchAndSetPrice(sym);
+  };
+
   const handleOptionSelect = ({ symbol, ltp }) => {
-    setForm(f => ({ ...f, symbol, entry_price: ltp ? String(ltp) : f.entry_price }));
+    setForm(f => ({ ...f, symbol, entry_price: ltp ? String(ltp) : '' }));
   };
 
   const handleFuturesSelect = ({ symbol }) => {
     setForm(f => ({ ...f, symbol, entry_price: '' }));
+    if (symbol) fetchAndSetPrice(symbol);
   };
 
   const submit = async (e) => {
@@ -457,7 +477,7 @@ function NewTradeTab({ onTradeEntered }) {
             <div className="pt-form-row">
               <div className="pt-field">
                 <label>Symbol</label>
-                <SymbolSearchInput value={form.symbol} onChange={v => set('symbol', v)} />
+                <SymbolSearchInput value={form.symbol} onChange={handleEquitySymbolSelect} />
               </div>
               <div className="pt-field">
                 <label>Trade Type</label>
@@ -532,10 +552,15 @@ function NewTradeTab({ onTradeEntered }) {
                 value={form.quantity} onChange={e => set('quantity', e.target.value)} required />
             </div>
             <div className="pt-field">
-              <label>Entry Price (optional)</label>
-              <input type="number" step="0.01"
-                placeholder={instrType === 'equity' ? 'Auto from Fyers/Yahoo' : 'Auto-fill from chain'}
-                value={form.entry_price} onChange={e => set('entry_price', e.target.value)} />
+              <label>Entry Price (Live)</label>
+              <div className={`pt-price-display ${!form.entry_price && !priceLoading ? 'empty' : ''}`}>
+                {priceLoading
+                  ? <span className="pt-price-fetching">Fetching price...</span>
+                  : form.entry_price
+                    ? <><span className="pt-price-val">{fmtINR(form.entry_price)}</span><span className="pt-price-live">● LIVE</span></>
+                    : <span className="pt-price-na">{form.symbol ? 'Price unavailable' : 'Select a symbol'}</span>
+                }
+              </div>
             </div>
           </div>
           <div className="pt-field" style={{ marginBottom: 14 }}>
