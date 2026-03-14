@@ -176,55 +176,69 @@ function UnderlyingSearchInput({ value, onChange }) {
 
 // ── Option Chain Picker ────────────────────────────────────────────────────
 function OptionChainPicker({ underlying, onSelect }) {
-  const [expiries, setExpiries] = useState([]);
-  const [selectedExpiry, setSelectedExpiry] = useState('');
+  const OPT_MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  // Always have expiry dates via client-side calculation (same as FuturesPicker)
+  const expiries = getNSEFuturesExpiries(4);
+  const [selectedExpiry, setSelectedExpiry] = useState(expiries[0]?.date || '');
   const [strikes, setStrikes] = useState([]);
   const [atm, setAtm] = useState(null);
   const [underlyingLtp, setUnderlyingLtp] = useState(null);
   const [selectedStrike, setSelectedStrike] = useState('');
+  const [manualStrike, setManualStrike] = useState('');
   const [optionType, setOptionType] = useState('CE');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [noChainData, setNoChainData] = useState(false);
 
-  const fetchChain = useCallback(async (expiry) => {
+  // Build Fyers-style option symbol from parts (used when chain data unavailable)
+  const buildSymbol = (strike, type, expDate) => {
+    if (!expDate || !strike) return '';
+    const d = new Date(expDate);
+    const yy = String(d.getFullYear()).slice(2);
+    const mon = OPT_MONTHS[d.getMonth()];
+    return `NSE:${underlying}${yy}${mon}${strike}${type}`;
+  };
+
+  const fetchStrikes = useCallback(async (expiry) => {
+    if (!expiry || !underlying) return;
     setLoading(true);
-    setError('');
+    setNoChainData(false);
     try {
-      const url = `${API}/paper-trading/option-chain/${underlying}${expiry ? `?expiry=${expiry}` : ''}`;
+      const url = `${API}/paper-trading/option-chain/${encodeURIComponent(underlying)}?expiry=${encodeURIComponent(expiry)}`;
       const res = await axios.get(url);
-      const { expiries: exps, strikes: stks, atm: atmVal, underlyingLtp: ltp, targetExpiry } = res.data;
-      setExpiries(exps || []);
-      setStrikes(stks || []);
+      const { strikes: stks, atm: atmVal, underlyingLtp: ltp } = res.data;
+      const validStrikes = (stks || []).filter(s => s.strike > 0);
+      setStrikes(validStrikes);
       setAtm(atmVal);
       setUnderlyingLtp(ltp);
-      if (!expiry && exps?.length) setSelectedExpiry(exps[0]);
-      if (atmVal) setSelectedStrike(String(atmVal));
-    } catch (e) {
-      setError(e.response?.data?.error || 'Failed to load option chain');
+      if (validStrikes.length > 0) {
+        const atmStr = String(atmVal || validStrikes[Math.floor(validStrikes.length / 2)].strike);
+        setSelectedStrike(atmStr);
+        setNoChainData(false);
+      } else {
+        setNoChainData(true);
+        setSelectedStrike('');
+        if (atmVal) setManualStrike(String(atmVal));
+      }
+    } catch (_) {
+      setNoChainData(true);
+      setStrikes([]);
     } finally {
       setLoading(false);
     }
   }, [underlying]);
 
   useEffect(() => {
-    fetchChain('');
-  }, [fetchChain]);
+    if (selectedExpiry) fetchStrikes(selectedExpiry);
+  }, [selectedExpiry, fetchStrikes]);
 
-  const handleExpiryChange = (e) => {
-    const exp = e.target.value;
-    setSelectedExpiry(exp);
-    fetchChain(exp);
-  };
-
-  // Auto-notify parent when selection changes
+  // Notify parent when strike/type changes with Fyers chain data
   useEffect(() => {
-    if (!selectedStrike || !selectedExpiry) return;
-    const strikeRow = strikes.find(s => String(s.strike) === selectedStrike);
-    if (!strikeRow) return;
+    if (!strikes.length || !selectedStrike || !selectedExpiry) return;
+    const row = strikes.find(s => String(s.strike) === selectedStrike);
     const side = optionType === 'CE' ? 'ce' : 'pe';
-    const opt = strikeRow[side];
+    const opt = row?.[side];
     onSelect({
-      symbol: opt?.symbol || '',
+      symbol: opt?.symbol || buildSymbol(selectedStrike, optionType, selectedExpiry),
       ltp: opt?.ltp || '',
       strike: selectedStrike,
       optionType,
@@ -232,32 +246,48 @@ function OptionChainPicker({ underlying, onSelect }) {
     });
   }, [selectedStrike, optionType, strikes]);
 
-  if (error) return <div className="pt-chain-error">{error}</div>;
+  // Notify parent when manual strike changes (no chain data case)
+  useEffect(() => {
+    if (!noChainData || !manualStrike || !selectedExpiry) return;
+    onSelect({
+      symbol: buildSymbol(manualStrike, optionType, selectedExpiry),
+      ltp: '',
+      strike: manualStrike,
+      optionType,
+      expiry: selectedExpiry,
+    });
+  }, [manualStrike, optionType, noChainData, selectedExpiry]);
 
   return (
     <div className="pt-chain-picker">
+      {underlyingLtp && (
+        <div className="pt-chain-ltp">
+          <span className="pt-chain-ltp-val">{fmtINR(underlyingLtp)}</span>
+          <span className="pt-chain-ltp-lbl">{underlying} LTP</span>
+        </div>
+      )}
       <div className="pt-chain-row">
-        {underlyingLtp && (
-          <div className="pt-chain-ltp">
-            <span className="pt-chain-ltp-val">{fmtINR(underlyingLtp)}</span>
-            <span className="pt-chain-ltp-lbl">{underlying} LTP</span>
-          </div>
-        )}
         <div className="pt-field">
           <label>Expiry</label>
-          <select value={selectedExpiry} onChange={handleExpiryChange} disabled={loading}>
-            {expiries.map(e => <option key={e} value={e}>{e}</option>)}
+          <select value={selectedExpiry} onChange={e => setSelectedExpiry(e.target.value)} disabled={loading}>
+            {expiries.map(e => <option key={e.date} value={e.date}>{e.label}</option>)}
           </select>
         </div>
         <div className="pt-field">
           <label>Strike</label>
-          <select value={selectedStrike} onChange={e => setSelectedStrike(e.target.value)} disabled={loading || !strikes.length}>
-            {strikes.map(s => (
-              <option key={s.strike} value={String(s.strike)}>
-                {s.strike}{s.strike === atm ? ' (ATM)' : ''}
-              </option>
-            ))}
-          </select>
+          {strikes.length > 0 ? (
+            <select value={selectedStrike} onChange={e => setSelectedStrike(e.target.value)} disabled={loading}>
+              {strikes.map(s => (
+                <option key={s.strike} value={String(s.strike)}>
+                  {s.strike}{s.strike === atm ? ' (ATM)' : ''}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input type="number" min="1" step="50" placeholder="e.g. 25000"
+              value={manualStrike} onChange={e => setManualStrike(e.target.value)}
+              disabled={loading} />
+          )}
         </div>
         <div className="pt-field">
           <label>Type</label>
@@ -269,18 +299,21 @@ function OptionChainPicker({ underlying, onSelect }) {
           </div>
         </div>
       </div>
-      {loading && <div className="pt-chain-loading">Loading chain...</div>}
-      {selectedStrike && strikes.length > 0 && (() => {
+      {loading && <div className="pt-chain-loading">Loading strikes...</div>}
+      {noChainData && !loading && (
+        <div className="pt-chain-na">Live strike data unavailable — enter strike price manually above</div>
+      )}
+      {strikes.length > 0 && selectedStrike && (() => {
         const row = strikes.find(s => String(s.strike) === selectedStrike);
         const side = optionType === 'CE' ? 'ce' : 'pe';
         const opt = row?.[side];
         return opt ? (
           <div className="pt-chain-preview">
-            <span className="pt-chain-sym">{opt.symbol}</span>
+            <span className="pt-chain-sym">{opt.symbol || buildSymbol(selectedStrike, optionType, selectedExpiry)}</span>
             <span className="pt-chain-ltp-badge">LTP: {fmtINR(opt.ltp)}</span>
             {opt.oi > 0 && <span className="pt-chain-oi">OI: {opt.oi.toLocaleString('en-IN')}</span>}
           </div>
-        ) : <div className="pt-chain-na">No {optionType} data for this strike</div>;
+        ) : null;
       })()}
     </div>
   );
