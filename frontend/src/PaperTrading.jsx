@@ -586,15 +586,21 @@ function NewTradeTab({ onTradeEntered }) {
                 value={form.quantity} onChange={e => set('quantity', e.target.value)} required />
             </div>
             <div className="pt-field">
-              <label>Entry Price (Live)</label>
-              <div className={`pt-price-display ${!form.entry_price && !priceLoading ? 'empty' : ''}`}>
-                {priceLoading
-                  ? <span className="pt-price-fetching">Fetching price...</span>
-                  : form.entry_price
-                    ? <><span className="pt-price-val">{fmtINR(form.entry_price)}</span><span className="pt-price-live">● LIVE</span></>
-                    : <span className="pt-price-na">{form.symbol ? 'Price unavailable' : 'Select a symbol'}</span>
-                }
-              </div>
+              <label>
+                Entry Price
+                {priceLoading && <span className="pt-price-fetching"> · Fetching...</span>}
+                {!priceLoading && form.entry_price && instrType !== 'options' && <span className="pt-price-live"> ● LIVE</span>}
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder={priceLoading ? 'Fetching price...' : 'Enter price'}
+                value={form.entry_price}
+                onChange={e => set('entry_price', e.target.value)}
+                disabled={priceLoading}
+                required
+              />
             </div>
           </div>
           <div className="pt-field" style={{ marginBottom: 14 }}>
