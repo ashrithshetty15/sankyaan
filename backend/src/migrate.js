@@ -442,9 +442,19 @@ export async function runMigrations() {
       if (appliedSet.has(migration.name)) continue;
 
       console.log(`  Running migration: ${migration.name}...`);
-      await db.query(migration.sql);
-      await db.query('INSERT INTO _migrations (name) VALUES ($1)', [migration.name]);
-      ranCount++;
+      try {
+        // Run each semicolon-separated statement individually to avoid multi-statement issues
+        const statements = migration.sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+        for (const stmt of statements) {
+          await db.query(stmt);
+        }
+        await db.query('INSERT INTO _migrations (name) VALUES ($1)', [migration.name]);
+        ranCount++;
+        console.log(`  ✅ ${migration.name} applied`);
+      } catch (err) {
+        console.error(`  ❌ Migration ${migration.name} failed: ${err.message}`);
+        // Continue to next migration — don't let one failure block others
+      }
     }
 
     if (ranCount > 0) {
@@ -453,7 +463,6 @@ export async function runMigrations() {
       console.log('✅ Database is up to date');
     }
   } catch (error) {
-    console.error('❌ Migration error:', error.message);
-    // Don't crash the server — migrations use IF NOT EXISTS so partial runs are safe
+    console.error('❌ Migration setup error:', error.message);
   }
 }
