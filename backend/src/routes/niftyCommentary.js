@@ -7,7 +7,7 @@ const NSE_HEADERS = {
   'Referer': 'https://www.nseindia.com/',
 };
 
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 let commentaryCache = { data: null, fetchedAt: 0 };
 
 async function getNSECookies() {
