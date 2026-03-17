@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getOptionChain, getQuotes, getFyersSymbol, isReady as isFyersReady } from '../fyersService.js';
 
 const NSE_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -50,6 +51,94 @@ function formatNSEExpiry(date) {
   return `${dd}-${months[date.getMonth()]}-${date.getFullYear()}`;
 }
 
+// ─── Fyers data source ────────────────────────────────────────────────────────
+
+/**
+ * Fetch option chain + spot from Fyers.
+ * Fyers optionsChain rows: { expiry (YYYY-MM-DD), strike_price, option_type ('CE'/'PE'), oi, ltp, symbol }
+ * underlyingData: { ltp }
+ */
+async function fetchFromFyers(symbol) {
+  const fyersSymbol = getFyersSymbol(symbol);
+  const [chainData, quotesData] = await Promise.all([
+    getOptionChain(fyersSymbol, 20),
+    getQuotes([fyersSymbol]),
+  ]);
+
+  if (chainData?.error) throw new Error(chainData.error);
+
+  const optData = chainData.optionsChain || [];
+  const spotLtp = chainData.underlyingData?.ltp
+    || (Array.isArray(quotesData) && quotesData[0]?.v?.lp)
+    || null;
+
+  // Collect sorted unique expiry dates (Fyers format: YYYY-MM-DD)
+  const expiriesRaw = [...new Set(optData.map(o => o.expiry).filter(Boolean))].sort();
+
+  // Pick weekly (nearest upcoming Thursday) and monthly (last Thursday of month)
+  const today = new Date();
+  const nextThursday = getNextThursday(today);
+  let monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth());
+  if (monthlyDate < today) monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth() + 1);
+
+  // Fyers expiry format is YYYY-MM-DD, compare as string
+  const toISO = (d) => d.toISOString().slice(0, 10);
+  const weeklyExpiry = expiriesRaw.find(e => e >= toISO(nextThursday)) || expiriesRaw[0];
+  const monthlyExpiry = expiriesRaw.find(e => e >= toISO(monthlyDate)) || expiriesRaw[expiriesRaw.length - 1];
+
+  const computeFromFyers = (targetExpiry) => {
+    const rows = optData.filter(o => !targetExpiry || o.expiry === targetExpiry);
+    let callOI = 0, putOI = 0;
+    const strikeOI = {};
+
+    for (const opt of rows) {
+      const strike = opt.strike_price;
+      if (!strike) continue;
+      if (!strikeOI[strike]) strikeOI[strike] = { ce: 0, pe: 0 };
+      if (opt.option_type === 'CE') { callOI += opt.oi || 0; strikeOI[strike].ce += opt.oi || 0; }
+      if (opt.option_type === 'PE') { putOI += opt.oi || 0; strikeOI[strike].pe += opt.oi || 0; }
+    }
+
+    const pcr = callOI > 0 ? parseFloat((putOI / callOI).toFixed(3)) : null;
+    const strikes = Object.keys(strikeOI).map(Number).sort((a, b) => a - b);
+
+    let maxPainStrike = null;
+    let minLoss = Infinity;
+    for (const s of strikes) {
+      let totalLoss = 0;
+      for (const s2 of strikes) {
+        if (s2 > s) totalLoss += strikeOI[s2].ce * (s2 - s);
+        if (s2 < s) totalLoss += strikeOI[s2].pe * (s - s2);
+      }
+      if (totalLoss < minLoss) { minLoss = totalLoss; maxPainStrike = s; }
+    }
+
+    const topCE = [...strikes].sort((a, b) => strikeOI[b].ce - strikeOI[a].ce).slice(0, 5)
+      .map(s => ({ strike: s, oi: strikeOI[s].ce }));
+    const topPE = [...strikes].sort((a, b) => strikeOI[b].pe - strikeOI[a].pe).slice(0, 5)
+      .map(s => ({ strike: s, oi: strikeOI[s].pe }));
+
+    return { pcr, maxPain: maxPainStrike, topCE, topPE, totalCallOI: callOI, totalPutOI: putOI };
+  };
+
+  const weekly = weeklyExpiry
+    ? { expiry: weeklyExpiry, ...computeFromFyers(weeklyExpiry) }
+    : null;
+  const monthly = monthlyExpiry
+    ? { expiry: monthlyExpiry, ...computeFromFyers(monthlyExpiry) }
+    : null;
+
+  const spot = spotLtp ? {
+    price: parseFloat(spotLtp),
+    change: null,
+    changePct: null,
+  } : null;
+
+  return { spot, weekly, monthly, source: 'fyers' };
+}
+
+// ─── NSE fallback ─────────────────────────────────────────────────────────────
+
 async function fetchStockOptionChain(symbol, cookies) {
   const headers = { ...NSE_HEADERS, Cookie: cookies };
   const resp = await axios.get(
@@ -81,8 +170,8 @@ function computeOIMetrics(optData, targetExpiry) {
   }
 
   const pcr = callOI > 0 ? parseFloat((putOI / callOI).toFixed(3)) : null;
-
   const strikes = Object.keys(strikeOI).map(Number).sort((a, b) => a - b);
+
   let maxPainStrike = null;
   let minLoss = Infinity;
   for (const s of strikes) {
@@ -102,27 +191,53 @@ function computeOIMetrics(optData, targetExpiry) {
   return { pcr, maxPain: maxPainStrike, topCE, topPE, totalCallOI: callOI, totalPutOI: putOI };
 }
 
-function extractExpiryMetrics(chainData, today) {
-  const optData = chainData?.records?.data || chainData?.filtered?.data || [];
-  const expiriesRaw = chainData?.records?.expiryDates || [];
+async function fetchFromNSE(symbol) {
+  let cookies = '';
+  try { cookies = await getNSECookies(); } catch (_) {}
 
-  const nextThursdayFmt = formatNSEExpiry(getNextThursday(today));
-  let monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth());
-  if (monthlyDate < today) monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth() + 1);
-  const monthlyFmt = formatNSEExpiry(monthlyDate);
+  const [quoteResult, chainResult] = await Promise.allSettled([
+    fetchStockQuote(symbol, cookies),
+    fetchStockOptionChain(symbol, cookies),
+  ]);
 
-  const weeklyExpiry = expiriesRaw.find(e => e >= nextThursdayFmt) || expiriesRaw[0];
-  const monthlyExpiry = expiriesRaw.find(e => e >= monthlyFmt) || expiriesRaw[expiriesRaw.length - 1];
+  let spot = null;
+  if (quoteResult.status === 'fulfilled') {
+    const pi = quoteResult.value?.priceInfo;
+    if (pi) {
+      spot = {
+        price: parseFloat(pi.lastPrice ?? pi.last ?? 0),
+        change: parseFloat(pi.change ?? 0),
+        changePct: parseFloat(pi.pChange ?? pi.changePct ?? 0),
+      };
+    }
+  } else {
+    console.warn(`NSE quote failed for ${symbol}:`, quoteResult.reason?.message);
+  }
 
-  const weekly = weeklyExpiry
-    ? { expiry: weeklyExpiry, ...computeOIMetrics(optData, weeklyExpiry) }
-    : null;
-  const monthly = monthlyExpiry
-    ? { expiry: monthlyExpiry, ...computeOIMetrics(optData, monthlyExpiry) }
-    : null;
+  let weekly = null;
+  let monthly = null;
+  if (chainResult.status === 'fulfilled') {
+    const optData = chainResult.value?.records?.data || chainResult.value?.filtered?.data || [];
+    const expiriesRaw = chainResult.value?.records?.expiryDates || [];
+    const today = new Date();
+    const nextThursdayFmt = formatNSEExpiry(getNextThursday(today));
+    let monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth());
+    if (monthlyDate < today) monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth() + 1);
+    const monthlyFmt = formatNSEExpiry(monthlyDate);
 
-  return { weekly, monthly };
+    const weeklyExpiry = expiriesRaw.find(e => e >= nextThursdayFmt) || expiriesRaw[0];
+    const monthlyExpiry = expiriesRaw.find(e => e >= monthlyFmt) || expiriesRaw[expiriesRaw.length - 1];
+
+    weekly = weeklyExpiry ? { expiry: weeklyExpiry, ...computeOIMetrics(optData, weeklyExpiry) } : null;
+    monthly = monthlyExpiry ? { expiry: monthlyExpiry, ...computeOIMetrics(optData, monthlyExpiry) } : null;
+  } else {
+    console.warn(`NSE option chain failed for ${symbol}:`, chainResult.reason?.message);
+  }
+
+  return { spot, weekly, monthly, source: 'nse' };
 }
+
+// ─── AI commentary ─────────────────────────────────────────────────────────────
 
 function fmtOI(oi) {
   return oi >= 1e5 ? `${(oi / 1e5).toFixed(1)}L` : String(oi);
@@ -140,10 +255,12 @@ async function generateStockCommentary(symbol, marketData) {
     return `PCR ${data.pcr ?? 'N/A'} | Max Pain ${data.maxPain ?? 'N/A'} | CE: ${data.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'} | PE: ${data.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'}`;
   };
 
+  const priceStr = spot?.price ? `₹${spot.price}${spot.changePct != null ? ` (${spot.changePct >= 0 ? '+' : ''}${spot.changePct}%)` : ''}` : 'N/A';
+
   const prompt = `You are a professional Indian derivatives market analyst providing live commentary at ${timeStr} IST. Analyze ${symbol} F&O data and write a concise 3-paragraph commentary in a confident, analytical tone — like a CNBC-TV18 analyst.
 
 STOCK DATA:
-- ${symbol} Spot: ₹${spot?.price ?? 'N/A'} (${spot?.changePct >= 0 ? '+' : ''}${spot?.changePct ?? 0}%)
+- ${symbol} Spot: ${priceStr}
 
 OPTION CHAIN OI:
 - Weekly expiry (${weekly?.expiry ?? 'N/A'}): ${oiLine(weekly)}
@@ -175,6 +292,8 @@ Keep it under 200 words. Use specific strike prices as numbers. No bullet points
   return resp.data?.content?.[0]?.text || null;
 }
 
+// ─── Route handler ─────────────────────────────────────────────────────────────
+
 /**
  * GET /api/stock-commentary?symbol=RELIANCE
  */
@@ -190,52 +309,37 @@ export async function getStockCommentary(req, res) {
 
   const cached = stockCommentaryCache.get(symbol);
 
-  // Outside market hours — return cached data with marketOpen flag
   if (!marketOpen && !force && cached) {
     return res.json({ ...cached.data, marketOpen: false });
   }
 
-  // Within cache TTL
   if (!force && cached && (now - cached.fetchedAt) < CACHE_TTL) {
     return res.json({ ...cached.data, marketOpen });
   }
 
   try {
-    let cookies = '';
-    try { cookies = await getNSECookies(); } catch (_) {}
+    let result;
+    let dataSource = 'unknown';
 
-    const [quoteResult, chainResult] = await Promise.allSettled([
-      fetchStockQuote(symbol, cookies),
-      fetchStockOptionChain(symbol, cookies),
-    ]);
-
-    // Extract spot price
-    let spot = null;
-    if (quoteResult.status === 'fulfilled') {
-      const pi = quoteResult.value?.priceInfo;
-      if (pi) {
-        spot = {
-          price: parseFloat(pi.lastPrice ?? pi.last ?? 0),
-          change: parseFloat(pi.change ?? 0),
-          changePct: parseFloat(pi.pChange ?? pi.changePct ?? 0),
-        };
+    // Try Fyers first (works from Railway), fall back to NSE
+    if (isFyersReady()) {
+      try {
+        result = await fetchFromFyers(symbol);
+        dataSource = 'fyers';
+        console.log(`Stock commentary for ${symbol}: fetched via Fyers`);
+      } catch (e) {
+        console.warn(`Fyers fetch failed for ${symbol}: ${e.message} — falling back to NSE`);
+        result = await fetchFromNSE(symbol);
+        dataSource = 'nse';
       }
     } else {
-      console.warn(`Stock quote fetch failed for ${symbol}:`, quoteResult.reason?.message);
+      result = await fetchFromNSE(symbol);
+      dataSource = 'nse';
+      console.log(`Stock commentary for ${symbol}: fetched via NSE (Fyers not connected)`);
     }
 
-    // Extract OI metrics
-    let weekly = null;
-    let monthly = null;
-    if (chainResult.status === 'fulfilled') {
-      const { weekly: w, monthly: m } = extractExpiryMetrics(chainResult.value, new Date());
-      weekly = w;
-      monthly = m;
-    } else {
-      console.warn(`Option chain fetch failed for ${symbol}:`, chainResult.reason?.message);
-    }
-
-    const marketData = { symbol, spot, weekly, monthly, timestamp: new Date().toISOString() };
+    const { spot, weekly, monthly } = result;
+    const marketData = { symbol, spot, weekly, monthly, dataSource, timestamp: new Date().toISOString() };
 
     let commentary = null;
     let commentaryError = null;
@@ -259,6 +363,6 @@ export async function getStockCommentary(req, res) {
     res.json(payload);
   } catch (err) {
     console.error('Stock commentary error:', err.message);
-    res.status(500).json({ error: `Failed to fetch data for ${symbol}` });
+    res.status(500).json({ error: `Failed to fetch data for ${symbol}: ${err.message}` });
   }
 }
