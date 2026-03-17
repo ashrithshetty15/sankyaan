@@ -145,7 +145,7 @@ export default function NiftyCommentary() {
 
   useEffect(() => { load(); }, [load]);
 
-  const { spot, bankniftySpot, vix, nifty, banknifty, commentary, commentaryError, marketOpen } = data || {};
+  const { spot, bankniftySpot, midcapSpot, finniftySpot, vix, nifty, banknifty, midcap, finnifty, commentary, commentaryError, marketOpen } = data || {};
 
   return (
     <div className="nc-container">
@@ -239,6 +239,22 @@ export default function NiftyCommentary() {
             accent="#a78bfa"
             spot={bankniftySpot}
             oiData={banknifty}
+          />
+
+          {/* ── Midcap Nifty Section ── */}
+          <IndexSection
+            name="Midcap Nifty"
+            accent="#34d399"
+            spot={midcapSpot}
+            oiData={midcap}
+          />
+
+          {/* ── Fin Nifty Section ── */}
+          <IndexSection
+            name="Fin Nifty"
+            accent="#fb923c"
+            spot={finniftySpot}
+            oiData={finnifty}
           />
         </>
       )}

@@ -135,7 +135,7 @@ async function generateCommentary(marketData) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
-  const { spot, bankniftySpot, vix, nifty, banknifty, timestamp } = marketData;
+  const { spot, bankniftySpot, midcapSpot, finniftySpot, vix, nifty, banknifty, midcap, finnifty, timestamp } = marketData;
   const timeStr = new Date(timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
 
   const oiSection = (label, data) => {
@@ -147,24 +147,32 @@ Weekly (${w?.expiry ?? 'N/A'}): PCR ${w?.pcr ?? 'N/A'} | Max Pain ${w?.maxPain ?
 Monthly (${m?.expiry ?? 'N/A'}): PCR ${m?.pcr ?? 'N/A'} | Max Pain ${m?.maxPain ?? 'N/A'} | CE: ${m?.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'} | PE: ${m?.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'}`;
   };
 
+  const spotLine = (label, s) => s ? `- ${label}: ${s.price} (${s.changePct >= 0 ? '+' : ''}${s.changePct}%)` : '';
+
   const prompt = `You are a professional Indian derivatives market analyst providing live F&O commentary at ${timeStr} IST. Write exactly 4 paragraphs in a confident, analytical tone like a CNBC-TV18 or Bloomberg Quint analyst — use numbers, be direct and insightful, no bullet points.
 
 MARKET DATA:
-- Nifty 50: ${spot?.price ?? 'N/A'} (${spot?.changePct >= 0 ? '+' : ''}${spot?.changePct ?? 0}%)
-- Bank Nifty: ${bankniftySpot?.price ?? 'N/A'} (${bankniftySpot?.changePct >= 0 ? '+' : ''}${bankniftySpot?.changePct ?? 0}%)
+${spotLine('Nifty 50', spot)}
+${spotLine('Bank Nifty', bankniftySpot)}
+${spotLine('Midcap Nifty', midcapSpot)}
+${spotLine('Fin Nifty', finniftySpot)}
 - India VIX: ${vix?.value ?? 'N/A'} (${vix?.level ?? ''})
 
 ${oiSection('NIFTY OI', nifty)}
 
 ${oiSection('BANKNIFTY OI', banknifty)}
 
-Write exactly 4 paragraphs:
-1. Overall market tone — what Nifty + BankNifty movement and VIX signal right now
-2. Nifty F&O positioning — weekly + monthly key levels, where bulls/bears are positioned
-3. BankNifty F&O positioning — weekly + monthly key levels and banking sector bias
-4. Near-term outlook and key levels to watch on both indices
+${oiSection('MIDCPNIFTY OI', midcap)}
 
-Keep it under 300 words. Use strike prices as specific numbers.`;
+${oiSection('FINNIFTY OI', finnifty)}
+
+Write exactly 4 paragraphs:
+1. Overall market tone — what broad index movement and VIX signal right now
+2. Nifty + BankNifty F&O positioning — key weekly/monthly levels, where bulls/bears are positioned
+3. Midcap Nifty + Fin Nifty positioning — PCR bias, key OI levels, sectoral implications
+4. Near-term outlook — key levels to watch across all four indices
+
+Keep it under 350 words. Use strike prices as specific numbers.`;
 
   const resp = await axios.post(
     'https://api.anthropic.com/v1/messages',
@@ -210,10 +218,12 @@ export async function getNiftyCommentary(req, res) {
     let cookies = '';
     try { cookies = await getNSECookies(); } catch (_) {}
 
-    const [indicesResult, niftyChainResult, bankniftyChainResult] = await Promise.allSettled([
+    const [indicesResult, niftyChainResult, bankniftyChainResult, midcapChainResult, finniftyChainResult] = await Promise.allSettled([
       fetchAllIndices(cookies),
       fetchOptionChain('NIFTY', cookies),
       fetchOptionChain('BANKNIFTY', cookies),
+      fetchOptionChain('MIDCPNIFTY', cookies),
+      fetchOptionChain('FINNIFTY', cookies),
     ]);
 
     // Extract spot prices
@@ -221,18 +231,25 @@ export async function getNiftyCommentary(req, res) {
     const niftyEntry = allIndices.find(i => i.indexSymbol === 'NIFTY 50' || i.index === 'Nifty 50');
     const bnEntry = allIndices.find(i => i.indexSymbol === 'NIFTY BANK' || i.index === 'Nifty Bank' || i.indexSymbol === 'BANK NIFTY');
     const vixEntry = allIndices.find(i => i.indexSymbol === 'INDIA VIX' || i.index === 'India VIX');
+    const midcapEntry = allIndices.find(i =>
+      i.indexSymbol === 'NIFTY MID SELECT' || i.indexSymbol === 'NIFTY MIDCAP SELECT' ||
+      i.index === 'Nifty Midcap Select' || i.indexSymbol === 'MIDCPNIFTY'
+    );
+    const finniftyEntry = allIndices.find(i =>
+      i.indexSymbol === 'NIFTY FIN SERVICE' || i.index === 'Nifty Financial Services' ||
+      i.indexSymbol === 'FINNIFTY' || i.index === 'Nifty Fin Services'
+    );
 
-    const spot = niftyEntry ? {
-      price: parseFloat(niftyEntry.last ?? niftyEntry.lastPrice ?? 0),
-      change: parseFloat(niftyEntry.variation ?? niftyEntry.change ?? 0),
-      changePct: parseFloat(niftyEntry.percentChange ?? niftyEntry.pChange ?? 0),
+    const extractSpot = (entry) => entry ? {
+      price: parseFloat(entry.last ?? entry.lastPrice ?? 0),
+      change: parseFloat(entry.variation ?? entry.change ?? 0),
+      changePct: parseFloat(entry.percentChange ?? entry.pChange ?? 0),
     } : null;
 
-    const bankniftySpot = bnEntry ? {
-      price: parseFloat(bnEntry.last ?? bnEntry.lastPrice ?? 0),
-      change: parseFloat(bnEntry.variation ?? bnEntry.change ?? 0),
-      changePct: parseFloat(bnEntry.percentChange ?? bnEntry.pChange ?? 0),
-    } : null;
+    const spot = extractSpot(niftyEntry);
+    const bankniftySpot = extractSpot(bnEntry);
+    const midcapSpot = extractSpot(midcapEntry);
+    const finniftySpot = extractSpot(finniftyEntry);
 
     const vixVal = vixEntry ? parseFloat(vixEntry.last ?? vixEntry.lastPrice ?? 0) : null;
     const vix = vixVal ? {
@@ -247,19 +264,28 @@ export async function getNiftyCommentary(req, res) {
     const bankniftyOI = bankniftyChainResult.status === 'fulfilled'
       ? extractExpiryMetrics(bankniftyChainResult.value, today)
       : { weekly: null, monthly: null };
+    const midcapOI = midcapChainResult.status === 'fulfilled'
+      ? extractExpiryMetrics(midcapChainResult.value, today)
+      : { weekly: null, monthly: null };
+    const finniftyOI = finniftyChainResult.status === 'fulfilled'
+      ? extractExpiryMetrics(finniftyChainResult.value, today)
+      : { weekly: null, monthly: null };
 
     if (niftyChainResult.status === 'rejected') console.warn('Nifty chain error:', niftyChainResult.reason?.message);
     if (bankniftyChainResult.status === 'rejected') console.warn('BankNifty chain error:', bankniftyChainResult.reason?.message);
+    if (midcapChainResult.status === 'rejected') console.warn('MidcapNifty chain error:', midcapChainResult.reason?.message);
+    if (finniftyChainResult.status === 'rejected') console.warn('FinNifty chain error:', finniftyChainResult.reason?.message);
 
     const marketData = {
       spot,
       bankniftySpot,
+      midcapSpot,
+      finniftySpot,
       vix,
-      // Keep backward-compat fields for frontend OI tables
-      weekly: niftyOI.weekly,
-      monthly: niftyOI.monthly,
       nifty: niftyOI,
       banknifty: bankniftyOI,
+      midcap: midcapOI,
+      finnifty: finniftyOI,
       timestamp: new Date().toISOString(),
     };
 
