@@ -122,13 +122,13 @@ export async function getFundAIReport(req, res) {
 
     // Fetch top 5 holdings from portfolio
     const holdingsResult = await db.query(
-      `SELECT stock_name, percentage_of_total_portfolio
-       FROM portfolio WHERE ticker = $1 AND asset_type = 'Equity'
-       ORDER BY percentage_of_total_portfolio DESC LIMIT 5`,
+      `SELECT instrument_name, percent_nav
+       FROM mutualfund_portfolio WHERE fund_name = $1 AND percent_nav > 0
+       ORDER BY percent_nav DESC LIMIT 5`,
       [ticker]
     );
     const topHoldings = holdingsResult.rows
-      .map(h => `${h.stock_name} (${fmt(h.percentage_of_total_portfolio)}%)`)
+      .map(h => `${h.instrument_name} (${fmt(h.percent_nav)}%)`)
       .join(', ') || 'N/A';
 
     const prompt = `You are a professional Indian mutual fund analyst. Write a concise analysis for ${f.scheme_name || ticker}.
