@@ -86,7 +86,7 @@ function OICard({ label, metrics }) {
   );
 }
 
-function IndexSection({ name, accent, spot, oiData }) {
+function IndexSection({ name, accent, spot, oiData, commentary, commentaryError, timestamp }) {
   const weekly = oiData?.weekly;
   const monthly = oiData?.monthly;
   const pcr = weekly?.pcr;
@@ -111,6 +111,26 @@ function IndexSection({ name, accent, spot, oiData }) {
           </div>
         )}
       </div>
+
+      {/* Per-index AI commentary */}
+      {commentary ? (
+        <div className="nc-index-commentary">
+          <div className="nc-index-commentary-header">
+            <span className="nc-ai-badge">✦ AI Analysis</span>
+            {timestamp && (
+              <span className="nc-commentary-time">
+                {new Date(timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })} IST
+              </span>
+            )}
+          </div>
+          <div className="nc-commentary-text">
+            {commentary.split('\n\n').map((para, i) => <p key={i}>{para}</p>)}
+          </div>
+        </div>
+      ) : commentaryError ? (
+        <div className="nc-index-commentary-error">⚠️ {commentaryError}</div>
+      ) : null}
+
       <div className="nc-oi-pair">
         <OICard label="Weekly" metrics={weekly} />
         <OICard label="Monthly" metrics={monthly} />
@@ -145,7 +165,9 @@ export default function NiftyCommentary() {
 
   useEffect(() => { load(); }, [load]);
 
-  const { spot, bankniftySpot, midcapSpot, finniftySpot, vix, nifty, banknifty, midcap, finnifty, commentary, commentaryError, marketOpen } = data || {};
+  const { spot, bankniftySpot, midcapSpot, finniftySpot, vix, nifty, banknifty, midcap, finnifty, commentaries, marketOpen } = data || {};
+  const c = commentaries || {};
+  const noApiKey = c.errors?._global === 'ANTHROPIC_API_KEY not set';
 
   return (
     <div className="nc-container">
@@ -199,29 +221,9 @@ export default function NiftyCommentary() {
             </div>
           )}
 
-          {/* ── AI Commentary ── */}
-          {commentary ? (
-            <div className="nc-commentary-card">
-              <div className="nc-commentary-header">
-                <span className="nc-ai-badge">✦ AI Analysis</span>
-                <span className="nc-commentary-time">
-                  {data.timestamp ? new Date(data.timestamp).toLocaleTimeString('en-IN', {
-                    hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata'
-                  }) + ' IST' : ''}
-                </span>
-              </div>
-              <div className="nc-commentary-text">
-                {commentary.split('\n\n').map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
-              </div>
-            </div>
-          ) : (
+          {noApiKey && (
             <div className="nc-no-commentary">
-              {commentaryError && commentaryError !== 'ANTHROPIC_API_KEY not set'
-                ? <span>⚠️ AI commentary error: <code>{commentaryError}</code></span>
-                : <span>🔑 Set <code>ANTHROPIC_API_KEY</code> in Railway environment variables to enable AI commentary</span>
-              }
+              🔑 Set <code>ANTHROPIC_API_KEY</code> in Railway environment variables to enable AI commentary
             </div>
           )}
 
@@ -231,6 +233,9 @@ export default function NiftyCommentary() {
             accent="#60a5fa"
             spot={spot}
             oiData={nifty}
+            commentary={c.nifty}
+            commentaryError={c.errors?.nifty}
+            timestamp={data?.timestamp}
           />
 
           {/* ── BankNifty Section ── */}
@@ -239,6 +244,9 @@ export default function NiftyCommentary() {
             accent="#a78bfa"
             spot={bankniftySpot}
             oiData={banknifty}
+            commentary={c.banknifty}
+            commentaryError={c.errors?.banknifty}
+            timestamp={data?.timestamp}
           />
 
           {/* ── Midcap Nifty Section ── */}
@@ -247,6 +255,9 @@ export default function NiftyCommentary() {
             accent="#34d399"
             spot={midcapSpot}
             oiData={midcap}
+            commentary={c.midcap}
+            commentaryError={c.errors?.midcap}
+            timestamp={data?.timestamp}
           />
 
           {/* ── Fin Nifty Section ── */}
@@ -255,6 +266,9 @@ export default function NiftyCommentary() {
             accent="#fb923c"
             spot={finniftySpot}
             oiData={finnifty}
+            commentary={c.finnifty}
+            commentaryError={c.errors?.finnifty}
+            timestamp={data?.timestamp}
           />
         </>
       )}

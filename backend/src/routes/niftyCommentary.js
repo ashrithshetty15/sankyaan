@@ -131,54 +131,12 @@ function fmtOI(oi) {
   return oi >= 1e5 ? `${(oi / 1e5).toFixed(1)}L` : String(oi);
 }
 
-async function generateCommentary(marketData) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-
-  const { spot, bankniftySpot, midcapSpot, finniftySpot, vix, nifty, banknifty, midcap, finnifty, timestamp } = marketData;
-  const timeStr = new Date(timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
-
-  const oiSection = (label, data) => {
-    if (!data?.weekly && !data?.monthly) return `${label}: OI data unavailable`;
-    const w = data.weekly;
-    const m = data.monthly;
-    return `${label}:
-Weekly (${w?.expiry ?? 'N/A'}): PCR ${w?.pcr ?? 'N/A'} | Max Pain ${w?.maxPain ?? 'N/A'} | CE: ${w?.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'} | PE: ${w?.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'}
-Monthly (${m?.expiry ?? 'N/A'}): PCR ${m?.pcr ?? 'N/A'} | Max Pain ${m?.maxPain ?? 'N/A'} | CE: ${m?.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'} | PE: ${m?.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'}`;
-  };
-
-  const spotLine = (label, s) => s ? `- ${label}: ${s.price} (${s.changePct >= 0 ? '+' : ''}${s.changePct}%)` : '';
-
-  const prompt = `You are a professional Indian derivatives market analyst providing live F&O commentary at ${timeStr} IST. Write exactly 4 paragraphs in a confident, analytical tone like a CNBC-TV18 or Bloomberg Quint analyst — use numbers, be direct and insightful, no bullet points.
-
-MARKET DATA:
-${spotLine('Nifty 50', spot)}
-${spotLine('Bank Nifty', bankniftySpot)}
-${spotLine('Midcap Nifty', midcapSpot)}
-${spotLine('Fin Nifty', finniftySpot)}
-- India VIX: ${vix?.value ?? 'N/A'} (${vix?.level ?? ''})
-
-${oiSection('NIFTY OI', nifty)}
-
-${oiSection('BANKNIFTY OI', banknifty)}
-
-${oiSection('MIDCPNIFTY OI', midcap)}
-
-${oiSection('FINNIFTY OI', finnifty)}
-
-Write exactly 4 paragraphs:
-1. Overall market tone — what broad index movement and VIX signal right now
-2. Nifty + BankNifty F&O positioning — key weekly/monthly levels, where bulls/bears are positioned
-3. Midcap Nifty + Fin Nifty positioning — PCR bias, key OI levels, sectoral implications
-4. Near-term outlook — key levels to watch across all four indices
-
-Keep it under 350 words. Use strike prices as specific numbers.`;
-
+async function callClaude(prompt, apiKey) {
   const resp = await axios.post(
     'https://api.anthropic.com/v1/messages',
     {
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 700,
+      max_tokens: 400,
       messages: [{ role: 'user', content: prompt }],
     },
     {
@@ -191,6 +149,59 @@ Keep it under 350 words. Use strike prices as specific numbers.`;
     }
   );
   return resp.data?.content?.[0]?.text || null;
+}
+
+function buildIndexPrompt(indexName, spot, oiData, vix, timeStr) {
+  const w = oiData?.weekly;
+  const m = oiData?.monthly;
+  const oiStr = (label, d) => {
+    if (!d) return `${label}: N/A`;
+    return `${label} (${d.expiry}): PCR ${d.pcr ?? 'N/A'} | Max Pain ${d.maxPain ?? 'N/A'} | CE: ${d.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ')} | PE: ${d.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ')}`;
+  };
+  return `You are a professional Indian derivatives analyst. Write exactly 2 paragraphs about ${indexName} F&O at ${timeStr} IST. Be direct, use numbers, no bullet points.
+
+DATA:
+- Spot: ${spot?.price ?? 'N/A'} (${spot?.changePct >= 0 ? '+' : ''}${spot?.changePct ?? 0}%)
+- India VIX: ${vix?.value ?? 'N/A'} (${vix?.level ?? ''})
+- ${oiStr('Weekly', w)}
+- ${oiStr('Monthly', m)}
+
+Paragraph 1: Current bias — what PCR + price action signal, where the index is headed.
+Paragraph 2: Key levels — CE OI resistance, PE OI support, max pain magnet, near-term outlook.
+Under 120 words. Use specific strike prices as numbers.`;
+}
+
+async function generateCommentaries(marketData) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return { nifty: null, banknifty: null, midcap: null, finnifty: null, errors: {} };
+
+  const { spot, bankniftySpot, midcapSpot, finniftySpot, vix, nifty, banknifty, midcap, finnifty, timestamp } = marketData;
+  const timeStr = new Date(timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+
+  const indices = [
+    { key: 'nifty',     name: 'Nifty 50',      spot,          oi: nifty     },
+    { key: 'banknifty', name: 'Bank Nifty',     spot: bankniftySpot, oi: banknifty },
+    { key: 'midcap',    name: 'Midcap Nifty',   spot: midcapSpot,   oi: midcap    },
+    { key: 'finnifty',  name: 'Fin Nifty',      spot: finniftySpot, oi: finnifty  },
+  ];
+
+  const results = await Promise.allSettled(
+    indices.map(({ name, spot: s, oi }) =>
+      callClaude(buildIndexPrompt(name, s, oi, vix, timeStr), apiKey)
+    )
+  );
+
+  const commentaries = {};
+  const errors = {};
+  indices.forEach(({ key }, i) => {
+    if (results[i].status === 'fulfilled') {
+      commentaries[key] = results[i].value;
+    } else {
+      commentaries[key] = null;
+      errors[key] = results[i].reason?.response?.data?.error?.message || results[i].reason?.message;
+    }
+  });
+  return { ...commentaries, errors };
 }
 
 /**
@@ -289,21 +300,19 @@ export async function getNiftyCommentary(req, res) {
       timestamp: new Date().toISOString(),
     };
 
-    let commentary = null;
-    let commentaryError = null;
+    let commentaries = { nifty: null, banknifty: null, midcap: null, finnifty: null, errors: {} };
     if (!process.env.ANTHROPIC_API_KEY) {
-      commentaryError = 'ANTHROPIC_API_KEY not set';
+      commentaries.errors._global = 'ANTHROPIC_API_KEY not set';
     } else {
-      try { commentary = await generateCommentary(marketData); } catch (e) {
-        commentaryError = e.response?.data?.error?.message || e.message;
-        console.warn('Commentary AI error:', commentaryError);
+      try { commentaries = await generateCommentaries(marketData); } catch (e) {
+        commentaries.errors._global = e.response?.data?.error?.message || e.message;
+        console.warn('Commentary AI error:', commentaries.errors._global);
       }
     }
 
     const payload = {
       ...marketData,
-      commentary,
-      commentaryError,
+      commentaries,
       marketOpen,
       nextUpdateAt: marketOpen ? now + CACHE_TTL : null,
     };

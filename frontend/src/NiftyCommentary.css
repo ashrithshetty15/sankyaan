@@ -273,6 +273,32 @@
   background: rgba(255,255,255,0.04);
 }
 
+/* ── Per-index commentary ── */
+.nc-index-commentary {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.nc-index-commentary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.nc-index-commentary-error {
+  font-size: 0.8rem;
+  color: #f87171;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 8px;
+}
+
 /* ── OI pair (weekly + monthly side by side) ── */
 .nc-oi-pair {
   display: grid;
