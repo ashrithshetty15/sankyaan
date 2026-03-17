@@ -122,6 +122,7 @@ export default function NiftyCommentary() {
   const weekly = data?.weekly;
   const monthly = data?.monthly;
   const commentary = data?.commentary;
+  const commentaryError = data?.commentaryError;
 
   return (
     <div className="nc-container">
@@ -220,7 +221,10 @@ export default function NiftyCommentary() {
             </div>
           ) : (
             <div className="nc-no-commentary">
-              <span>🔑 Set <code>ANTHROPIC_API_KEY</code> in Railway environment variables to enable AI commentary</span>
+              {commentaryError && commentaryError !== 'ANTHROPIC_API_KEY not set'
+                ? <span>⚠️ AI commentary error: <code>{commentaryError}</code></span>
+                : <span>🔑 Set <code>ANTHROPIC_API_KEY</code> in Railway environment variables to enable AI commentary</span>
+              }
             </div>
           )}
 

@@ -214,11 +214,17 @@ export async function getNiftyCommentary(req, res) {
 
     // Generate AI commentary (non-blocking — use cached text if AI fails)
     let commentary = null;
-    try { commentary = await generateCommentary(marketData); } catch (e) {
-      console.warn('Commentary AI error:', e.message);
+    let commentaryError = null;
+    if (!process.env.ANTHROPIC_API_KEY) {
+      commentaryError = 'ANTHROPIC_API_KEY not set';
+    } else {
+      try { commentary = await generateCommentary(marketData); } catch (e) {
+        commentaryError = e.response?.data?.error?.message || e.message;
+        console.warn('Commentary AI error:', commentaryError);
+      }
     }
 
-    const payload = { ...marketData, commentary, nextUpdateAt: now + CACHE_TTL };
+    const payload = { ...marketData, commentary, commentaryError, nextUpdateAt: now + CACHE_TTL };
     commentaryCache = { data: payload, fetchedAt: now };
     res.json(payload);
   } catch (err) {
