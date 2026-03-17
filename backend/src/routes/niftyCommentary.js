@@ -186,6 +186,10 @@ export async function getNiftyCommentary(req, res) {
     let weekly = null;
     let monthly = null;
 
+    if (chainResult.status === 'rejected') {
+      console.warn('Option chain fetch failed:', chainResult.reason?.message);
+    }
+
     if (chainResult.status === 'fulfilled') {
       const optData = chainResult.value?.records?.data || chainResult.value?.filtered?.data || [];
       const expiriesRaw = chainResult.value?.records?.expiryDates || [];
@@ -224,7 +228,8 @@ export async function getNiftyCommentary(req, res) {
       }
     }
 
-    const payload = { ...marketData, commentary, commentaryError, nextUpdateAt: now + CACHE_TTL };
+    const chainError = chainResult.status === 'rejected' ? chainResult.reason?.message : null;
+    const payload = { ...marketData, commentary, commentaryError, chainError, nextUpdateAt: now + CACHE_TTL };
     commentaryCache = { data: payload, fetchedAt: now };
     res.json(payload);
   } catch (err) {
