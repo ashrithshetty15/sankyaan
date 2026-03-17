@@ -14,6 +14,7 @@ import TradeAlerts from './TradeAlerts.jsx';
 import PortfolioTracker from './PortfolioTracker.jsx';
 import MarketSentiment from './MarketSentiment.jsx';
 import PaperTrading from './PaperTrading.jsx';
+import NiftyCommentary from './NiftyCommentary.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 import './App.css';
 
@@ -512,6 +513,7 @@ export default function Home({ viewMode, setViewMode }) {
             : viewMode === 'portfolio-tracker' ? 'My Portfolio'
             : viewMode === 'trade-alerts' ? 'Trade Alerts'
             : viewMode === 'market-sentiment' ? 'Market Sentiment'
+            : viewMode === 'nifty-commentary' ? 'Nifty Commentary'
             : viewMode === 'paper-trading' ? 'Paper Trading'
             : 'Stock Scores Rating'}
         </h1>
@@ -534,6 +536,8 @@ export default function Home({ viewMode, setViewMode }) {
             ? 'High-probability options strategies'
             : viewMode === 'market-sentiment'
             ? 'Live VIX, PCR, and crowd sentiment for Nifty & BankNifty'
+            : viewMode === 'nifty-commentary'
+            ? 'AI-generated F&O commentary updated every 10 minutes'
             : viewMode === 'paper-trading'
             ? 'Trade with ₹10 lakh virtual capital and climb the leaderboard'
             : 'Rank stocks by quality scores'}
@@ -1185,6 +1189,10 @@ export default function Home({ viewMode, setViewMode }) {
 
       {viewMode === 'market-sentiment' && (
         <MarketSentiment />
+      )}
+
+      {viewMode === 'nifty-commentary' && (
+        <NiftyCommentary />
       )}
 
       {viewMode === 'paper-trading' && (

@@ -21,6 +21,7 @@ import { googleLogin, getMe, logout } from './routes/auth.js';
 import { getBulkTrades, refreshBulkTrades } from './routes/bulkTrades.js';
 import { subscribe, confirm, unsubscribe, sendNewsletter, getStats } from './routes/newsletter.js';
 import { getMarketSentiment } from './routes/marketSentiment.js';
+import { getNiftyCommentary } from './routes/niftyCommentary.js';
 import { getPortfolio as getPaperPortfolio, enterTrade, closeTrade, getHistory as getPaperHistory, getStats as getPaperStats, getLeaderboard, getOptionChainForTrading, getLivePrice } from './routes/paperTrading.js';
 import { addHolding, getPortfolio, deleteHolding, getPortfolioAnalysis } from './routes/portfolio.js';
 import { getTradeAlerts, getTradeAlertHistory, triggerScan, getOptionsChainEndpoint } from './routes/tradeAlerts.js';
@@ -407,6 +408,7 @@ app.get('/api/newsletter/stats', getStats);
 
 // Market Sentiment - live VIX, PCR, StockTwits, news
 app.get('/api/market-sentiment', getMarketSentiment);
+app.get('/api/nifty-commentary', getNiftyCommentary);
 
 // Paper Trading
 app.get('/api/paper-trading/portfolio', optionalAuth, getPaperPortfolio);
