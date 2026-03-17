@@ -7,8 +7,21 @@ const NSE_HEADERS = {
   'Referer': 'https://www.nseindia.com/',
 };
 
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 let commentaryCache = { data: null, fetchedAt: 0 };
+
+/** Returns true if current time is within NSE market hours (IST Mon–Fri 9:15–15:30) */
+function isMarketOpen() {
+  const now = new Date();
+  // Convert to IST (UTC+5:30)
+  const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const day = ist.getDay(); // 0=Sun, 6=Sat
+  if (day === 0 || day === 6) return false;
+  const h = ist.getHours();
+  const m = ist.getMinutes();
+  const mins = h * 60 + m;
+  return mins >= 9 * 60 + 15 && mins <= 15 * 60 + 30;
+}
 
 async function getNSECookies() {
   const resp = await axios.get('https://www.nseindia.com', {
@@ -20,7 +33,7 @@ async function getNSECookies() {
 /** Next Thursday on or after today */
 function getNextThursday(fromDate = new Date()) {
   const d = new Date(fromDate);
-  const dow = d.getDay(); // 0=Sun, 4=Thu
+  const dow = d.getDay();
   const daysUntilThursday = (4 - dow + 7) % 7 || 7;
   d.setDate(d.getDate() + daysUntilThursday);
   return d;
@@ -41,10 +54,10 @@ function formatNSEExpiry(date) {
   return `${dd}-${months[date.getMonth()]}-${date.getFullYear()}`;
 }
 
-async function fetchOptionChainData(cookies) {
+async function fetchOptionChain(symbol, cookies) {
   const headers = { ...NSE_HEADERS, Cookie: cookies };
   const resp = await axios.get(
-    'https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY',
+    `https://www.nseindia.com/api/option-chain-indices?symbol=${symbol}`,
     { headers, timeout: 20000 }
   );
   return resp.data;
@@ -72,65 +85,92 @@ function computeOIMetrics(optData, targetExpiry) {
 
   const pcr = callOI > 0 ? parseFloat((putOI / callOI).toFixed(3)) : null;
 
-  // Max pain: strike where total OI loss is minimum for option buyers
   const strikes = Object.keys(strikeOI).map(Number).sort((a, b) => a - b);
   let maxPainStrike = null;
   let minLoss = Infinity;
   for (const s of strikes) {
     let totalLoss = 0;
     for (const s2 of strikes) {
-      if (s2 > s) totalLoss += strikeOI[s2].ce * (s2 - s); // CE loss if expires at s
-      if (s2 < s) totalLoss += strikeOI[s2].pe * (s - s2); // PE loss if expires at s
+      if (s2 > s) totalLoss += strikeOI[s2].ce * (s2 - s);
+      if (s2 < s) totalLoss += strikeOI[s2].pe * (s - s2);
     }
     if (totalLoss < minLoss) { minLoss = totalLoss; maxPainStrike = s; }
   }
 
-  // Top 5 CE and PE OI strikes
-  const topCE = strikes.sort((a, b) => strikeOI[b].ce - strikeOI[a].ce).slice(0, 5)
+  const topCE = [...strikes].sort((a, b) => strikeOI[b].ce - strikeOI[a].ce).slice(0, 5)
     .map(s => ({ strike: s, oi: strikeOI[s].ce }));
-  const topPE = strikes.sort((a, b) => strikeOI[b].pe - strikeOI[a].pe).slice(0, 5)
+  const topPE = [...strikes].sort((a, b) => strikeOI[b].pe - strikeOI[a].pe).slice(0, 5)
     .map(s => ({ strike: s, oi: strikeOI[s].pe }));
 
   return { pcr, maxPain: maxPainStrike, topCE, topPE, totalCallOI: callOI, totalPutOI: putOI };
+}
+
+function extractExpiryMetrics(chainData, today) {
+  const optData = chainData?.records?.data || chainData?.filtered?.data || [];
+  const expiriesRaw = chainData?.records?.expiryDates || [];
+
+  const nextThursdayFmt = formatNSEExpiry(getNextThursday(today));
+  let monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth());
+  if (monthlyDate < today) monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth() + 1);
+  const monthlyFmt = formatNSEExpiry(monthlyDate);
+
+  const weeklyExpiry = expiriesRaw.find(e => e >= nextThursdayFmt) || expiriesRaw[0];
+  const monthlyExpiry = expiriesRaw.find(e => e >= monthlyFmt) || expiriesRaw[expiriesRaw.length - 1];
+
+  const weekly = weeklyExpiry
+    ? { expiry: weeklyExpiry, ...computeOIMetrics(optData, weeklyExpiry) }
+    : null;
+  const monthly = monthlyExpiry
+    ? { expiry: monthlyExpiry, ...computeOIMetrics(optData, monthlyExpiry) }
+    : null;
+
+  return { weekly, monthly };
+}
+
+function fmtOI(oi) {
+  return oi >= 1e5 ? `${(oi / 1e5).toFixed(1)}L` : String(oi);
 }
 
 async function generateCommentary(marketData) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
-  const { spot, vix, weekly, monthly, timestamp } = marketData;
+  const { spot, bankniftySpot, vix, nifty, banknifty, timestamp } = marketData;
   const timeStr = new Date(timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
 
-  const prompt = `You are a professional Indian derivatives market analyst providing live commentary at ${timeStr} IST. Based on the following NIFTY F&O data, write a concise 3-paragraph market commentary in a confident, analytical tone — like a Bloomberg or CNBC-TV18 analyst would narrate.
+  const oiSection = (label, data) => {
+    if (!data?.weekly && !data?.monthly) return `${label}: OI data unavailable`;
+    const w = data.weekly;
+    const m = data.monthly;
+    return `${label}:
+Weekly (${w?.expiry ?? 'N/A'}): PCR ${w?.pcr ?? 'N/A'} | Max Pain ${w?.maxPain ?? 'N/A'} | CE: ${w?.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'} | PE: ${w?.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'}
+Monthly (${m?.expiry ?? 'N/A'}): PCR ${m?.pcr ?? 'N/A'} | Max Pain ${m?.maxPain ?? 'N/A'} | CE: ${m?.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'} | PE: ${m?.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ') ?? 'N/A'}`;
+  };
+
+  const prompt = `You are a professional Indian derivatives market analyst providing live F&O commentary at ${timeStr} IST. Write exactly 4 paragraphs in a confident, analytical tone like a CNBC-TV18 or Bloomberg Quint analyst — use numbers, be direct and insightful, no bullet points.
 
 MARKET DATA:
-- Nifty Spot: ${spot?.price ?? 'N/A'} (${spot?.changePct >= 0 ? '+' : ''}${spot?.changePct ?? 0}%)
+- Nifty 50: ${spot?.price ?? 'N/A'} (${spot?.changePct >= 0 ? '+' : ''}${spot?.changePct ?? 0}%)
+- Bank Nifty: ${bankniftySpot?.price ?? 'N/A'} (${bankniftySpot?.changePct >= 0 ? '+' : ''}${bankniftySpot?.changePct ?? 0}%)
 - India VIX: ${vix?.value ?? 'N/A'} (${vix?.level ?? ''})
 
-WEEKLY EXPIRY OI (${weekly?.expiry ?? 'this week'}):
-- PCR: ${weekly?.pcr ?? 'N/A'} → ${weekly?.pcr > 1.2 ? 'Bullish sentiment' : weekly?.pcr < 0.8 ? 'Bearish sentiment' : 'Neutral'}
-- Max Pain: ${weekly?.maxPain ?? 'N/A'}
-- Top CE (Resistance) strikes by OI: ${weekly?.topCE?.slice(0, 3).map(s => `${s.strike} (${(s.oi / 1e5).toFixed(1)}L)`).join(', ') ?? 'N/A'}
-- Top PE (Support) strikes by OI: ${weekly?.topPE?.slice(0, 3).map(s => `${s.strike} (${(s.oi / 1e5).toFixed(1)}L)`).join(', ') ?? 'N/A'}
+${oiSection('NIFTY OI', nifty)}
 
-MONTHLY EXPIRY OI (${monthly?.expiry ?? 'this month'}):
-- PCR: ${monthly?.pcr ?? 'N/A'} → ${monthly?.pcr > 1.2 ? 'Bullish' : monthly?.pcr < 0.8 ? 'Bearish' : 'Neutral'}
-- Max Pain: ${monthly?.maxPain ?? 'N/A'}
-- Top CE strikes: ${monthly?.topCE?.slice(0, 3).map(s => `${s.strike} (${(s.oi / 1e5).toFixed(1)}L)`).join(', ') ?? 'N/A'}
-- Top PE strikes: ${monthly?.topPE?.slice(0, 3).map(s => `${s.strike} (${(s.oi / 1e5).toFixed(1)}L)`).join(', ') ?? 'N/A'}
+${oiSection('BANKNIFTY OI', banknifty)}
 
-Write exactly 3 paragraphs:
-1. Current market tone and what VIX + spot movement signals
-2. Weekly expiry OI analysis — key support/resistance levels, where smart money is positioned
-3. Monthly picture — bigger support/resistance zones and near-term outlook
+Write exactly 4 paragraphs:
+1. Overall market tone — what Nifty + BankNifty movement and VIX signal right now
+2. Nifty F&O positioning — weekly + monthly key levels, where bulls/bears are positioned
+3. BankNifty F&O positioning — weekly + monthly key levels and banking sector bias
+4. Near-term outlook and key levels to watch on both indices
 
-Keep it under 250 words. Use numbers. Be direct and insightful. Do not use bullet points.`;
+Keep it under 300 words. Use strike prices as specific numbers.`;
 
   const resp = await axios.post(
     'https://api.anthropic.com/v1/messages',
     {
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 600,
+      max_tokens: 700,
       messages: [{ role: 'user', content: prompt }],
     },
     {
@@ -151,23 +191,35 @@ Keep it under 250 words. Use numbers. Be direct and insightful. Do not use bulle
 export async function getNiftyCommentary(req, res) {
   const force = req.query.force === '1';
   const now = Date.now();
+  const marketOpen = isMarketOpen();
+
+  // Outside market hours — return cached data (or last stale data) with marketOpen flag
+  if (!marketOpen && !force) {
+    const cached = commentaryCache.data;
+    if (cached) {
+      return res.json({ ...cached, marketOpen: false });
+    }
+    // No cache yet — still fetch once so page has data even outside hours
+  }
 
   if (!force && commentaryCache.data && (now - commentaryCache.fetchedAt) < CACHE_TTL) {
-    return res.json(commentaryCache.data);
+    return res.json({ ...commentaryCache.data, marketOpen });
   }
 
   try {
     let cookies = '';
     try { cookies = await getNSECookies(); } catch (_) {}
 
-    const [indicesResult, chainResult] = await Promise.allSettled([
+    const [indicesResult, niftyChainResult, bankniftyChainResult] = await Promise.allSettled([
       fetchAllIndices(cookies),
-      fetchOptionChainData(cookies),
+      fetchOptionChain('NIFTY', cookies),
+      fetchOptionChain('BANKNIFTY', cookies),
     ]);
 
-    // Extract spot + VIX
+    // Extract spot prices
     const allIndices = indicesResult.status === 'fulfilled' ? indicesResult.value : [];
     const niftyEntry = allIndices.find(i => i.indexSymbol === 'NIFTY 50' || i.index === 'Nifty 50');
+    const bnEntry = allIndices.find(i => i.indexSymbol === 'NIFTY BANK' || i.index === 'Nifty Bank' || i.indexSymbol === 'BANK NIFTY');
     const vixEntry = allIndices.find(i => i.indexSymbol === 'INDIA VIX' || i.index === 'India VIX');
 
     const spot = niftyEntry ? {
@@ -176,47 +228,41 @@ export async function getNiftyCommentary(req, res) {
       changePct: parseFloat(niftyEntry.percentChange ?? niftyEntry.pChange ?? 0),
     } : null;
 
+    const bankniftySpot = bnEntry ? {
+      price: parseFloat(bnEntry.last ?? bnEntry.lastPrice ?? 0),
+      change: parseFloat(bnEntry.variation ?? bnEntry.change ?? 0),
+      changePct: parseFloat(bnEntry.percentChange ?? bnEntry.pChange ?? 0),
+    } : null;
+
     const vixVal = vixEntry ? parseFloat(vixEntry.last ?? vixEntry.lastPrice ?? 0) : null;
     const vix = vixVal ? {
       value: vixVal,
       level: vixVal < 15 ? 'Low Fear' : vixVal < 20 ? 'Moderate' : vixVal < 25 ? 'High' : 'Extreme Fear',
     } : null;
 
-    // Compute weekly and monthly OI metrics
-    let weekly = null;
-    let monthly = null;
+    const today = new Date();
+    const niftyOI = niftyChainResult.status === 'fulfilled'
+      ? extractExpiryMetrics(niftyChainResult.value, today)
+      : { weekly: null, monthly: null };
+    const bankniftyOI = bankniftyChainResult.status === 'fulfilled'
+      ? extractExpiryMetrics(bankniftyChainResult.value, today)
+      : { weekly: null, monthly: null };
 
-    if (chainResult.status === 'rejected') {
-      console.warn('Option chain fetch failed:', chainResult.reason?.message);
-    }
+    if (niftyChainResult.status === 'rejected') console.warn('Nifty chain error:', niftyChainResult.reason?.message);
+    if (bankniftyChainResult.status === 'rejected') console.warn('BankNifty chain error:', bankniftyChainResult.reason?.message);
 
-    if (chainResult.status === 'fulfilled') {
-      const optData = chainResult.value?.records?.data || chainResult.value?.filtered?.data || [];
-      const expiriesRaw = chainResult.value?.records?.expiryDates || [];
+    const marketData = {
+      spot,
+      bankniftySpot,
+      vix,
+      // Keep backward-compat fields for frontend OI tables
+      weekly: niftyOI.weekly,
+      monthly: niftyOI.monthly,
+      nifty: niftyOI,
+      banknifty: bankniftyOI,
+      timestamp: new Date().toISOString(),
+    };
 
-      const today = new Date();
-      const nextThursday = getNextThursday(today);
-      const nextThursdayFmt = formatNSEExpiry(nextThursday);
-
-      // Monthly: last Thursday of current or next month
-      let monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth());
-      if (monthlyDate < today) monthlyDate = getMonthlyExpiry(today.getFullYear(), today.getMonth() + 1);
-      const monthlyFmt = formatNSEExpiry(monthlyDate);
-
-      // Find nearest available expiry in the chain for weekly
-      const weeklyExpiry = expiriesRaw.find(e => e >= nextThursdayFmt) || expiriesRaw[0];
-      const monthlyExpiry = expiriesRaw.find(e => e >= monthlyFmt) || expiriesRaw[expiriesRaw.length - 1];
-
-      const weeklyMetrics = computeOIMetrics(optData, weeklyExpiry);
-      const monthlyMetrics = computeOIMetrics(optData, monthlyExpiry);
-
-      weekly = { expiry: weeklyExpiry, ...weeklyMetrics };
-      monthly = { expiry: monthlyExpiry, ...monthlyMetrics };
-    }
-
-    const marketData = { spot, vix, weekly, monthly, timestamp: new Date().toISOString() };
-
-    // Generate AI commentary (non-blocking — use cached text if AI fails)
     let commentary = null;
     let commentaryError = null;
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -228,8 +274,13 @@ export async function getNiftyCommentary(req, res) {
       }
     }
 
-    const chainError = chainResult.status === 'rejected' ? chainResult.reason?.message : null;
-    const payload = { ...marketData, commentary, commentaryError, chainError, nextUpdateAt: now + CACHE_TTL };
+    const payload = {
+      ...marketData,
+      commentary,
+      commentaryError,
+      marketOpen,
+      nextUpdateAt: marketOpen ? now + CACHE_TTL : null,
+    };
     commentaryCache = { data: payload, fetchedAt: now };
     res.json(payload);
   } catch (err) {
