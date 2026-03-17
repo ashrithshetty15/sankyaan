@@ -41,77 +41,79 @@ function Countdown({ nextUpdateAt, onTick }) {
   return <span className="nc-countdown">{m}:{String(s).padStart(2, '0')}</span>;
 }
 
-function OITable({ label, weeklyMetrics, monthlyMetrics }) {
-  if (!weeklyMetrics && !monthlyMetrics) return null;
-
-  const renderRows = (strikes, maxOi) => strikes.slice(0, 5).map(s => (
-    <div key={s.strike} className="nc-oi-row">
-      <span className="nc-strike">{fmtINR(s.strike)}</span>
-      <div className="nc-oi-bar-wrap">
-        <div className="nc-oi-bar pe" style={{ width: `${Math.min(100, (s.oi / (maxOi || 1)) * 100)}%` }} />
-      </div>
-      <span className="nc-oi-val">{fmtOI(s.oi)}</span>
-    </div>
-  ));
+function OICard({ label, metrics }) {
+  if (!metrics) return null;
+  const { pcr, maxPain, topCE = [], topPE = [], expiry } = metrics;
+  const pcrColor = getPCRColor(pcr);
 
   return (
-    <div className="nc-oi-section-block">
-      <div className="nc-oi-index-label">{label}</div>
-      <div className="nc-oi-expiry-row">
-        {/* Weekly */}
-        {weeklyMetrics && (() => {
-          const { pcr, maxPain, topCE = [], topPE = [] } = weeklyMetrics;
-          const pcrColor = getPCRColor(pcr);
-          return (
-            <div className="nc-oi-card">
-              <div className="nc-oi-header">
-                <span className="nc-oi-label">Weekly</span>
-                <span className="nc-oi-expiry">{weeklyMetrics.expiry}</span>
-                <span className="nc-pcr-badge" style={{ color: pcrColor, borderColor: pcrColor }}>
-                  PCR {fmt(pcr, 2)} · {getPCRLabel(pcr)}
-                </span>
-                {maxPain && <span className="nc-maxpain">Max Pain: {fmtINR(maxPain)}</span>}
+    <div className="nc-oi-card">
+      <div className="nc-oi-header">
+        <span className="nc-oi-label">{label}</span>
+        <span className="nc-oi-expiry">{expiry}</span>
+        <span className="nc-pcr-badge" style={{ color: pcrColor, borderColor: pcrColor }}>
+          PCR {fmt(pcr, 2)} · {getPCRLabel(pcr)}
+        </span>
+        {maxPain && <span className="nc-maxpain">Max Pain: {fmtINR(maxPain)}</span>}
+      </div>
+      <div className="nc-oi-grid">
+        <div className="nc-oi-col">
+          <div className="nc-oi-col-title">🟢 Support (PE OI)</div>
+          {topPE.slice(0, 5).map(s => (
+            <div key={s.strike} className="nc-oi-row">
+              <span className="nc-strike">{fmtINR(s.strike)}</span>
+              <div className="nc-oi-bar-wrap">
+                <div className="nc-oi-bar pe" style={{ width: `${Math.min(100, (s.oi / (topPE[0]?.oi || 1)) * 100)}%` }} />
               </div>
-              <div className="nc-oi-grid">
-                <div className="nc-oi-col">
-                  <div className="nc-oi-col-title">🟢 Support (PE OI)</div>
-                  {renderRows(topPE, topPE[0]?.oi)}
-                </div>
-                <div className="nc-oi-col">
-                  <div className="nc-oi-col-title">🔴 Resistance (CE OI)</div>
-                  {renderRows(topCE, topCE[0]?.oi)}
-                </div>
-              </div>
+              <span className="nc-oi-val">{fmtOI(s.oi)}</span>
             </div>
-          );
-        })()}
-        {/* Monthly */}
-        {monthlyMetrics && (() => {
-          const { pcr, maxPain, topCE = [], topPE = [] } = monthlyMetrics;
-          const pcrColor = getPCRColor(pcr);
-          return (
-            <div className="nc-oi-card">
-              <div className="nc-oi-header">
-                <span className="nc-oi-label">Monthly</span>
-                <span className="nc-oi-expiry">{monthlyMetrics.expiry}</span>
-                <span className="nc-pcr-badge" style={{ color: pcrColor, borderColor: pcrColor }}>
-                  PCR {fmt(pcr, 2)} · {getPCRLabel(pcr)}
-                </span>
-                {maxPain && <span className="nc-maxpain">Max Pain: {fmtINR(maxPain)}</span>}
+          ))}
+        </div>
+        <div className="nc-oi-col">
+          <div className="nc-oi-col-title">🔴 Resistance (CE OI)</div>
+          {topCE.slice(0, 5).map(s => (
+            <div key={s.strike} className="nc-oi-row">
+              <span className="nc-strike">{fmtINR(s.strike)}</span>
+              <div className="nc-oi-bar-wrap">
+                <div className="nc-oi-bar ce" style={{ width: `${Math.min(100, (s.oi / (topCE[0]?.oi || 1)) * 100)}%` }} />
               </div>
-              <div className="nc-oi-grid">
-                <div className="nc-oi-col">
-                  <div className="nc-oi-col-title">🟢 Support (PE OI)</div>
-                  {renderRows(topPE, topPE[0]?.oi)}
-                </div>
-                <div className="nc-oi-col">
-                  <div className="nc-oi-col-title">🔴 Resistance (CE OI)</div>
-                  {renderRows(topCE, topCE[0]?.oi)}
-                </div>
-              </div>
+              <span className="nc-oi-val">{fmtOI(s.oi)}</span>
             </div>
-          );
-        })()}
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IndexSection({ name, accent, spot, oiData }) {
+  const weekly = oiData?.weekly;
+  const monthly = oiData?.monthly;
+  const pcr = weekly?.pcr;
+
+  return (
+    <div className="nc-index-section" style={{ borderTopColor: accent }}>
+      <div className="nc-index-header">
+        <div className="nc-index-title-group">
+          <span className="nc-index-name" style={{ color: accent }}>{name}</span>
+          {spot && (
+            <span className="nc-index-price" style={{ color: spot.changePct >= 0 ? '#3ddc84' : '#ff6b6b' }}>
+              {fmtINR(spot.price)}
+              <span className="nc-index-chg">
+                {spot.changePct >= 0 ? ' +' : ' '}{fmt(spot.changePct)}%
+              </span>
+            </span>
+          )}
+        </div>
+        {pcr != null && (
+          <div className="nc-index-pcr" style={{ color: getPCRColor(pcr), borderColor: getPCRColor(pcr) }}>
+            PCR {fmt(pcr, 2)} · {getPCRLabel(pcr)}
+          </div>
+        )}
+      </div>
+      <div className="nc-oi-pair">
+        <OICard label="Weekly" metrics={weekly} />
+        <OICard label="Monthly" metrics={monthly} />
       </div>
     </div>
   );
@@ -143,17 +145,11 @@ export default function NiftyCommentary() {
 
   useEffect(() => { load(); }, [load]);
 
-  const spot = data?.spot;
-  const bankniftySpot = data?.bankniftySpot;
-  const vix = data?.vix;
-  const niftyOI = data?.nifty;
-  const bankniftyOI = data?.banknifty;
-  const commentary = data?.commentary;
-  const commentaryError = data?.commentaryError;
-  const marketOpen = data?.marketOpen;
+  const { spot, bankniftySpot, vix, nifty, banknifty, commentary, commentaryError, marketOpen } = data || {};
 
   return (
     <div className="nc-container">
+      {/* ── Header ── */}
       <div className="nc-header">
         <div className="nc-title-row">
           <h2 className="nc-title">🎙️ Live F&O Commentary</h2>
@@ -190,62 +186,20 @@ export default function NiftyCommentary() {
 
       {data && (
         <>
-          {/* Spot + VIX row */}
-          <div className="nc-market-row">
-            {spot && (
-              <div className="nc-market-card">
-                <div className="nc-market-val" style={{ color: spot.changePct >= 0 ? '#3ddc84' : '#ff6b6b' }}>
-                  {fmtINR(spot.price)}
-                </div>
-                <div className="nc-market-lbl">Nifty 50</div>
-                <div className={`nc-market-chg ${spot.changePct >= 0 ? 'pos' : 'neg'}`}>
-                  {spot.changePct >= 0 ? '+' : ''}{fmt(spot.changePct)}% ({spot.changePct >= 0 ? '+' : ''}{fmt(spot.change, 0)})
-                </div>
-              </div>
-            )}
-            {bankniftySpot && (
-              <div className="nc-market-card">
-                <div className="nc-market-val" style={{ color: bankniftySpot.changePct >= 0 ? '#3ddc84' : '#ff6b6b' }}>
-                  {fmtINR(bankniftySpot.price)}
-                </div>
-                <div className="nc-market-lbl">Bank Nifty</div>
-                <div className={`nc-market-chg ${bankniftySpot.changePct >= 0 ? 'pos' : 'neg'}`}>
-                  {bankniftySpot.changePct >= 0 ? '+' : ''}{fmt(bankniftySpot.changePct)}% ({bankniftySpot.changePct >= 0 ? '+' : ''}{fmt(bankniftySpot.change, 0)})
-                </div>
-              </div>
-            )}
-            {vix && (
-              <div className="nc-market-card">
-                <div className="nc-market-val" style={{
-                  color: vix.value < 15 ? '#3ddc84' : vix.value < 20 ? '#f0b429' : '#ff6b6b'
-                }}>
-                  {fmt(vix.value)}
-                </div>
-                <div className="nc-market-lbl">India VIX</div>
-                <div className="nc-vix-level">{vix.level}</div>
-              </div>
-            )}
-            {niftyOI?.weekly && (
-              <div className="nc-market-card">
-                <div className="nc-market-val" style={{ color: getPCRColor(niftyOI.weekly.pcr) }}>
-                  {fmt(niftyOI.weekly.pcr, 2)}
-                </div>
-                <div className="nc-market-lbl">Nifty PCR</div>
-                <div className="nc-market-chg" style={{ color: getPCRColor(niftyOI.weekly.pcr) }}>{getPCRLabel(niftyOI.weekly.pcr)}</div>
-              </div>
-            )}
-            {bankniftyOI?.weekly && (
-              <div className="nc-market-card">
-                <div className="nc-market-val" style={{ color: getPCRColor(bankniftyOI.weekly.pcr) }}>
-                  {fmt(bankniftyOI.weekly.pcr, 2)}
-                </div>
-                <div className="nc-market-lbl">BankNifty PCR</div>
-                <div className="nc-market-chg" style={{ color: getPCRColor(bankniftyOI.weekly.pcr) }}>{getPCRLabel(bankniftyOI.weekly.pcr)}</div>
-              </div>
-            )}
-          </div>
+          {/* ── VIX summary bar ── */}
+          {vix && (
+            <div className="nc-vix-bar">
+              <span className="nc-vix-label">India VIX</span>
+              <span className="nc-vix-val" style={{
+                color: vix.value < 15 ? '#3ddc84' : vix.value < 20 ? '#f0b429' : '#ff6b6b'
+              }}>{fmt(vix.value)}</span>
+              <span className="nc-vix-badge" style={{
+                color: vix.value < 15 ? '#3ddc84' : vix.value < 20 ? '#f0b429' : '#ff6b6b'
+              }}>{vix.level}</span>
+            </div>
+          )}
 
-          {/* AI Commentary */}
+          {/* ── AI Commentary ── */}
           {commentary ? (
             <div className="nc-commentary-card">
               <div className="nc-commentary-header">
@@ -271,9 +225,21 @@ export default function NiftyCommentary() {
             </div>
           )}
 
-          {/* OI Tables */}
-          <OITable label="Nifty 50" weeklyMetrics={niftyOI?.weekly} monthlyMetrics={niftyOI?.monthly} />
-          <OITable label="Bank Nifty" weeklyMetrics={bankniftyOI?.weekly} monthlyMetrics={bankniftyOI?.monthly} />
+          {/* ── Nifty Section ── */}
+          <IndexSection
+            name="Nifty 50"
+            accent="#60a5fa"
+            spot={spot}
+            oiData={nifty}
+          />
+
+          {/* ── BankNifty Section ── */}
+          <IndexSection
+            name="Bank Nifty"
+            accent="#a78bfa"
+            spot={bankniftySpot}
+            oiData={banknifty}
+          />
         </>
       )}
     </div>
