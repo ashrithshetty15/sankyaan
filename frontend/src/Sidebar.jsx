@@ -137,19 +137,11 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
         </button>
 
         <button
-          className={`nav-item ${viewMode === 'nifty-commentary' ? 'active' : ''}`}
-          onClick={() => handleNavClick('nifty-commentary')}
+          className={`nav-item ${viewMode === 'fo-commentary' ? 'active' : ''}`}
+          onClick={() => handleNavClick('fo-commentary')}
         >
           <span className="nav-icon">🎙️</span>
-          <span className="nav-text">Nifty Commentary</span>
-        </button>
-
-        <button
-          className={`nav-item ${viewMode === 'stock-commentary' ? 'active' : ''}`}
-          onClick={() => handleNavClick('stock-commentary')}
-        >
-          <span className="nav-icon">📊</span>
-          <span className="nav-text">Stock F&amp;O</span>
+          <span className="nav-text">F&amp;O Commentary</span>
         </button>
 
         <div className="nav-section-label">TRADING</div>
