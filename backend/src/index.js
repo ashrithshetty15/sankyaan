@@ -23,6 +23,7 @@ import { subscribe, confirm, unsubscribe, sendNewsletter, getStats } from './rou
 import { getMarketSentiment } from './routes/marketSentiment.js';
 import { getNiftyCommentary } from './routes/niftyCommentary.js';
 import { getStockCommentary } from './routes/stockCommentary.js';
+import { getStockAIReport, getFundAIReport } from './routes/aiAnalysis.js';
 import { getPortfolio as getPaperPortfolio, enterTrade, closeTrade, getHistory as getPaperHistory, getStats as getPaperStats, getLeaderboard, getOptionChainForTrading, getLivePrice } from './routes/paperTrading.js';
 import { addHolding, getPortfolio, deleteHolding, getPortfolioAnalysis } from './routes/portfolio.js';
 import { getTradeAlerts, getTradeAlertHistory, triggerScan, getOptionsChainEndpoint } from './routes/tradeAlerts.js';
@@ -411,6 +412,8 @@ app.get('/api/newsletter/stats', getStats);
 app.get('/api/market-sentiment', getMarketSentiment);
 app.get('/api/nifty-commentary', getNiftyCommentary);
 app.get('/api/stock-commentary', getStockCommentary);
+app.get('/api/stock-ai-report', getStockAIReport);
+app.get('/api/fund-ai-report', getFundAIReport);
 
 // Paper Trading
 app.get('/api/paper-trading/portfolio', optionalAuth, getPaperPortfolio);

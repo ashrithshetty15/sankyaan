@@ -13,6 +13,64 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const COLORS = ['#2E8B57', '#1E5C41', '#FFD93D', '#6BCB77', '#FF6B6B'];
 
+function AIReportCard({ symbol }) {
+  const [report, setReport] = useState(null);
+  const [reportError, setReportError] = useState('');
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [generated, setGenerated] = useState(false);
+
+  const generate = async (force = false) => {
+    setLoadingReport(true);
+    setReportError('');
+    try {
+      const res = await axios.get(`${API_URL}/stock-ai-report`, {
+        params: { symbol, ...(force ? { force: 1 } : {}) }
+      });
+      setReport(res.data.report);
+      if (res.data.reportError) setReportError(res.data.reportError);
+      setGenerated(true);
+    } catch (e) {
+      setReportError(e.response?.data?.error || 'Failed to generate report');
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  return (
+    <div className="ai-report-card">
+      <div className="ai-report-header">
+        <span className="ai-report-title">✦ AI Analyst Report</span>
+        {!generated ? (
+          <button className="ai-report-btn" onClick={() => generate()} disabled={loadingReport}>
+            {loadingReport ? 'Generating...' : 'Generate Report'}
+          </button>
+        ) : (
+          <button className="ai-report-btn secondary" onClick={() => generate(true)} disabled={loadingReport}>
+            {loadingReport ? '⏳' : '↻ Regenerate'}
+          </button>
+        )}
+      </div>
+      {loadingReport && (
+        <div className="ai-report-loading">
+          <div className="ai-report-spinner" />
+          <span>Analyzing financials and generating insights...</span>
+        </div>
+      )}
+      {reportError && <div className="ai-report-error">⚠️ {reportError}</div>}
+      {report && !loadingReport && (
+        <div className="ai-report-body">
+          {report.split('\n\n').map((para, i) => <p key={i}>{para}</p>)}
+        </div>
+      )}
+      {!generated && !loadingReport && (
+        <div className="ai-report-placeholder">
+          Click "Generate Report" for an AI-powered investment analysis of this stock.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StockDetail() {
   const { symbol } = useParams();
   const navigate = useNavigate();
@@ -322,6 +380,9 @@ export default function StockDetail() {
           </div>
         </div>
       ) : null}
+
+      {/* AI Analyst Report */}
+      <AIReportCard symbol={stockData.symbol} />
 
       {/* Enhanced Stock Chart with Timeframe Selector */}
       <StockChart

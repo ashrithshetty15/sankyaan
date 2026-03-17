@@ -16,6 +16,76 @@ import MarketSentiment from './MarketSentiment.jsx';
 import PaperTrading from './PaperTrading.jsx';
 import FOCommentary from './FOCommentary.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
+
+const API_URL_HOME = import.meta.env.VITE_API_URL ||
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-production.up.railway.app/api');
+
+function FundAIReportCard({ ticker }) {
+  const [report, setReport] = React.useState(null);
+  const [reportError, setReportError] = React.useState('');
+  const [loadingReport, setLoadingReport] = React.useState(false);
+  const [generated, setGenerated] = React.useState(false);
+
+  React.useEffect(() => { setReport(null); setReportError(''); setGenerated(false); }, [ticker]);
+
+  const generate = async (force = false) => {
+    setLoadingReport(true);
+    setReportError('');
+    try {
+      const res = await axios.get(`${API_URL_HOME}/fund-ai-report`, {
+        params: { ticker, ...(force ? { force: 1 } : {}) }
+      });
+      setReport(res.data.report);
+      if (res.data.reportError) setReportError(res.data.reportError);
+      setGenerated(true);
+    } catch (e) {
+      setReportError(e.response?.data?.error || 'Failed to generate report');
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
+  return (
+    <div style={{
+      background: '#080f1a', border: '1px solid #1e3a5f', borderLeft: '3px solid #3b82f6',
+      borderRadius: '12px', padding: '18px 22px', marginBottom: '20px'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', gap: '12px' }}>
+        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#60a5fa', letterSpacing: '0.03em' }}>✦ AI Fund Analysis</span>
+        {!generated ? (
+          <button
+            onClick={() => generate()}
+            disabled={loadingReport}
+            style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)', border: 'none', borderRadius: '8px', color: '#fff', padding: '6px 16px', fontSize: '0.82rem', fontWeight: 600, cursor: loadingReport ? 'not-allowed' : 'pointer', opacity: loadingReport ? 0.5 : 1 }}
+          >{loadingReport ? 'Generating...' : 'Generate Analysis'}</button>
+        ) : (
+          <button
+            onClick={() => generate(true)}
+            disabled={loadingReport}
+            style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#94a3b8', padding: '6px 16px', fontSize: '0.82rem', fontWeight: 600, cursor: loadingReport ? 'not-allowed' : 'pointer', opacity: loadingReport ? 0.5 : 1 }}
+          >{loadingReport ? '⏳' : '↻ Regenerate'}</button>
+        )}
+      </div>
+      {loadingReport && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#64748b', fontSize: '0.875rem', padding: '12px 0' }}>
+          <div style={{ width: 18, height: 18, border: '2px solid #1e293b', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
+          Analyzing fund portfolio and generating insights...
+        </div>
+      )}
+      {reportError && <div style={{ fontSize: '0.82rem', color: '#f87171', background: 'rgba(239,68,68,0.08)', borderRadius: '8px', padding: '8px 12px', marginTop: '4px' }}>⚠️ {reportError}</div>}
+      {report && !loadingReport && (
+        <div>{report.split('\n\n').map((para, i) => (
+          <p key={i} style={{ margin: '0 0 12px', fontSize: '0.9rem', lineHeight: 1.75, color: '#cbd5e1' }}>{para}</p>
+        ))}</div>
+      )}
+      {!generated && !loadingReport && (
+        <div style={{ fontSize: '0.85rem', color: '#475569', fontStyle: 'italic' }}>
+          Click "Generate Analysis" for an AI-powered assessment of this fund's portfolio quality, performance, and suitability.
+        </div>
+      )}
+    </div>
+  );
+}
 import './App.css';
 
 // Error boundary to prevent forensic components from crashing the whole page
@@ -725,6 +795,9 @@ export default function Home({ viewMode, setViewMode }) {
               )}
             </div>
           </div>
+
+          {/* AI Fund Analysis */}
+          <FundAIReportCard ticker={fundData.ticker} />
 
           <div className="portfolio-view">
             <div className="chart-card">
