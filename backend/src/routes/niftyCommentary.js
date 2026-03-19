@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { postCommentaryToTelegram } from '../telegram.js';
 
 const NSE_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -7,7 +8,7 @@ const NSE_HEADERS = {
   'Referer': 'https://www.nseindia.com/',
 };
 
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
 let commentaryCache = { data: null, fetchedAt: 0 };
 
 /** Returns true if current time is within NSE market hours (IST Mon–Fri 9:15–15:30) */
@@ -363,6 +364,13 @@ export async function getNiftyCommentary(req, res) {
     };
     commentaryCache = { data: payload, fetchedAt: now };
     res.json(payload);
+
+    // Post to Telegram in background (non-blocking) during market hours
+    if (marketOpen) {
+      postCommentaryToTelegram(payload).catch(e =>
+        console.error('Telegram post failed:', e.message)
+      );
+    }
   } catch (err) {
     console.error('Nifty commentary error:', err.message);
     res.status(500).json({ error: 'Failed to fetch market data' });
