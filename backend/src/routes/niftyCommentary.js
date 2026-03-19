@@ -71,7 +71,7 @@ async function fetchAllIndices(cookies) {
   return resp.data?.data || [];
 }
 
-function computeOIMetrics(optData, targetExpiry) {
+function computeOIMetrics(optData, targetExpiry, spotPrice) {
   const rows = optData.filter(r => !targetExpiry || r.expiryDate === targetExpiry);
   let callOI = 0, putOI = 0;
   const strikeOI = {};
@@ -102,10 +102,43 @@ function computeOIMetrics(optData, targetExpiry) {
   const topPE = [...strikes].sort((a, b) => strikeOI[b].pe - strikeOI[a].pe).slice(0, 5)
     .map(s => ({ strike: s, oi: strikeOI[s].pe }));
 
-  return { pcr, maxPain: maxPainStrike, topCE, topPE, totalCallOI: callOI, totalPutOI: putOI };
+  // ── Greeks extraction ──
+  let atmIV = null, atmDelta = null, atmGamma = null, atmTheta = null;
+  let ivSkew = null, expectedMove = null;
+
+  if (spotPrice && strikes.length > 0) {
+    // ATM = strike closest to spot
+    const atmStrike = strikes.reduce((prev, curr) =>
+      Math.abs(curr - spotPrice) < Math.abs(prev - spotPrice) ? curr : prev
+    );
+    const atmRow = rows.find(r => r.strikePrice === atmStrike);
+    if (atmRow) {
+      atmIV = atmRow.CE?.impliedVolatility ?? atmRow.PE?.impliedVolatility ?? null;
+      atmDelta = atmRow.CE?.delta ?? null;
+      atmGamma = atmRow.CE?.gamma ?? null;
+      // Average theta of ATM CE + PE (both are negative; show absolute value)
+      const ceTheta = atmRow.CE?.theta;
+      const peTheta = atmRow.PE?.theta;
+      if (ceTheta != null && peTheta != null) atmTheta = parseFloat(((Math.abs(ceTheta) + Math.abs(peTheta)) / 2).toFixed(2));
+      else if (ceTheta != null) atmTheta = parseFloat(Math.abs(ceTheta).toFixed(2));
+    }
+
+    // IV skew: OTM PE (5% below spot) IV minus OTM CE (5% above spot) IV
+    const otmPEStrike = strikes.reduce((p, c) => Math.abs(c - spotPrice * 0.95) < Math.abs(p - spotPrice * 0.95) ? c : p);
+    const otmCEStrike = strikes.reduce((p, c) => Math.abs(c - spotPrice * 1.05) < Math.abs(p - spotPrice * 1.05) ? c : p);
+    const peIV = rows.find(r => r.strikePrice === otmPEStrike)?.PE?.impliedVolatility;
+    const ceIV = rows.find(r => r.strikePrice === otmCEStrike)?.CE?.impliedVolatility;
+    if (peIV != null && ceIV != null) ivSkew = parseFloat((peIV - ceIV).toFixed(2));
+
+    // Expected weekly move: ATM IV / sqrt(52) × spot / 100
+    if (atmIV != null) expectedMove = parseFloat((atmIV / 100 * spotPrice / Math.sqrt(52)).toFixed(0));
+  }
+
+  return { pcr, maxPain: maxPainStrike, topCE, topPE, totalCallOI: callOI, totalPutOI: putOI,
+           atmIV, atmDelta, atmGamma, atmTheta, ivSkew, expectedMove };
 }
 
-function extractExpiryMetrics(chainData, today) {
+function extractExpiryMetrics(chainData, today, spotPrice) {
   const optData = chainData?.records?.data || chainData?.filtered?.data || [];
   const expiriesRaw = chainData?.records?.expiryDates || [];
 
@@ -118,10 +151,10 @@ function extractExpiryMetrics(chainData, today) {
   const monthlyExpiry = expiriesRaw.find(e => e >= monthlyFmt) || expiriesRaw[expiriesRaw.length - 1];
 
   const weekly = weeklyExpiry
-    ? { expiry: weeklyExpiry, ...computeOIMetrics(optData, weeklyExpiry) }
+    ? { expiry: weeklyExpiry, ...computeOIMetrics(optData, weeklyExpiry, spotPrice) }
     : null;
   const monthly = monthlyExpiry
-    ? { expiry: monthlyExpiry, ...computeOIMetrics(optData, monthlyExpiry) }
+    ? { expiry: monthlyExpiry, ...computeOIMetrics(optData, monthlyExpiry, spotPrice) }
     : null;
 
   return { weekly, monthly };
@@ -154,10 +187,22 @@ async function callClaude(prompt, apiKey) {
 function buildIndexPrompt(indexName, spot, oiData, vix, timeStr) {
   const w = oiData?.weekly;
   const m = oiData?.monthly;
+
+  const fmtN = (v, d = 2) => v != null ? Number(v).toFixed(d) : 'N/A';
+
   const oiStr = (label, d) => {
     if (!d) return `${label}: N/A`;
-    return `${label} (${d.expiry}): PCR ${d.pcr ?? 'N/A'} | Max Pain ${d.maxPain ?? 'N/A'} | CE: ${d.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ')} | PE: ${d.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ')}`;
+    const greeks = [
+      d.atmIV != null ? `ATM IV ${fmtN(d.atmIV)}%` : null,
+      d.expectedMove != null ? `Expected move ±${d.expectedMove}pts` : null,
+      d.atmDelta != null ? `Δ ${fmtN(d.atmDelta)}` : null,
+      d.atmGamma != null ? `Γ ${fmtN(d.atmGamma, 4)}` : null,
+      d.atmTheta != null ? `Θ -${fmtN(d.atmTheta)}/day` : null,
+      d.ivSkew != null ? `IV Skew(PE-CE) ${fmtN(d.ivSkew)}%` : null,
+    ].filter(Boolean).join(' | ');
+    return `${label} (${d.expiry}): PCR ${d.pcr ?? 'N/A'} | Max Pain ${d.maxPain ?? 'N/A'} | CE walls: ${d.topCE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ')} | PE support: ${d.topPE?.slice(0,3).map(s => `${s.strike}(${fmtOI(s.oi)})`).join(', ')}${greeks ? `\n  Greeks: ${greeks}` : ''}`;
   };
+
   return `You are a professional Indian derivatives analyst. Write exactly 2 paragraphs about ${indexName} F&O at ${timeStr} IST. Be direct, use numbers, no bullet points.
 
 DATA:
@@ -166,9 +211,9 @@ DATA:
 - ${oiStr('Weekly', w)}
 - ${oiStr('Monthly', m)}
 
-Paragraph 1: Current bias — what PCR + price action signal, where the index is headed.
-Paragraph 2: Key levels — CE OI resistance, PE OI support, max pain magnet, near-term outlook.
-Under 120 words. Use specific strike prices as numbers.`;
+Paragraph 1: Current bias — combine PCR, IV skew (put skew = fear), and delta to assess directional lean; mention expected move range if available.
+Paragraph 2: Key levels — CE OI resistance, PE OI support, max pain magnet; note if high gamma/theta near expiry signals pinning risk.
+Under 140 words. Use specific strike prices and Greek values as numbers.`;
 }
 
 async function generateCommentaries(marketData) {
@@ -270,16 +315,16 @@ export async function getNiftyCommentary(req, res) {
 
     const today = new Date();
     const niftyOI = niftyChainResult.status === 'fulfilled'
-      ? extractExpiryMetrics(niftyChainResult.value, today)
+      ? extractExpiryMetrics(niftyChainResult.value, today, spot?.price)
       : { weekly: null, monthly: null };
     const bankniftyOI = bankniftyChainResult.status === 'fulfilled'
-      ? extractExpiryMetrics(bankniftyChainResult.value, today)
+      ? extractExpiryMetrics(bankniftyChainResult.value, today, bankniftySpot?.price)
       : { weekly: null, monthly: null };
     const midcapOI = midcapChainResult.status === 'fulfilled'
-      ? extractExpiryMetrics(midcapChainResult.value, today)
+      ? extractExpiryMetrics(midcapChainResult.value, today, midcapSpot?.price)
       : { weekly: null, monthly: null };
     const finniftyOI = finniftyChainResult.status === 'fulfilled'
-      ? extractExpiryMetrics(finniftyChainResult.value, today)
+      ? extractExpiryMetrics(finniftyChainResult.value, today, finniftySpot?.price)
       : { weekly: null, monthly: null };
 
     if (niftyChainResult.status === 'rejected') console.warn('Nifty chain error:', niftyChainResult.reason?.message);

@@ -299,6 +299,30 @@
   border-radius: 8px;
 }
 
+/* ── Greeks row ── */
+.nc-greeks-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.nc-greek-chip {
+  background: #0f172a;
+  border: 1px solid #1e3a5f;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.nc-greek-lbl {
+  color: #60a5fa;
+  font-weight: 700;
+  margin-right: 3px;
+}
+
 /* ── OI pair (weekly + monthly side by side) ── */
 .nc-oi-pair {
   display: grid;

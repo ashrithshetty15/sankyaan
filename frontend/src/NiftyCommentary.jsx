@@ -43,8 +43,10 @@ function Countdown({ nextUpdateAt, onTick }) {
 
 function OICard({ label, metrics }) {
   if (!metrics) return null;
-  const { pcr, maxPain, topCE = [], topPE = [], expiry } = metrics;
+  const { pcr, maxPain, topCE = [], topPE = [], expiry,
+          atmIV, atmDelta, atmGamma, atmTheta, ivSkew, expectedMove } = metrics;
   const pcrColor = getPCRColor(pcr);
+  const hasGreeks = atmIV != null || atmDelta != null || atmGamma != null;
 
   return (
     <div className="nc-oi-card">
@@ -56,6 +58,43 @@ function OICard({ label, metrics }) {
         </span>
         {maxPain && <span className="nc-maxpain">Max Pain: {fmtINR(maxPain)}</span>}
       </div>
+
+      {/* Greeks row */}
+      {hasGreeks && (
+        <div className="nc-greeks-row">
+          {atmIV != null && (
+            <span className="nc-greek-chip">
+              <span className="nc-greek-lbl">IV</span> {fmt(atmIV)}%
+            </span>
+          )}
+          {expectedMove != null && (
+            <span className="nc-greek-chip">
+              <span className="nc-greek-lbl">Exp. Move</span> ±{expectedMove}
+            </span>
+          )}
+          {atmDelta != null && (
+            <span className="nc-greek-chip">
+              <span className="nc-greek-lbl">Δ</span> {fmt(atmDelta, 3)}
+            </span>
+          )}
+          {atmGamma != null && (
+            <span className="nc-greek-chip">
+              <span className="nc-greek-lbl">Γ</span> {fmt(atmGamma, 4)}
+            </span>
+          )}
+          {atmTheta != null && (
+            <span className="nc-greek-chip">
+              <span className="nc-greek-lbl">Θ</span> -{fmt(atmTheta)}/day
+            </span>
+          )}
+          {ivSkew != null && (
+            <span className="nc-greek-chip" style={{ color: ivSkew > 3 ? '#f0b429' : '#94a3b8' }}>
+              <span className="nc-greek-lbl">IV Skew</span> {ivSkew > 0 ? '+' : ''}{fmt(ivSkew)}%
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="nc-oi-grid">
         <div className="nc-oi-col">
           <div className="nc-oi-col-title">🟢 Support (PE OI)</div>
