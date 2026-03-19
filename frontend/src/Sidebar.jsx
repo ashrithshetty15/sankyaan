@@ -136,6 +136,8 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-text">Market Sentiment</span>
         </button>
 
+        <div className="nav-section-label">TRADING</div>
+
         <button
           className={`nav-item ${viewMode === 'fo-commentary' ? 'active' : ''}`}
           onClick={() => handleNavClick('fo-commentary')}
@@ -143,8 +145,6 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
           <span className="nav-icon">🎙️</span>
           <span className="nav-text">F&amp;O Commentary</span>
         </button>
-
-        <div className="nav-section-label">TRADING</div>
 
         <button
           className={`nav-item ${viewMode === 'trade-alerts' ? 'active' : ''}`}
