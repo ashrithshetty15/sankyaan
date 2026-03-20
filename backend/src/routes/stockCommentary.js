@@ -225,6 +225,30 @@ function parseFyersExpiry(sym) {
   return `${yy}-${mm}-${dd}`;
 }
 
+/**
+ * Merge CE + PE rows by strike into a single sorted array for the option chain table.
+ */
+function buildOptionChain(optData, targetExpiry, spotPrice) {
+  const rows = optData.filter(o => o.expiry === targetExpiry);
+  const strikeSet = [...new Set(rows.map(o => o.strike_price).filter(Boolean))].sort((a, b) => a - b);
+
+  let atmStrike = null;
+  if (spotPrice && strikeSet.length > 0) {
+    atmStrike = strikeSet.reduce((p, c) => Math.abs(c - spotPrice) < Math.abs(p - spotPrice) ? c : p);
+  }
+
+  return strikeSet.map(strike => {
+    const ce = rows.find(o => o.strike_price === strike && o.option_type === 'CE');
+    const pe = rows.find(o => o.strike_price === strike && o.option_type === 'PE');
+    return {
+      strike,
+      isATM: strike === atmStrike,
+      ce: ce ? { oi: ce.oi || 0, ltp: ce.ltp || null, iv: ce.iv || null, delta: ce.delta || null, volume: ce.volume || 0 } : null,
+      pe: pe ? { oi: pe.oi || 0, ltp: pe.ltp || null, iv: pe.iv || null, delta: pe.delta || null, volume: pe.volume || 0 } : null,
+    };
+  });
+}
+
 async function fetchFromFyers(symbol) {
   const fyersSymbol = getFyersSymbol(symbol);
   await Promise.all([
@@ -258,8 +282,10 @@ async function fetchFromFyers(symbol) {
     ? { price: parseFloat(spotData.ltp), change: null, changePct: null }
     : null;
 
+  const nearChain = nearExpiry ? buildOptionChain(optData, nearExpiry, spot?.price) : [];
+
   console.log(`Fyers ${symbol}: ${optData.length} rows, expiries: ${expiriesRaw.join(', ')}, spot: ${spotData?.ltp}`);
-  return { spot, nearMonth, nextMonth, source: 'fyers' };
+  return { spot, nearMonth, nextMonth, nearChain, source: 'fyers' };
 }
 
 // ─── News fetching ────────────────────────────────────────────────────────────
@@ -382,7 +408,7 @@ export async function getStockCommentary(req, res) {
       console.log(`Stock commentary for ${symbol}: fetched via NSE (Fyers not connected)`);
     }
 
-    const { spot, nearMonth, nextMonth, source: dataSource } = oiResult;
+    const { spot, nearMonth, nextMonth, nearChain, source: dataSource } = oiResult;
 
     // Fetch news in parallel (graceful failure)
     let news = [];
@@ -406,7 +432,7 @@ export async function getStockCommentary(req, res) {
     }
 
     const payload = {
-      symbol, spot, nearMonth, nextMonth, news,
+      symbol, spot, nearMonth, nextMonth, optionChain: nearChain || [], news,
       commentary, commentaryError, dataSource,
       marketOpen, nextUpdateAt: marketOpen ? now + CACHE_TTL : null, timestamp,
     };

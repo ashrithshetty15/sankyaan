@@ -501,3 +501,173 @@
   flex-shrink: 0;
   margin-top: 2px;
 }
+
+/* ── Option Chain Table ── */
+.sc-chain-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.sc-chain-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.sc-chain-table {
+  min-width: 480px;
+}
+
+/* 7-col grid: CE OI | CE IV | CE LTP | Strike | PE LTP | PE IV | PE OI */
+.sc-chain-header,
+.sc-chain-side-labels,
+.sc-chain-row {
+  display: grid;
+  grid-template-columns: 1fr 0.7fr 0.9fr 1fr 0.9fr 0.7fr 1fr;
+  align-items: center;
+  gap: 4px;
+}
+
+.sc-chain-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 4px 6px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.sc-chain-side-labels {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 4px 6px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.sc-chain-side-labels span:last-child {
+  text-align: right;
+}
+
+.sc-chain-row {
+  padding: 5px 4px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+  font-size: 0.75rem;
+  transition: background 0.1s;
+}
+
+.sc-chain-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sc-chain-row:last-child {
+  border-bottom: none;
+}
+
+.sc-chain-atm {
+  background: rgba(96, 165, 250, 0.07);
+  border-left: 2px solid #3b82f6;
+  margin-left: -2px;
+}
+
+/* CE columns — right-aligned, subtle red tint on hover */
+.sc-chain-ce-col {
+  text-align: right;
+  color: #cbd5e1;
+}
+
+.sc-chain-header .sc-chain-ce-col {
+  color: #ff6b6b;
+}
+
+/* PE columns — left-aligned */
+.sc-chain-pe-col {
+  text-align: left;
+  color: #cbd5e1;
+}
+
+.sc-chain-header .sc-chain-pe-col {
+  color: #3ddc84;
+}
+
+/* Strike center column */
+.sc-chain-strike-hdr {
+  text-align: center;
+  color: #94a3b8 !important;
+}
+
+.sc-chain-strike {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.sc-chain-strike-atm {
+  color: #60a5fa;
+  font-weight: 800;
+}
+
+.sc-chain-ltp {
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+/* OI with bar */
+.sc-chain-oi-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sc-chain-ce-col.sc-chain-oi-wrap {
+  flex-direction: row-reverse; /* bar on left, value on right */
+}
+
+.sc-chain-oi-bar-wrap {
+  flex: 1;
+  background: #1e293b;
+  border-radius: 2px;
+  height: 4px;
+  overflow: hidden;
+  min-width: 20px;
+  max-width: 60px;
+}
+
+.sc-chain-oi-bar {
+  height: 100%;
+  border-radius: 2px;
+  display: block;
+  transition: width 0.3s ease;
+}
+
+.sc-chain-oi-bar.ce { background: #ef4444; opacity: 0.7; }
+.sc-chain-oi-bar.pe { background: #22c55e; opacity: 0.7; }
+
+.sc-chain-oi-val {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mobile: hide IV columns, use 5-col grid */
+@media (max-width: 520px) {
+  .sc-chain-hide-mobile {
+    display: none;
+  }
+
+  .sc-chain-header,
+  .sc-chain-side-labels,
+  .sc-chain-row {
+    grid-template-columns: 1fr 0.9fr 1fr 0.9fr 1fr;
+  }
+}

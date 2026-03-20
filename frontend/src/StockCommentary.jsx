@@ -116,6 +116,61 @@ function OICard({ label, metrics }) {
   );
 }
 
+function OptionChainTable({ chain, spot }) {
+  if (!chain?.length) return null;
+  const atmStrike = spot
+    ? chain.reduce((p, c) => Math.abs(c.strike - spot) < Math.abs(p.strike - spot) ? c : p).strike
+    : null;
+
+  const maxCE = Math.max(...chain.map(r => r.ce?.oi || 0), 1);
+  const maxPE = Math.max(...chain.map(r => r.pe?.oi || 0), 1);
+
+  return (
+    <div className="sc-chain-card">
+      <div className="sc-chain-title">📋 Option Chain (Near Month)</div>
+      <div className="sc-chain-table">
+        <div className="sc-chain-header">
+          <span className="sc-chain-ce-col">OI</span>
+          <span className="sc-chain-ce-col sc-chain-hide-mobile">IV%</span>
+          <span className="sc-chain-ce-col">LTP</span>
+          <span className="sc-chain-strike-hdr">Strike</span>
+          <span className="sc-chain-pe-col">LTP</span>
+          <span className="sc-chain-pe-col sc-chain-hide-mobile">IV%</span>
+          <span className="sc-chain-pe-col">OI</span>
+        </div>
+        <div className="sc-chain-side-labels">
+          <span style={{ color: '#ff6b6b' }}>— CALLS —</span>
+          <span></span>
+          <span style={{ color: '#3ddc84' }}>— PUTS —</span>
+        </div>
+        {chain.map(row => (
+          <div key={row.strike} className={`sc-chain-row${row.strike === atmStrike ? ' sc-chain-atm' : ''}`}>
+            <span className="sc-chain-ce-col sc-chain-oi-wrap">
+              <span className="sc-chain-oi-bar-wrap">
+                <span className="sc-chain-oi-bar ce" style={{ width: `${Math.min(100, ((row.ce?.oi || 0) / maxCE) * 100)}%` }} />
+              </span>
+              <span className="sc-chain-oi-val">{fmtOI(row.ce?.oi || 0)}</span>
+            </span>
+            <span className="sc-chain-ce-col sc-chain-hide-mobile">{row.ce?.iv ? fmt(row.ce.iv) : '—'}</span>
+            <span className="sc-chain-ce-col sc-chain-ltp">{row.ce?.ltp ? fmtINR(row.ce.ltp) : '—'}</span>
+            <span className={`sc-chain-strike${row.strike === atmStrike ? ' sc-chain-strike-atm' : ''}`}>
+              {fmtINR(row.strike)}
+            </span>
+            <span className="sc-chain-pe-col sc-chain-ltp">{row.pe?.ltp ? fmtINR(row.pe.ltp) : '—'}</span>
+            <span className="sc-chain-pe-col sc-chain-hide-mobile">{row.pe?.iv ? fmt(row.pe.iv) : '—'}</span>
+            <span className="sc-chain-pe-col sc-chain-oi-wrap">
+              <span className="sc-chain-oi-val">{fmtOI(row.pe?.oi || 0)}</span>
+              <span className="sc-chain-oi-bar-wrap">
+                <span className="sc-chain-oi-bar pe" style={{ width: `${Math.min(100, ((row.pe?.oi || 0) / maxPE) * 100)}%` }} />
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function StockCommentary() {
   const [input, setInput] = useState('');
   const [data, setData] = useState(null);
@@ -261,6 +316,11 @@ export default function StockCommentary() {
             <div className="sc-no-data">
               Option chain data unavailable for <strong>{symbol}</strong> — this symbol may not have active F&O contracts, or data could not be fetched.
             </div>
+          )}
+
+          {/* ── Full Option Chain Table ── */}
+          {data.optionChain?.length > 0 && (
+            <OptionChainTable chain={data.optionChain} spot={spot?.price} />
           )}
 
           {/* ── News ── */}
