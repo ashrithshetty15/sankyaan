@@ -5,8 +5,7 @@ import './StockCommentary.css';
 const API = import.meta.env.VITE_API_URL ||
   (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-production.up.railway.app/api');
 
-// Popular F&O stocks for quick access
-const POPULAR = ['RELIANCE', 'HDFCBANK', 'INFY', 'TCS', 'ICICIBANK', 'WIPRO', 'BAJFINANCE', 'SBIN', 'TATAMOTORS', 'NAUKRI'];
+const POPULAR = ['RELIANCE', 'HDFCBANK', 'INFY', 'TCS', 'ICICIBANK', 'BAJFINANCE', 'SBIN', 'TATAMOTORS', 'WIPRO', 'NAUKRI'];
 
 function fmt(n, d = 2) { return n == null ? '—' : Number(n).toFixed(d); }
 function fmtINR(n) { return n == null ? '—' : `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`; }
@@ -26,10 +25,20 @@ function getPCRLabel(pcr) {
   return 'Neutral';
 }
 
+function formatNewsDate(pubDate) {
+  if (!pubDate) return '';
+  try {
+    const d = new Date(pubDate);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+  } catch { return ''; }
+}
+
 function OICard({ label, metrics }) {
   if (!metrics) return null;
-  const { pcr, maxPain, topCE = [], topPE = [], expiry } = metrics;
+  const { pcr, maxPain, topCE = [], topPE = [], expiry,
+          atmIV, atmDelta, atmGamma, atmTheta, ivSkew, expectedMove } = metrics;
   const pcrColor = getPCRColor(pcr);
+  const hasGreeks = atmIV != null || atmDelta != null || atmGamma != null;
 
   return (
     <div className="sc-oi-card">
@@ -41,6 +50,42 @@ function OICard({ label, metrics }) {
         </span>
         {maxPain && <span className="sc-maxpain">Max Pain: {fmtINR(maxPain)}</span>}
       </div>
+
+      {hasGreeks && (
+        <div className="sc-greeks-row">
+          {atmIV != null && (
+            <span className="sc-greek-chip">
+              <span className="sc-greek-lbl">IV</span> {fmt(atmIV)}%
+            </span>
+          )}
+          {expectedMove != null && (
+            <span className="sc-greek-chip">
+              <span className="sc-greek-lbl">Exp. Move</span> ±{expectedMove}
+            </span>
+          )}
+          {atmDelta != null && (
+            <span className="sc-greek-chip">
+              <span className="sc-greek-lbl">Δ</span> {fmt(atmDelta, 3)}
+            </span>
+          )}
+          {atmGamma != null && (
+            <span className="sc-greek-chip">
+              <span className="sc-greek-lbl">Γ</span> {fmt(atmGamma, 4)}
+            </span>
+          )}
+          {atmTheta != null && (
+            <span className="sc-greek-chip">
+              <span className="sc-greek-lbl">Θ</span> -{fmt(atmTheta)}/day
+            </span>
+          )}
+          {ivSkew != null && (
+            <span className="sc-greek-chip" style={{ color: ivSkew > 3 ? '#f0b429' : '#94a3b8' }}>
+              <span className="sc-greek-lbl">IV Skew</span> {ivSkew > 0 ? '+' : ''}{fmt(ivSkew)}%
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="sc-oi-grid">
         <div className="sc-oi-col">
           <div className="sc-oi-col-title">🟢 Support (PE OI)</div>
@@ -109,7 +154,7 @@ export default function StockCommentary() {
     load(sym);
   };
 
-  const { symbol, spot, weekly, monthly, commentary, commentaryError, marketOpen } = data || {};
+  const { symbol, spot, nearMonth, nextMonth, commentary, commentaryError, marketOpen, news, dataSource } = data || {};
 
   return (
     <div className="sc-container">
@@ -118,7 +163,7 @@ export default function StockCommentary() {
         <input
           className="sc-search-input"
           type="text"
-          placeholder="Enter NSE symbol (e.g. RELIANCE, HDFCBANK, TCS)"
+          placeholder="Enter NSE F&O symbol (e.g. RELIANCE, HDFCBANK, TCS)"
           value={input}
           onChange={e => setInput(e.target.value.toUpperCase())}
           autoFocus
@@ -142,7 +187,7 @@ export default function StockCommentary() {
       {loading && (
         <div className="sc-loading">
           <div className="sc-spinner" />
-          <span>Fetching F&O data for {input}...</span>
+          <span>Fetching F&O data and news for {input}...</span>
         </div>
       )}
 
@@ -153,17 +198,22 @@ export default function StockCommentary() {
             <div className="sc-stock-title-group">
               <span className="sc-symbol">{symbol}</span>
               {spot && (
-                <span className="sc-price" style={{ color: spot.changePct >= 0 ? '#3ddc84' : '#ff6b6b' }}>
+                <span className="sc-price" style={{ color: (spot.changePct ?? 0) >= 0 ? '#3ddc84' : '#ff6b6b' }}>
                   {fmtINR(spot.price)}
-                  <span className="sc-chg">
-                    {spot.changePct >= 0 ? ' +' : ' '}{fmt(spot.changePct)}%
-                    ({spot.changePct >= 0 ? '+' : ''}{fmt(spot.change, 2)})
-                  </span>
+                  {spot.changePct != null && (
+                    <span className="sc-chg">
+                      {spot.changePct >= 0 ? ' +' : ' '}{fmt(spot.changePct)}%
+                      {spot.change != null && ` (${spot.change >= 0 ? '+' : ''}${fmt(spot.change, 2)})`}
+                    </span>
+                  )}
                 </span>
               )}
             </div>
             <div className="sc-header-right">
               {!marketOpen && <span className="sc-market-closed">🔴 Market Closed</span>}
+              {dataSource && (
+                <span className="sc-source-badge">via {dataSource === 'fyers' ? 'Fyers' : 'NSE'}</span>
+              )}
               {lastRefresh && (
                 <span className="sc-updated">
                   {lastRefresh.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} IST
@@ -203,13 +253,26 @@ export default function StockCommentary() {
 
           {/* ── OI Tables ── */}
           <div className="sc-oi-pair">
-            <OICard label="Weekly Expiry" metrics={weekly} />
-            <OICard label="Monthly Expiry" metrics={monthly} />
+            <OICard label="Near Month" metrics={nearMonth} />
+            <OICard label="Next Month" metrics={nextMonth} />
           </div>
 
-          {!weekly && !monthly && (
+          {!nearMonth && !nextMonth && (
             <div className="sc-no-data">
-              Option chain data unavailable for <strong>{symbol}</strong> — NSE may not list F&O contracts for this symbol, or data could not be fetched from Railway servers.
+              Option chain data unavailable for <strong>{symbol}</strong> — this symbol may not have active F&O contracts, or data could not be fetched.
+            </div>
+          )}
+
+          {/* ── News ── */}
+          {news?.length > 0 && (
+            <div className="sc-news-card">
+              <div className="sc-news-title">📰 Recent News</div>
+              {news.map((item, i) => (
+                <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="sc-news-item">
+                  <span className="sc-news-headline">{item.title}</span>
+                  {item.pubDate && <span className="sc-news-time">{formatNewsDate(item.pubDate)}</span>}
+                </a>
+              ))}
             </div>
           )}
         </>
@@ -218,7 +281,7 @@ export default function StockCommentary() {
       {!loading && !data && !error && (
         <div className="sc-empty">
           <div className="sc-empty-icon">📊</div>
-          <p>Search for any NSE F&O stock to get live option chain analysis and AI commentary</p>
+          <p>Search for any NSE F&O stock to get live option chain, Greeks, OI analysis, and AI commentary</p>
         </div>
       )}
     </div>

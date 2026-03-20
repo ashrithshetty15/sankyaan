@@ -15,6 +15,7 @@ import PortfolioTracker from './PortfolioTracker.jsx';
 import MarketSentiment from './MarketSentiment.jsx';
 import PaperTrading from './PaperTrading.jsx';
 import FOCommentary from './FOCommentary.jsx';
+import StockCommentary from './StockCommentary.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 
 const API_URL_HOME = import.meta.env.VITE_API_URL ||
@@ -584,6 +585,7 @@ export default function Home({ viewMode, setViewMode }) {
             : viewMode === 'trade-alerts' ? 'Trade Alerts'
             : viewMode === 'market-sentiment' ? 'Market Sentiment'
             : viewMode === 'fo-commentary' ? 'F&O Commentary'
+            : viewMode === 'stock-commentary' ? 'Stock F&O Commentary'
             : viewMode === 'paper-trading' ? 'Paper Trading'
             : 'Stock Scores Rating'}
         </h1>
@@ -607,7 +609,9 @@ export default function Home({ viewMode, setViewMode }) {
             : viewMode === 'market-sentiment'
             ? 'Live VIX, PCR, and crowd sentiment for Nifty & BankNifty'
             : viewMode === 'fo-commentary'
-            ? 'AI-generated index and stock F&O commentary with live OI analysis'
+            ? 'AI-generated index F&O commentary with live OI analysis'
+            : viewMode === 'stock-commentary'
+            ? 'Live option chain, Greeks, OI analysis & AI commentary for any NSE F&O stock'
             : viewMode === 'paper-trading'
             ? 'Trade with ₹10 lakh virtual capital and climb the leaderboard'
             : 'Rank stocks by quality scores'}
@@ -1266,6 +1270,10 @@ export default function Home({ viewMode, setViewMode }) {
 
       {viewMode === 'fo-commentary' && (
         <FOCommentary />
+      )}
+
+      {viewMode === 'stock-commentary' && (
+        <StockCommentary />
       )}
 
       {viewMode === 'paper-trading' && (

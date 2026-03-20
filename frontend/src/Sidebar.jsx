@@ -147,6 +147,14 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
         </button>
 
         <button
+          className={`nav-item ${viewMode === 'stock-commentary' ? 'active' : ''}`}
+          onClick={() => handleNavClick('stock-commentary')}
+        >
+          <span className="nav-icon">📊</span>
+          <span className="nav-text">Stock F&amp;O</span>
+        </button>
+
+        <button
           className={`nav-item ${viewMode === 'trade-alerts' ? 'active' : ''}`}
           onClick={() => handleNavClick('trade-alerts')}
         >
