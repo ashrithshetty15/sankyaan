@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { getOptionChain, getQuotes, getFyersSymbol, isReady as isFyersReady } from '../fyersService.js';
+import { getOptionChain, getQuotes, getFyersSymbol, isReady as isFyersReady, getCachedUnderlyingData } from '../fyersService.js';
 
 const NSE_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -211,19 +211,37 @@ function computeFromFyers(optData, targetExpiry) {
            atmIV: null, atmDelta: null, atmGamma: null, atmTheta: null, ivSkew: null, expectedMove: null };
 }
 
+/**
+ * Fyers option symbols encode expiry in the name: 'NSE:RELIANCE2503271240CE'
+ * → extract '250327' → '2025-03-27' (ISO, for sorting)
+ */
+function parseFyersExpiry(sym) {
+  const m = /(\d{6})\d+(?:CE|PE)$/i.exec(sym || '');
+  if (!m) return null;
+  const s = m[1];
+  const yy = 2000 + parseInt(s.slice(0, 2));
+  const mm = String(parseInt(s.slice(2, 4))).padStart(2, '0');
+  const dd = String(parseInt(s.slice(4, 6))).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
 async function fetchFromFyers(symbol) {
   const fyersSymbol = getFyersSymbol(symbol);
-  const [chainData, quotesData] = await Promise.all([
+  await Promise.all([
     getOptionChain(fyersSymbol, 20),
     getQuotes([fyersSymbol]),
   ]);
 
+  // Read from cache (populated by the calls above)
+  const chainData = await getOptionChain(fyersSymbol, 20);
   if (chainData?.error) throw new Error(chainData.error);
 
-  const optData = chainData.optionsChain || [];
-  const spotLtp = chainData.underlyingData?.ltp
-    || (Array.isArray(quotesData) && quotesData[0]?.v?.lp)
-    || null;
+  // Fyers option rows have no .expiry field — parse it from the symbol string
+  const rawOptData = chainData.optionsChain || [];
+  const optData = rawOptData.map(o => ({
+    ...o,
+    expiry: parseFyersExpiry(o.symbol || ''),
+  }));
 
   const expiriesRaw = [...new Set(optData.map(o => o.expiry).filter(Boolean))].sort();
   const today = new Date().toISOString().slice(0, 10);
@@ -233,8 +251,14 @@ async function fetchFromFyers(symbol) {
 
   const nearMonth = nearExpiry ? { expiry: nearExpiry, ...computeFromFyers(optData, nearExpiry) } : null;
   const nextMonth = nextExpiry ? { expiry: nextExpiry, ...computeFromFyers(optData, nextExpiry) } : null;
-  const spot = spotLtp ? { price: parseFloat(spotLtp), change: null, changePct: null } : null;
 
+  // Spot price from getCachedUnderlyingData (populated by getQuotes above)
+  const spotData = getCachedUnderlyingData(fyersSymbol);
+  const spot = spotData?.ltp
+    ? { price: parseFloat(spotData.ltp), change: null, changePct: null }
+    : null;
+
+  console.log(`Fyers ${symbol}: ${optData.length} rows, expiries: ${expiriesRaw.join(', ')}, spot: ${spotData?.ltp}`);
   return { spot, nearMonth, nextMonth, source: 'fyers' };
 }
 
