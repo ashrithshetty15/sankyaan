@@ -19,7 +19,7 @@ import StockCommentary from './StockCommentary.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
 
 const API_URL_HOME = import.meta.env.VITE_API_URL ||
-  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-production.up.railway.app/api');
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.fly.dev/api');
 
 function FundAIReportCard({ ticker }) {
   const [report, setReport] = React.useState(null);
@@ -103,7 +103,8 @@ class ForensicErrorBoundary extends Component {
   }
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL ||
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.fly.dev/api');
 
 // Color palette for horizontal bar chart — diverse hues
 const COLORS = [

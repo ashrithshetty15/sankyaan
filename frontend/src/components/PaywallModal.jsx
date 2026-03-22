@@ -3,7 +3,7 @@ import axios from 'axios';
 import './PaywallModal.css';
 
 const API = import.meta.env.VITE_API_URL ||
-  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-production.up.railway.app/api');
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.fly.dev/api');
 
 const PLANS_INFO = {
   basic: {

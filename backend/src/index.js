@@ -493,7 +493,7 @@ async function startServer() {
 
 
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
     console.log(`📊 Try: http://localhost:${PORT}/api/search?ticker=INFY`);
     console.log(`🔄 Refresh all caches: POST http://localhost:${PORT}/api/refresh-all`);

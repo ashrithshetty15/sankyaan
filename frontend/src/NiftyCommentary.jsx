@@ -3,7 +3,7 @@ import axios from 'axios';
 import './NiftyCommentary.css';
 
 const API = import.meta.env.VITE_API_URL ||
-  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-production.up.railway.app/api');
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.fly.dev/api');
 
 function fmt(n, d = 2) { return n == null ? '—' : Number(n).toFixed(d); }
 function fmtINR(n) { return n == null ? '—' : `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`; }

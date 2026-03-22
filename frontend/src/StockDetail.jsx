@@ -9,7 +9,8 @@ import EventsTimeline from './components/EventsTimeline';
 import PeerComparison from './components/PeerComparison';
 import './StockDetail.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL ||
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.fly.dev/api');
 
 const COLORS = ['#2E8B57', '#1E5C41', '#FFD93D', '#6BCB77', '#FF6B6B'];
 

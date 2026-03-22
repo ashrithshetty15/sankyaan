@@ -15,7 +15,7 @@ function createTransport() {
 }
 
 const FROM = process.env.EMAIL_FROM || 'Sankyaan <contact@sankyaan.com>';
-const BASE_URL = process.env.BACKEND_URL || 'https://sankyaan-production.up.railway.app';
+const BASE_URL = process.env.BACKEND_URL || 'https://sankyaan-backend.fly.dev';
 const SITE_URL = 'https://sankyaan.com';
 
 /**

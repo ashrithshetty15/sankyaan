@@ -3,7 +3,7 @@ import axios from 'axios';
 import './StockCommentary.css';
 
 const API = import.meta.env.VITE_API_URL ||
-  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-production.up.railway.app/api');
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.fly.dev/api');
 
 const POPULAR = ['RELIANCE', 'HDFCBANK', 'INFY', 'TCS', 'ICICIBANK', 'BAJFINANCE', 'SBIN', 'TATAMOTORS', 'WIPRO', 'NAUKRI'];
 

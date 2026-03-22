@@ -4,7 +4,7 @@ import { useAuth } from './context/AuthContext';
 import './PaperTrading.css';
 
 const API = import.meta.env.VITE_API_URL ||
-  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-production.up.railway.app/api');
+  (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.fly.dev/api');
 
 const TABS = ['Portfolio', 'New Trade', 'History', 'Leaderboard'];
 
