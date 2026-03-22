@@ -229,7 +229,7 @@ export default function NiftyCommentary() {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${API}/nifty-commentary${force ? '?force=1' : ''}`);
+      const res = await axios.get(`${API}/nifty-commentary${force ? '?force=1' : ''}`, { withCredentials: true });
       setData(res.data);
       setLastRefresh(new Date());
     } catch (e) {
