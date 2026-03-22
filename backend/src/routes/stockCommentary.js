@@ -211,18 +211,45 @@ function computeFromFyers(optData, targetExpiry) {
            atmIV: null, atmDelta: null, atmGamma: null, atmTheta: null, ivSkew: null, expectedMove: null };
 }
 
+const MONTH_NUM = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+
+/** Last Thursday of a given year+month (stock options expiry day in India). */
+function lastThursdayOfMonth(year, month) {
+  const lastDay = new Date(year, month, 0); // day 0 of next month = last day of this month
+  const dow = lastDay.getDay(); // 0=Sun … 4=Thu
+  const daysBack = (dow - 4 + 7) % 7;
+  const thu = new Date(lastDay);
+  thu.setDate(lastDay.getDate() - daysBack);
+  return thu.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
 /**
- * Fyers option symbols encode expiry in the name: 'NSE:RELIANCE2503271240CE'
- * → extract '250327' → '2025-03-27' (ISO, for sorting)
+ * Parse expiry ISO date from a Fyers option symbol string.
+ *
+ * Format 1 — index weekly/monthly (YYMMDD):
+ *   NSE:NIFTY2503271240CE  → 250327 → 2025-03-27
+ *
+ * Format 2 — stock monthly (YYMON, no day):
+ *   NSE:RELIANCE25MAR2900CE → 25 + MAR → last Thursday of Mar 2025
  */
 function parseFyersExpiry(sym) {
-  const m = /(\d{6})\d+(?:CE|PE)$/i.exec(sym || '');
-  if (!m) return null;
-  const s = m[1];
-  const yy = 2000 + parseInt(s.slice(0, 2));
-  const mm = String(parseInt(s.slice(2, 4))).padStart(2, '0');
-  const dd = String(parseInt(s.slice(4, 6))).padStart(2, '0');
-  return `${yy}-${mm}-${dd}`;
+  // Format 1: 6 consecutive digits before the strike
+  const m1 = /(\d{6})\d+(?:CE|PE)$/i.exec(sym || '');
+  if (m1) {
+    const s = m1[1];
+    const yy = 2000 + parseInt(s.slice(0, 2));
+    const mm = String(parseInt(s.slice(2, 4))).padStart(2, '0');
+    const dd = String(parseInt(s.slice(4, 6))).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+  }
+  // Format 2: YY + 3-letter month abbreviation (stock monthly options)
+  const m2 = /(\d{2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\d+(?:CE|PE)$/i.exec(sym || '');
+  if (m2) {
+    const yy = 2000 + parseInt(m2[1]);
+    const month = MONTH_NUM[m2[2].toUpperCase()];
+    return lastThursdayOfMonth(yy, month);
+  }
+  return null;
 }
 
 /**
