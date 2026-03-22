@@ -260,10 +260,17 @@ function isMarketOpen() {
 }
 
 async function getNSECookies() {
-  const resp = await axios.get('https://www.nseindia.com', {
-    headers: NSE_HEADERS, timeout: 15000, maxRedirects: 5,
-  });
-  return (resp.headers['set-cookie'] || []).map(c => c.split(';')[0]).join('; ');
+  try {
+    const resp = await axios.get('https://www.nseindia.com', {
+      headers: NSE_HEADERS, timeout: 15000, maxRedirects: 5,
+    });
+    const cookies = (resp.headers['set-cookie'] || []).map(c => c.split(';')[0]).join('; ');
+    console.log(`[NSE] cookies obtained: ${cookies ? cookies.slice(0, 60) + '...' : 'NONE'} (status=${resp.status})`);
+    return cookies;
+  } catch (e) {
+    console.warn(`[NSE] cookie fetch failed: ${e.message}`);
+    return '';
+  }
 }
 
 /** Next Thursday on or after today */
@@ -296,7 +303,14 @@ async function fetchOptionChain(symbol, cookies) {
     `https://www.nseindia.com/api/option-chain-indices?symbol=${symbol}`,
     { headers, timeout: 20000 }
   );
-  return resp.data;
+  const data = resp.data;
+  const hasRecords = data?.records?.data?.length > 0;
+  if (!hasRecords) {
+    // Log what NSE actually returned
+    const bodyPreview = typeof data === 'string' ? data.slice(0, 200) : JSON.stringify(data).slice(0, 200);
+    console.warn(`[NSE] ${symbol} returned no records. Status=${resp.status}, body preview: ${bodyPreview}`);
+  }
+  return data;
 }
 
 async function fetchAllIndices(cookies) {
