@@ -623,18 +623,27 @@ export async function getNiftyCommentary(req, res) {
       ? extractExpiryMetrics(finniftyChainResult.value, today, resolvedFinniftySpot?.price)
       : (fyersData.FINNIFTY || { weekly: null, monthly: null, weeklyChain: [] });
 
-    // If NSE returned data but chain is empty, try Fyers for chain data
-    const anyChainEmpty = [niftyOI, bankniftyOI, midcapOI, finniftyOI].some(o => !o.weeklyChain || o.weeklyChain.length === 0);
-    if (anyChainEmpty && Object.keys(fyersData).length === 0) {
+    // If NSE returned data but chain/metrics are missing, try Fyers
+    const allOI = [niftyOI, bankniftyOI, midcapOI, finniftyOI];
+    const anyMissing = allOI.some(o => !o.weekly || !o.weeklyChain || o.weeklyChain.length === 0);
+    if (anyMissing && Object.keys(fyersData).filter(k => !k.startsWith('_')).length === 0) {
       try { fyersData = await fetchAllFromFyers(); } catch (e) {
-        console.warn('[Fyers] chain-fill fallback failed:', e.message);
+        console.warn('[Fyers] fallback failed:', e.message);
       }
     }
-    // Patch empty chains with Fyers data
+    // Patch missing data with Fyers
     const fyersNames = ['NIFTY', 'BANKNIFTY', 'MIDCPNIFTY', 'FINNIFTY'];
-    [niftyOI, bankniftyOI, midcapOI, finniftyOI].forEach((oi, idx) => {
+    allOI.forEach((oi, idx) => {
       const fData = fyersData[fyersNames[idx]];
-      if ((!oi.weeklyChain || oi.weeklyChain.length === 0) && fData?.weeklyChain?.length > 0) {
+      if (!fData) return;
+      if (!oi.weekly && fData.weekly) {
+        oi.weekly = fData.weekly;
+        console.log(`[optionChain] patched ${fyersNames[idx]} weekly metrics from Fyers`);
+      }
+      if (!oi.monthly && fData.monthly) {
+        oi.monthly = fData.monthly;
+      }
+      if ((!oi.weeklyChain || oi.weeklyChain.length === 0) && fData.weeklyChain?.length > 0) {
         oi.weeklyChain = fData.weeklyChain;
         console.log(`[optionChain] patched ${fyersNames[idx]} chain from Fyers: ${fData.weeklyChain.length} strikes`);
       }
