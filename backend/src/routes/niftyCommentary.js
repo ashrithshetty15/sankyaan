@@ -1,5 +1,169 @@
 import axios from 'axios';
 import { postCommentaryToTelegram } from '../telegram.js';
+import { getOptionChain, getQuotes, isReady as isFyersReady, autoAuthenticate } from '../fyersService.js';
+
+// ─── Fyers index symbols ───────────────────────────────────────────────────────
+const FYERS_INDICES = {
+  NIFTY:      'NSE:NIFTY50-INDEX',
+  BANKNIFTY:  'NSE:NIFTYBANK-INDEX',
+  FINNIFTY:   'NSE:FINNIFTY-INDEX',
+  MIDCPNIFTY: 'NSE:MIDCPNIFTY-INDEX',
+};
+
+/** Parse YYMMDD expiry from a Fyers index option symbol (e.g. NSE:NIFTY2503261240CE) */
+function parseFyersExpiryIdx(sym) {
+  const m = /(\d{6})\d+(?:CE|PE)$/i.exec(sym || '');
+  if (!m) return null;
+  const s = m[1];
+  const yy = 2000 + parseInt(s.slice(0, 2));
+  const mm = String(parseInt(s.slice(2, 4))).padStart(2, '0');
+  const dd = String(parseInt(s.slice(4, 6))).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+/** Compute PCR, max pain, top OI strikes and ATM Greeks from Fyers option rows */
+function computeFromFyersIdx(rows, targetExpiry, spotPrice) {
+  const filtered = rows.filter(o => !targetExpiry || o.expiry === targetExpiry);
+  let callOI = 0, putOI = 0;
+  const strikeMap = {};
+
+  for (const opt of filtered) {
+    const s = opt.strike_price;
+    if (!s) continue;
+    if (!strikeMap[s]) strikeMap[s] = { ce: 0, pe: 0, ceRow: null, peRow: null };
+    if (opt.option_type === 'CE') { callOI += opt.oi || 0; strikeMap[s].ce += opt.oi || 0; strikeMap[s].ceRow = opt; }
+    if (opt.option_type === 'PE') { putOI += opt.oi || 0; strikeMap[s].pe += opt.oi || 0; strikeMap[s].peRow = opt; }
+  }
+
+  const pcr = callOI > 0 ? parseFloat((putOI / callOI).toFixed(3)) : null;
+  const strikes = Object.keys(strikeMap).map(Number).sort((a, b) => a - b);
+
+  let maxPainStrike = null, minLoss = Infinity;
+  for (const s of strikes) {
+    let loss = 0;
+    for (const s2 of strikes) {
+      if (s2 > s) loss += strikeMap[s2].ce * (s2 - s);
+      if (s2 < s) loss += strikeMap[s2].pe * (s - s2);
+    }
+    if (loss < minLoss) { minLoss = loss; maxPainStrike = s; }
+  }
+
+  const topCE = [...strikes].sort((a, b) => strikeMap[b].ce - strikeMap[a].ce).slice(0, 5).map(s => ({ strike: s, oi: strikeMap[s].ce }));
+  const topPE = [...strikes].sort((a, b) => strikeMap[b].pe - strikeMap[a].pe).slice(0, 5).map(s => ({ strike: s, oi: strikeMap[s].pe }));
+
+  let atmIV = null, atmDelta = null, atmGamma = null, atmTheta = null, ivSkew = null, expectedMove = null;
+  const atmStrike = spotPrice && strikes.length > 0
+    ? strikes.reduce((p, c) => Math.abs(c - spotPrice) < Math.abs(p - spotPrice) ? c : p)
+    : strikes[Math.floor(strikes.length / 2)];
+
+  if (atmStrike) {
+    const atmCE = strikeMap[atmStrike]?.ceRow;
+    const atmPE = strikeMap[atmStrike]?.peRow;
+    atmIV = atmCE?.iv ?? atmPE?.iv ?? null;
+    atmDelta = atmCE?.delta ?? null;
+    atmGamma = atmCE?.gamma ?? null;
+    const ceTheta = atmCE?.theta, peTheta = atmPE?.theta;
+    if (ceTheta != null && peTheta != null) atmTheta = parseFloat(((Math.abs(ceTheta) + Math.abs(peTheta)) / 2).toFixed(2));
+    if (atmIV != null && spotPrice) expectedMove = parseFloat((atmIV / 100 * spotPrice / Math.sqrt(52)).toFixed(0));
+  }
+
+  return { pcr, maxPain: maxPainStrike, topCE, topPE, totalCallOI: callOI, totalPutOI: putOI,
+           atmIV, atmDelta, atmGamma, atmTheta, ivSkew, expectedMove };
+}
+
+/** Build ATM ± 20 strike option chain from Fyers rows */
+function buildIndexChainFromFyers(rows, targetExpiry, spotPrice) {
+  const filtered = rows.filter(o => o.expiry === targetExpiry);
+  const strikeSet = [...new Set(filtered.map(o => o.strike_price).filter(Boolean))].sort((a, b) => a - b);
+
+  let atmStrike = null;
+  if (spotPrice && strikeSet.length > 0)
+    atmStrike = strikeSet.reduce((p, c) => Math.abs(c - spotPrice) < Math.abs(p - spotPrice) ? c : p);
+
+  let strikesToShow = strikeSet;
+  if (atmStrike && strikeSet.length > 40) {
+    const atmIdx = strikeSet.indexOf(atmStrike);
+    strikesToShow = strikeSet.slice(Math.max(0, atmIdx - 20), Math.min(strikeSet.length, atmIdx + 21));
+  }
+
+  const ceMap = {}, peMap = {};
+  for (const r of filtered) {
+    if (r.option_type === 'CE') ceMap[r.strike_price] = r;
+    else if (r.option_type === 'PE') peMap[r.strike_price] = r;
+  }
+
+  return strikesToShow.map(strike => ({
+    strike,
+    isATM: strike === atmStrike,
+    ce: ceMap[strike] ? { oi: ceMap[strike].oi || 0, ltp: ceMap[strike].ltp || null, iv: ceMap[strike].iv || null } : null,
+    pe: peMap[strike] ? { oi: peMap[strike].oi || 0, ltp: peMap[strike].ltp || null, iv: peMap[strike].iv || null } : null,
+  }));
+}
+
+/** Fetch all 4 indices from Fyers — used when NSE is geo-blocked */
+async function fetchAllFromFyers() {
+  if (!isFyersReady()) {
+    // Try auto-auth once
+    const ok = await autoAuthenticate().catch(() => false);
+    if (!ok || !isFyersReady()) return {};
+  }
+
+  const fyersSymbols = Object.values(FYERS_INDICES);
+  const indexNames = Object.keys(FYERS_INDICES);
+
+  const [quotesResult, ...chainResults] = await Promise.allSettled([
+    getQuotes(fyersSymbols),
+    ...fyersSymbols.map(sym => getOptionChain(sym, 25)),
+  ]);
+
+  // Build spot map from quotes
+  const spotBySymbol = {};
+  if (quotesResult.status === 'fulfilled' && Array.isArray(quotesResult.value)) {
+    for (const q of quotesResult.value) {
+      if (q.n && q.v?.lp) spotBySymbol[q.n] = q.v.lp;
+    }
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const output = {};
+  let vixLtp = null;
+
+  indexNames.forEach((name, i) => {
+    const fyersSym = fyersSymbols[i];
+    const chainResult = chainResults[i];
+    if (chainResult.status !== 'fulfilled' || chainResult.value?.error) {
+      console.warn(`[Fyers] ${name} chain error:`, chainResult.value?.error || chainResult.reason?.message);
+      return;
+    }
+
+    const chainData = chainResult.value;
+    const rawRows = chainData.optionsChain || (Array.isArray(chainData) ? chainData : []);
+    const rows = rawRows.map(o => ({ ...o, expiry: parseFyersExpiryIdx(o.symbol || '') }));
+
+    const spotLtp = spotBySymbol[fyersSym] ?? chainData.ltp ?? null;
+    const spot = spotLtp ? { price: parseFloat(spotLtp), change: null, changePct: null } : null;
+
+    // VIX comes from NIFTY chain response
+    if (name === 'NIFTY' && chainData.indiavixData?.ltp) vixLtp = chainData.indiavixData.ltp;
+
+    const expiries = [...new Set(rows.map(o => o.expiry).filter(Boolean))].sort();
+    const upcoming = expiries.filter(e => e >= today);
+    const weeklyExpiry = upcoming[0] || expiries[0];
+    const monthlyExpiry = upcoming[upcoming.length - 1] || expiries[expiries.length - 1];
+
+    output[name] = {
+      spot,
+      weekly:      weeklyExpiry  ? { expiry: weeklyExpiry,  ...computeFromFyersIdx(rows, weeklyExpiry,  spot?.price) } : null,
+      monthly:     monthlyExpiry ? { expiry: monthlyExpiry, ...computeFromFyersIdx(rows, monthlyExpiry, spot?.price) } : null,
+      weeklyChain: weeklyExpiry  ? buildIndexChainFromFyers(rows, weeklyExpiry, spot?.price) : [],
+    };
+
+    console.log(`[Fyers] ${name}: ${rows.length} rows, expiries=[${expiries.slice(0, 3).join(', ')}], spot=${spot?.price}, weeklyChain=${output[name].weeklyChain.length}`);
+  });
+
+  output._vixLtp = vixLtp;
+  return output;
+}
 
 const NSE_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -335,46 +499,54 @@ export async function getNiftyCommentary(req, res) {
       changePct: parseFloat(entry.percentChange ?? entry.pChange ?? 0),
     } : null;
 
-    const spot = extractSpot(niftyEntry);
-    const bankniftySpot = extractSpot(bnEntry);
-    const midcapSpot = extractSpot(midcapEntry);
-    const finniftySpot = extractSpot(finniftyEntry);
-
     const vixVal = vixEntry ? parseFloat(vixEntry.last ?? vixEntry.lastPrice ?? 0) : null;
-    const vix = vixVal ? {
-      value: vixVal,
-      level: vixVal < 15 ? 'Low Fear' : vixVal < 20 ? 'Moderate' : vixVal < 25 ? 'High' : 'Extreme Fear',
-    } : null;
 
     const today = new Date();
-    const niftyOI = niftyChainResult.status === 'fulfilled'
-      ? extractExpiryMetrics(niftyChainResult.value, today, spot?.price)
-      : { weekly: null, monthly: null };
-    const bankniftyOI = bankniftyChainResult.status === 'fulfilled'
-      ? extractExpiryMetrics(bankniftyChainResult.value, today, bankniftySpot?.price)
-      : { weekly: null, monthly: null };
-    const midcapOI = midcapChainResult.status === 'fulfilled'
-      ? extractExpiryMetrics(midcapChainResult.value, today, midcapSpot?.price)
-      : { weekly: null, monthly: null };
-    const finniftyOI = finniftyChainResult.status === 'fulfilled'
-      ? extractExpiryMetrics(finniftyChainResult.value, today, finniftySpot?.price)
-      : { weekly: null, monthly: null };
 
-    if (niftyChainResult.status === 'rejected') console.warn('Nifty chain error:', niftyChainResult.reason?.message);
-    else console.log(`[niftyCommentary] NIFTY weeklyChain rows: ${niftyOI.weeklyChain?.length ?? 'N/A'}`);
-    if (bankniftyChainResult.status === 'rejected') console.warn('BankNifty chain error:', bankniftyChainResult.reason?.message);
-    else console.log(`[niftyCommentary] BANKNIFTY weeklyChain rows: ${bankniftyOI.weeklyChain?.length ?? 'N/A'}`);
-    if (midcapChainResult.status === 'rejected') console.warn('MidcapNifty chain error:', midcapChainResult.reason?.message);
-    else console.log(`[niftyCommentary] MIDCAP weeklyChain rows: ${midcapOI.weeklyChain?.length ?? 'N/A'}`);
-    if (finniftyChainResult.status === 'rejected') console.warn('FinNifty chain error:', finniftyChainResult.reason?.message);
-    else console.log(`[niftyCommentary] FINNIFTY weeklyChain rows: ${finniftyOI.weeklyChain?.length ?? 'N/A'}`);
+    // ── Fyers fallback when NSE is geo-blocked ─────────────────────────────────
+    const nseChainResults = [niftyChainResult, bankniftyChainResult, midcapChainResult, finniftyChainResult];
+    const nseSomeFailed = nseChainResults.some(r => r.status === 'rejected');
+    let fyersData = {};
+    if (nseSomeFailed) {
+      try { fyersData = await fetchAllFromFyers(); } catch (e) {
+        console.warn('[Fyers] fallback failed:', e.message);
+      }
+    }
+
+    // Spot prices: use NSE if available, fall back to Fyers
+    const resolvedSpot          = extractSpot(niftyEntry)     || fyersData.NIFTY?.spot      || null;
+    const resolvedBankniftySpot = extractSpot(bnEntry)        || fyersData.BANKNIFTY?.spot  || null;
+    const resolvedMidcapSpot    = extractSpot(midcapEntry)    || fyersData.MIDCPNIFTY?.spot || null;
+    const resolvedFinniftySpot  = extractSpot(finniftyEntry)  || fyersData.FINNIFTY?.spot   || null;
+
+    const niftyOI = niftyChainResult.status === 'fulfilled'
+      ? extractExpiryMetrics(niftyChainResult.value, today, resolvedSpot?.price)
+      : (fyersData.NIFTY || { weekly: null, monthly: null, weeklyChain: [] });
+    const bankniftyOI = bankniftyChainResult.status === 'fulfilled'
+      ? extractExpiryMetrics(bankniftyChainResult.value, today, resolvedBankniftySpot?.price)
+      : (fyersData.BANKNIFTY || { weekly: null, monthly: null, weeklyChain: [] });
+    const midcapOI = midcapChainResult.status === 'fulfilled'
+      ? extractExpiryMetrics(midcapChainResult.value, today, resolvedMidcapSpot?.price)
+      : (fyersData.MIDCPNIFTY || { weekly: null, monthly: null, weeklyChain: [] });
+    const finniftyOI = finniftyChainResult.status === 'fulfilled'
+      ? extractExpiryMetrics(finniftyChainResult.value, today, resolvedFinniftySpot?.price)
+      : (fyersData.FINNIFTY || { weekly: null, monthly: null, weeklyChain: [] });
+
+    // VIX: NSE or Fyers
+    const resolvedVixVal = vixVal || fyersData._vixLtp || null;
+    const resolvedVix = resolvedVixVal ? {
+      value: resolvedVixVal,
+      level: resolvedVixVal < 15 ? 'Low Fear' : resolvedVixVal < 20 ? 'Moderate' : resolvedVixVal < 25 ? 'High' : 'Extreme Fear',
+    } : null;
+
+    console.log(`[niftyCommentary] source: nse=${!nseSomeFailed}, fyers=${Object.keys(fyersData).filter(k => !k.startsWith('_')).join(',') || 'none'}`);
 
     const marketData = {
-      spot,
-      bankniftySpot,
-      midcapSpot,
-      finniftySpot,
-      vix,
+      spot:          resolvedSpot,
+      bankniftySpot: resolvedBankniftySpot,
+      midcapSpot:    resolvedMidcapSpot,
+      finniftySpot:  resolvedFinniftySpot,
+      vix:           resolvedVix,
       nifty: niftyOI,
       banknifty: bankniftyOI,
       midcap: midcapOI,
