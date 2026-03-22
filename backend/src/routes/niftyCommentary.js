@@ -10,15 +10,74 @@ const FYERS_INDICES = {
   MIDCPNIFTY: 'NSE:MIDCPNIFTY-INDEX',
 };
 
-/** Parse YYMMDD expiry from a Fyers index option symbol (e.g. NSE:NIFTY2503261240CE) */
-function parseFyersExpiryIdx(sym) {
-  const m = /(\d{6})\d+(?:CE|PE)$/i.exec(sym || '');
-  if (!m) return null;
-  const s = m[1];
-  const yy = 2000 + parseInt(s.slice(0, 2));
-  const mm = String(parseInt(s.slice(2, 4))).padStart(2, '0');
-  const dd = String(parseInt(s.slice(4, 6))).padStart(2, '0');
-  return `${yy}-${mm}-${dd}`;
+/** Parse expiry from a Fyers index option symbol.
+ *  Observed formats:
+ *    NSE:NIFTY2632421850PE          → YYMMDD + strike + CE/PE (weekly, has day)
+ *    NSE:BANKNIFTY26MAR50900CE      → YYMMM + strike + CE/PE (monthly, no day — use last Thursday)
+ *    NSE:FINNIFTY26MAR23550CE       → YYMMM + strike + CE/PE
+ *    NSE:NIFTY26327600CE            → YYcDD + strike + CE/PE (weekly, month code)
+ *  Also checks for expiryDate field directly from Fyers API. */
+function parseFyersExpiryIdx(sym, row) {
+  // If Fyers provides an expiryDate or expiry field directly, use it
+  if (row?.expiryDate) {
+    const d = new Date(row.expiryDate * 1000);
+    if (!isNaN(d)) return d.toISOString().slice(0, 10);
+  }
+
+  if (!sym) return null;
+
+  // Strip prefix up to the index name to isolate the date+strike part
+  // e.g. "NSE:NIFTY2632421850PE" → match after known index name
+  const namePatterns = ['MIDCPNIFTY', 'BANKNIFTY', 'FINNIFTY', 'NIFTY'];
+  let datePart = null;
+  for (const np of namePatterns) {
+    const idx = sym.indexOf(np);
+    if (idx >= 0) {
+      datePart = sym.slice(idx + np.length).replace(/(?:CE|PE)$/i, '');
+      break;
+    }
+  }
+  if (!datePart) return null;
+
+  // Format: YYMMM + strike (monthly, e.g. "26MAR50900" → March 2026, last Thursday)
+  const mAlpha = /^(\d{2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)/i.exec(datePart);
+  if (mAlpha) {
+    const months = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
+    const yy = 2000 + parseInt(mAlpha[1]);
+    const mm = months[mAlpha[2].toUpperCase()];
+    // Monthly expiry = last Thursday of month
+    const lastDay = new Date(yy, mm + 1, 0);
+    const dow = lastDay.getDay();
+    const lastThursday = new Date(lastDay);
+    lastThursday.setDate(lastDay.getDate() - ((dow + 3) % 7));
+    return lastThursday.toISOString().slice(0, 10);
+  }
+
+  // Format: YYMMDD + strike (weekly, e.g. "2632421850" → 2026-03-24 + strike 21850)
+  // We need to try all valid splits of the digits
+  const digits = datePart;
+  if (/^\d{7,}$/.test(digits)) {
+    // Try 6-digit date prefix first (YYMMDD)
+    const yy = parseInt(digits.slice(0, 2));
+    const mm = parseInt(digits.slice(2, 4));
+    const dd = parseInt(digits.slice(4, 6));
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      return `20${String(yy).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+    }
+
+    // Try 5-digit format YYcDD (month code: 1-9,O,N,D)
+    const monthCode = digits[2];
+    const codeMap = { '1':'01','2':'02','3':'03','4':'04','5':'05','6':'06','7':'07','8':'08','9':'09','O':'10','N':'11','D':'12' };
+    const mo = codeMap[monthCode.toUpperCase()];
+    if (mo) {
+      const cdd = parseInt(digits.slice(3, 5));
+      if (cdd >= 1 && cdd <= 31) {
+        return `20${digits.slice(0, 2)}-${mo}-${String(cdd).padStart(2, '0')}`;
+      }
+    }
+  }
+
+  return null;
 }
 
 /** Compute PCR, max pain, top OI strikes and ATM Greeks from Fyers option rows */
@@ -73,7 +132,10 @@ function computeFromFyersIdx(rows, targetExpiry, spotPrice) {
 
 /** Build ATM ± 20 strike option chain from Fyers rows */
 function buildIndexChainFromFyers(rows, targetExpiry, spotPrice) {
-  const filtered = rows.filter(o => o.expiry === targetExpiry);
+  // If targetExpiry is null/undefined and all rows have null expiry, use all rows
+  const filtered = targetExpiry
+    ? rows.filter(o => o.expiry === targetExpiry)
+    : rows;
   const strikeSet = [...new Set(filtered.map(o => o.strike_price).filter(Boolean))].sort((a, b) => a - b);
 
   let atmStrike = null;
@@ -138,7 +200,10 @@ async function fetchAllFromFyers() {
 
     const chainData = chainResult.value;
     const rawRows = chainData.optionsChain || (Array.isArray(chainData) ? chainData : []);
-    const rows = rawRows.map(o => ({ ...o, expiry: parseFyersExpiryIdx(o.symbol || '') }));
+    const rows = rawRows.map(o => ({ ...o, expiry: parseFyersExpiryIdx(o.symbol || '', o) }));
+    // Log an actual option symbol (not the index row)
+    const sampleOpt = rawRows.find(o => /CE|PE/i.test(o.symbol || ''));
+    if (sampleOpt) console.log(`[Fyers] ${name} sample option: ${sampleOpt.symbol}, parsed: ${parseFyersExpiryIdx(sampleOpt.symbol, sampleOpt)}`);
 
     const spotLtp = spotBySymbol[fyersSym] ?? chainData.ltp ?? null;
     const spot = spotLtp ? { price: parseFloat(spotLtp), change: null, changePct: null } : null;
@@ -151,11 +216,17 @@ async function fetchAllFromFyers() {
     const weeklyExpiry = upcoming[0] || expiries[0];
     const monthlyExpiry = upcoming[upcoming.length - 1] || expiries[expiries.length - 1];
 
+    // If no expiries parsed, use all rows (expiry = null)
+    const useAllRows = expiries.length === 0 && rows.length > 0;
     output[name] = {
       spot,
-      weekly:      weeklyExpiry  ? { expiry: weeklyExpiry,  ...computeFromFyersIdx(rows, weeklyExpiry,  spot?.price) } : null,
+      weekly:      weeklyExpiry  ? { expiry: weeklyExpiry,  ...computeFromFyersIdx(rows, weeklyExpiry,  spot?.price) }
+                 : useAllRows    ? { expiry: 'current',     ...computeFromFyersIdx(rows, null,          spot?.price) }
+                 : null,
       monthly:     monthlyExpiry ? { expiry: monthlyExpiry, ...computeFromFyersIdx(rows, monthlyExpiry, spot?.price) } : null,
-      weeklyChain: weeklyExpiry  ? buildIndexChainFromFyers(rows, weeklyExpiry, spot?.price) : [],
+      weeklyChain: weeklyExpiry  ? buildIndexChainFromFyers(rows, weeklyExpiry, spot?.price)
+                 : useAllRows    ? buildIndexChainFromFyers(rows, null,         spot?.price)
+                 : [],
     };
 
     console.log(`[Fyers] ${name}: ${rows.length} rows, expiries=[${expiries.slice(0, 3).join(', ')}], spot=${spot?.price}, weeklyChain=${output[name].weeklyChain.length}`);
@@ -354,9 +425,25 @@ function extractExpiryMetrics(chainData, today, spotPrice) {
 
   // Use filtered.data (NSE pre-filtered to near expiry) to avoid date-format matching issues
   const filteredRows = chainData?.filtered?.data || [];
-  const weeklyChain = filteredRows.length > 0
+  let weeklyChain = filteredRows.length > 0
     ? buildIndexOptionChain(filteredRows, null, spotPrice)
     : (weeklyExpiry ? buildIndexOptionChain(optData, weeklyExpiry, spotPrice) : []);
+
+  // Fallback: if chain is still empty, try first expiry found directly in the data
+  if (weeklyChain.length === 0 && optData.length > 0) {
+    const firstExpiry = optData[0]?.expiryDate;
+    if (firstExpiry) {
+      weeklyChain = buildIndexOptionChain(optData, firstExpiry, spotPrice);
+      console.log(`[optionChain] fallback to first expiry in data: ${firstExpiry}, got ${weeklyChain.length} strikes`);
+    }
+    // Last resort: build chain from all data without expiry filter
+    if (weeklyChain.length === 0) {
+      weeklyChain = buildIndexOptionChain(optData, null, spotPrice);
+      console.log(`[optionChain] fallback to all data (no expiry filter), got ${weeklyChain.length} strikes`);
+    }
+  }
+
+  console.log(`[extractExpiryMetrics] filtered=${filteredRows.length}, optData=${optData.length}, weeklyExpiry=${weeklyExpiry}, chain=${weeklyChain.length}`);
 
   return { weekly, monthly, weeklyChain };
 }
@@ -523,18 +610,35 @@ export async function getNiftyCommentary(req, res) {
     const resolvedMidcapSpot    = extractSpot(midcapEntry)    || fyersData.MIDCPNIFTY?.spot || null;
     const resolvedFinniftySpot  = extractSpot(finniftyEntry)  || fyersData.FINNIFTY?.spot   || null;
 
-    const niftyOI = niftyChainResult.status === 'fulfilled'
+    let niftyOI = niftyChainResult.status === 'fulfilled'
       ? extractExpiryMetrics(niftyChainResult.value, today, resolvedSpot?.price)
       : (fyersData.NIFTY || { weekly: null, monthly: null, weeklyChain: [] });
-    const bankniftyOI = bankniftyChainResult.status === 'fulfilled'
+    let bankniftyOI = bankniftyChainResult.status === 'fulfilled'
       ? extractExpiryMetrics(bankniftyChainResult.value, today, resolvedBankniftySpot?.price)
       : (fyersData.BANKNIFTY || { weekly: null, monthly: null, weeklyChain: [] });
-    const midcapOI = midcapChainResult.status === 'fulfilled'
+    let midcapOI = midcapChainResult.status === 'fulfilled'
       ? extractExpiryMetrics(midcapChainResult.value, today, resolvedMidcapSpot?.price)
       : (fyersData.MIDCPNIFTY || { weekly: null, monthly: null, weeklyChain: [] });
-    const finniftyOI = finniftyChainResult.status === 'fulfilled'
+    let finniftyOI = finniftyChainResult.status === 'fulfilled'
       ? extractExpiryMetrics(finniftyChainResult.value, today, resolvedFinniftySpot?.price)
       : (fyersData.FINNIFTY || { weekly: null, monthly: null, weeklyChain: [] });
+
+    // If NSE returned data but chain is empty, try Fyers for chain data
+    const anyChainEmpty = [niftyOI, bankniftyOI, midcapOI, finniftyOI].some(o => !o.weeklyChain || o.weeklyChain.length === 0);
+    if (anyChainEmpty && Object.keys(fyersData).length === 0) {
+      try { fyersData = await fetchAllFromFyers(); } catch (e) {
+        console.warn('[Fyers] chain-fill fallback failed:', e.message);
+      }
+    }
+    // Patch empty chains with Fyers data
+    const fyersNames = ['NIFTY', 'BANKNIFTY', 'MIDCPNIFTY', 'FINNIFTY'];
+    [niftyOI, bankniftyOI, midcapOI, finniftyOI].forEach((oi, idx) => {
+      const fData = fyersData[fyersNames[idx]];
+      if ((!oi.weeklyChain || oi.weeklyChain.length === 0) && fData?.weeklyChain?.length > 0) {
+        oi.weeklyChain = fData.weeklyChain;
+        console.log(`[optionChain] patched ${fyersNames[idx]} chain from Fyers: ${fData.weeklyChain.length} strikes`);
+      }
+    });
 
     // VIX: NSE or Fyers
     const resolvedVixVal = vixVal || fyersData._vixLtp || null;
