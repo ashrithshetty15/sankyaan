@@ -27,6 +27,7 @@
     "nodemailer": "^8.0.2",
     "otplib": "^13.3.0",
     "pg": "^8.11.3",
+    "razorpay": "^2.9.6",
     "truedata-nodejs": "^1.1.0",
     "yahoo-finance2": "^2.11.3"
   }

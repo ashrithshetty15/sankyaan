@@ -1,0 +1,240 @@
+.pw-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.pw-modal {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 32px 28px;
+  max-width: 640px;
+  width: 100%;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.pw-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #1e293b;
+  border: none;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.pw-close:hover { background: #334155; color: #e2e8f0; }
+
+.pw-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.pw-lock { font-size: 2rem; margin-bottom: 8px; }
+
+.pw-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 8px;
+}
+
+.pw-feature-desc {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Billing toggle */
+.pw-billing-toggle {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.pw-toggle-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pw-toggle-btn.active {
+  background: #1e3a5f;
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.pw-save-badge {
+  background: #166534;
+  color: #86efac;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 20px;
+}
+
+/* Plan cards */
+.pw-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .pw-cards { grid-template-columns: 1fr; }
+}
+
+.pw-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.pw-card-highlight {
+  border-color: #3b82f6;
+  background: #0f1f38;
+}
+
+.pw-recommended {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #3b82f6;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.pw-plan-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pw-price {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  line-height: 1.1;
+}
+
+.pw-period {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.pw-savings {
+  font-size: 0.75rem;
+  color: #86efac;
+  font-weight: 600;
+}
+
+.pw-features {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.pw-features li {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.pw-check {
+  color: #3ddc84;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.pw-cta {
+  width: 100%;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  margin-top: auto;
+}
+
+.pw-cta-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.pw-cta-primary:hover:not(:disabled) { background: #3b82f6; }
+
+.pw-cta-secondary {
+  background: #1e293b;
+  color: #93c5fd;
+  border: 1px solid #334155;
+}
+
+.pw-cta-secondary:hover:not(:disabled) { background: #334155; }
+
+.pw-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pw-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.825rem;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.pw-footer {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #475569;
+  margin: 12px 0 0;
+}

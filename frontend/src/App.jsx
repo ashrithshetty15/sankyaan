@@ -7,6 +7,7 @@ import Sidebar from './Sidebar';
 import Home from './Home';
 import StockDetail from './StockDetail';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import Pricing from './Pricing';
 import './AppLayout.css';
 import './accessibility.css';
 
@@ -15,12 +16,20 @@ function AppContent() {
   const location = useLocation();
 
   const isStockDetailPage = location.pathname.startsWith('/stock/');
-  const isFullPage = location.pathname === '/privacy';
+  const isFullPage = location.pathname === '/privacy' || location.pathname === '/pricing';
 
   if (isFullPage) {
     return (
       <Routes>
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/pricing" element={
+          <div className="app-layout">
+            <Sidebar viewMode="" onViewModeChange={() => {}} />
+            <div className="main-content with-sidebar">
+              <Pricing />
+            </div>
+          </div>
+        } />
       </Routes>
     );
   }

@@ -122,6 +122,25 @@
   flex-shrink: 0;
 }
 
+.footer-pricing {
+  display: block;
+  text-align: center;
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-bottom: 8px;
+  transition: opacity 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.footer-pricing:hover {
+  opacity: 0.88;
+}
+
 .footer-email {
   font-size: 0.7em;
   color: var(--text3);

@@ -416,6 +416,33 @@ const MIGRATIONS = [
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
+  },
+  {
+    name: '023_add_subscription_fields',
+    sql: `
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS subscription_plan VARCHAR(20) DEFAULT 'free',
+        ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS razorpay_subscription_id VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS ai_reports_used INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS ai_reports_reset_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    `
+  },
+  {
+    name: '024_create_user_watchlist',
+    sql: `
+      CREATE TABLE IF NOT EXISTS user_watchlist (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        symbol VARCHAR(50) NOT NULL,
+        symbol_type VARCHAR(10) DEFAULT 'stock',
+        alert_price_above NUMERIC(12,2),
+        alert_price_below NUMERIC(12,2),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, symbol)
+      );
+      CREATE INDEX IF NOT EXISTS idx_user_watchlist_user ON user_watchlist(user_id);
+    `
   }
 ];
 

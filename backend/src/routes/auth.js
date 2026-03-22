@@ -47,10 +47,18 @@ export async function googleLogin(req, res) {
          name = EXCLUDED.name,
          picture = EXCLUDED.picture,
          last_login_at = NOW()
-       RETURNING id, google_id, email, name, picture`,
+       RETURNING id, google_id, email, name, picture, subscription_plan, subscription_expires_at`,
       [googleId, email, name, picture, hd || null]
     );
-    const user = result.rows[0];
+    const row = result.rows[0];
+    const expired = row.subscription_expires_at && new Date(row.subscription_expires_at) < new Date();
+    const user = {
+      ...row,
+      plan: expired ? 'free' : (row.subscription_plan || 'free'),
+      planExpiresAt: row.subscription_expires_at,
+    };
+    delete user.subscription_plan;
+    delete user.subscription_expires_at;
 
     // Sign JWT
     const token = jwt.sign(
@@ -80,10 +88,20 @@ export async function getMe(req, res) {
 
   try {
     const result = await pool.query(
-      'SELECT id, email, name, picture FROM users WHERE id = $1',
+      `SELECT id, email, name, picture, subscription_plan, subscription_expires_at
+       FROM users WHERE id = $1`,
       [req.user.userId]
     );
-    res.json({ user: result.rows[0] || null });
+    const row = result.rows[0];
+    if (row) {
+      // Treat expired subscriptions as free
+      const expired = row.subscription_expires_at && new Date(row.subscription_expires_at) < new Date();
+      row.plan = expired ? 'free' : (row.subscription_plan || 'free');
+      row.planExpiresAt = row.subscription_expires_at;
+      delete row.subscription_plan;
+      delete row.subscription_expires_at;
+    }
+    res.json({ user: row || null });
   } catch (error) {
     console.error('Get me error:', error.message);
     res.json({ user: null });

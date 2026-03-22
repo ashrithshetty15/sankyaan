@@ -29,6 +29,7 @@ import { addHolding, getPortfolio, deleteHolding, getPortfolioAnalysis } from '.
 import { getTradeAlerts, getTradeAlertHistory, triggerScan, getOptionsChainEndpoint } from './routes/tradeAlerts.js';
 import { initFyers, getAuthUrl, handleAuthCallback, isReady as isFyersReady, autoAuthenticate, getSpanMargin } from './fyersService.js';
 import { startAutoScanner } from './autoScanner.js';
+import { createOrder, verifyPayment, getPlans } from './routes/payments.js';
 
 dotenv.config();
 
@@ -70,6 +71,11 @@ app.use(optionalAuth);
 app.post('/api/auth/google', googleLogin);
 app.get('/api/auth/me', getMe);
 app.post('/api/auth/logout', logout);
+
+// Payment routes
+app.get('/api/payments/plans', getPlans);
+app.post('/api/payments/create-order', createOrder);
+app.post('/api/payments/verify', verifyPayment);
 
 // Health check
 app.get('/health', (req, res) => {

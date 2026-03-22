@@ -174,6 +174,7 @@ export default function Sidebar({ viewMode, onViewModeChange }) {
 
         <UserProfile />
         <div className="sidebar-footer">
+          <a href="/pricing" className="footer-pricing">⭐ Upgrade to Pro</a>
           <a href="mailto:contact@sankyaan.com" className="footer-email">contact@sankyaan.com</a>
         </div>
     </div>
