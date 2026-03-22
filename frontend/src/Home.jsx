@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
+import { useAuth } from './context/AuthContext';
 import PortfolioForensicScores from './PortfolioForensicScores.jsx';
 import PortfolioStockScores from './PortfolioStockScores.jsx';
 import StockScoresRating from './StockScoresRating.jsx';
@@ -17,6 +18,34 @@ import PaperTrading from './PaperTrading.jsx';
 import FOCommentary from './FOCommentary.jsx';
 import StockCommentary from './StockCommentary.jsx';
 import { exportFundReportToPDF } from './utils/pdfExport.js';
+
+const AUTH_REQUIRED_VIEWS = ['fo-commentary', 'stock-commentary', 'paper-trading', 'trade-alerts', 'portfolio-tracker'];
+
+function LoginGate({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return children;
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: '60px 20px', textAlign: 'center', color: '#e2e8f0',
+    }}>
+      <div style={{
+        background: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px',
+        padding: '40px', maxWidth: '420px', width: '100%',
+      }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>🔒</div>
+        <h2 style={{ margin: '0 0 8px', fontSize: '1.3rem', color: '#f8fafc' }}>Sign in required</h2>
+        <p style={{ margin: '0 0 24px', fontSize: '0.9rem', color: '#94a3b8', lineHeight: 1.6 }}>
+          Sign in with your Google account to access trading features.
+        </p>
+        <p style={{ fontSize: '0.78rem', color: '#64748b' }}>
+          Use the sign-in button in the sidebar to get started.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const API_URL_HOME = import.meta.env.VITE_API_URL ||
   (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sankyaan-backend.fly.dev/api');
@@ -1262,7 +1291,7 @@ export default function Home({ viewMode, setViewMode }) {
       )}
 
       {viewMode === 'trade-alerts' && (
-        <TradeAlerts />
+        <LoginGate><TradeAlerts /></LoginGate>
       )}
 
       {viewMode === 'market-sentiment' && (
@@ -1270,20 +1299,20 @@ export default function Home({ viewMode, setViewMode }) {
       )}
 
       {viewMode === 'fo-commentary' && (
-        <FOCommentary />
+        <LoginGate><FOCommentary /></LoginGate>
       )}
 
       {viewMode === 'stock-commentary' && (
-        <StockCommentary />
+        <LoginGate><StockCommentary /></LoginGate>
       )}
 
       {viewMode === 'paper-trading' && (
-        <PaperTrading />
+        <LoginGate><PaperTrading /></LoginGate>
       )}
 
       {/* Portfolio Tracker View */}
       {viewMode === 'portfolio-tracker' && (
-        <PortfolioTracker />
+        <LoginGate><PortfolioTracker /></LoginGate>
       )}
 
       {/* Stock Scores Rating View */}

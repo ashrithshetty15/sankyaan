@@ -16,7 +16,7 @@ import { fundScreener, getScreenerSectors } from './routes/fundScreener.js';
 import { fetchFMPDividendCalendar, fetchFMPStockSplits } from './fmpService.js';
 import { runMigrations } from './migrate.js';
 import pool from './db.js';
-import { optionalAuth } from './middleware/auth.js';
+import { optionalAuth, requireAuth } from './middleware/auth.js';
 import { googleLogin, getMe, logout } from './routes/auth.js';
 import { getBulkTrades, refreshBulkTrades } from './routes/bulkTrades.js';
 import { subscribe, confirm, unsubscribe, sendNewsletter, getStats } from './routes/newsletter.js';
@@ -254,7 +254,7 @@ app.get('/api/stock-ratings', getStockRatings);
 app.post('/api/stock-ratings/refresh', refreshStockRatings);
 
 // Trade alerts - high probability options strategies
-app.get('/api/trade-alerts', getTradeAlerts);
+app.get('/api/trade-alerts', requireAuth, getTradeAlerts);
 app.get('/api/trade-alerts/history', getTradeAlertHistory);
 app.post('/api/trade-alerts/scan', triggerScan);
 app.get('/api/trade-alerts/options-chain/:symbol', getOptionsChainEndpoint);
@@ -416,17 +416,17 @@ app.get('/api/newsletter/stats', getStats);
 
 // Market Sentiment - live VIX, PCR, StockTwits, news
 app.get('/api/market-sentiment', getMarketSentiment);
-app.get('/api/nifty-commentary', getNiftyCommentary);
-app.get('/api/stock-commentary', getStockCommentary);
+app.get('/api/nifty-commentary', requireAuth, getNiftyCommentary);
+app.get('/api/stock-commentary', requireAuth, getStockCommentary);
 app.get('/api/stock-ai-report', getStockAIReport);
 app.get('/api/fund-ai-report', getFundAIReport);
 
 // Paper Trading
-app.get('/api/paper-trading/portfolio', optionalAuth, getPaperPortfolio);
-app.post('/api/paper-trading/trade', optionalAuth, enterTrade);
-app.put('/api/paper-trading/trade/:id/close', optionalAuth, closeTrade);
-app.get('/api/paper-trading/history', optionalAuth, getPaperHistory);
-app.get('/api/paper-trading/stats', optionalAuth, getPaperStats);
+app.get('/api/paper-trading/portfolio', requireAuth, getPaperPortfolio);
+app.post('/api/paper-trading/trade', requireAuth, enterTrade);
+app.put('/api/paper-trading/trade/:id/close', requireAuth, closeTrade);
+app.get('/api/paper-trading/history', requireAuth, getPaperHistory);
+app.get('/api/paper-trading/stats', requireAuth, getPaperStats);
 app.get('/api/paper-trading/leaderboard', getLeaderboard);
 app.get('/api/paper-trading/option-chain/:underlying', getOptionChainForTrading);
 app.get('/api/paper-trading/price/:symbol', getLivePrice);
