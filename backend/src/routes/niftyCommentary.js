@@ -199,11 +199,18 @@ async function fetchAllFromFyers() {
     }
 
     const chainData = chainResult.value;
+
+    // Use Fyers aggregate OI for accurate PCR (covers ALL strikes, not just the ones returned)
+    const fyersTotalCallOI = chainData.callOi || 0;
+    const fyersTotalPutOI = chainData.putOi || 0;
+    const fyersPCR = fyersTotalCallOI > 0 ? parseFloat((fyersTotalPutOI / fyersTotalCallOI).toFixed(3)) : null;
+
+    // Use expiryData for proper expiry dates
+    const fyersExpiries = (chainData.expiryData || []).map(e => e.date).sort();
+    const nearestExpiry = fyersExpiries[0] || null;
+
     const rawRows = chainData.optionsChain || (Array.isArray(chainData) ? chainData : []);
     const rows = rawRows.map(o => ({ ...o, expiry: parseFyersExpiryIdx(o.symbol || '', o) }));
-    // Log an actual option symbol (not the index row)
-    const sampleOpt = rawRows.find(o => /CE|PE/i.test(o.symbol || ''));
-    if (sampleOpt) console.log(`[Fyers] ${name} sample option: ${sampleOpt.symbol}, parsed: ${parseFyersExpiryIdx(sampleOpt.symbol, sampleOpt)}`);
 
     const spotLtp = spotBySymbol[fyersSym] ?? chainData.ltp ?? null;
     const spot = spotLtp ? { price: parseFloat(spotLtp), change: null, changePct: null } : null;
@@ -218,18 +225,30 @@ async function fetchAllFromFyers() {
 
     // If no expiries parsed, use all rows (expiry = null)
     const useAllRows = expiries.length === 0 && rows.length > 0;
+
+    // Compute per-strike metrics but override PCR with accurate aggregate OI
+    let weeklyMetrics = weeklyExpiry  ? { expiry: weeklyExpiry,  ...computeFromFyersIdx(rows, weeklyExpiry,  spot?.price) }
+                      : useAllRows    ? { expiry: nearestExpiry || 'current', ...computeFromFyersIdx(rows, null, spot?.price) }
+                      : null;
+
+    // Keep per-expiry PCR from computeFromFyersIdx (matches Sensibull/Upstox).
+    // Aggregate OI (all expiries) stored separately for reference.
+    if (weeklyMetrics) {
+      weeklyMetrics.totalCallOI_allExpiries = fyersTotalCallOI;
+      weeklyMetrics.totalPutOI_allExpiries = fyersTotalPutOI;
+      weeklyMetrics.pcr_allExpiries = fyersPCR;
+    }
+
     output[name] = {
       spot,
-      weekly:      weeklyExpiry  ? { expiry: weeklyExpiry,  ...computeFromFyersIdx(rows, weeklyExpiry,  spot?.price) }
-                 : useAllRows    ? { expiry: 'current',     ...computeFromFyersIdx(rows, null,          spot?.price) }
-                 : null,
+      weekly: weeklyMetrics,
       monthly:     monthlyExpiry ? { expiry: monthlyExpiry, ...computeFromFyersIdx(rows, monthlyExpiry, spot?.price) } : null,
       weeklyChain: weeklyExpiry  ? buildIndexChainFromFyers(rows, weeklyExpiry, spot?.price)
                  : useAllRows    ? buildIndexChainFromFyers(rows, null,         spot?.price)
                  : [],
     };
 
-    console.log(`[Fyers] ${name}: ${rows.length} rows, expiries=[${expiries.slice(0, 3).join(', ')}], spot=${spot?.price}, weeklyChain=${output[name].weeklyChain.length}`);
+    console.log(`[Fyers] ${name}: weeklyPCR=${weeklyMetrics?.pcr} aggPCR=${fyersPCR} (callOI=${fyersTotalCallOI}, putOI=${fyersTotalPutOI}), ${rows.length} rows, spot=${spot?.price}, chain=${output[name].weeklyChain.length}`);
   });
 
   output._vixLtp = vixLtp;
