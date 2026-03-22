@@ -449,6 +449,12 @@
   margin-top: 16px;
 }
 
+.nc-chain-unavailable {
+  font-size: 0.78rem;
+  color: #475569;
+  padding: 8px 0;
+}
+
 .nc-chain-toggle {
   background: none;
   border: 1px solid;

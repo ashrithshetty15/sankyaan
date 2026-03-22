@@ -361,9 +361,13 @@ export async function getNiftyCommentary(req, res) {
       : { weekly: null, monthly: null };
 
     if (niftyChainResult.status === 'rejected') console.warn('Nifty chain error:', niftyChainResult.reason?.message);
+    else console.log(`[niftyCommentary] NIFTY weeklyChain rows: ${niftyOI.weeklyChain?.length ?? 'N/A'}`);
     if (bankniftyChainResult.status === 'rejected') console.warn('BankNifty chain error:', bankniftyChainResult.reason?.message);
+    else console.log(`[niftyCommentary] BANKNIFTY weeklyChain rows: ${bankniftyOI.weeklyChain?.length ?? 'N/A'}`);
     if (midcapChainResult.status === 'rejected') console.warn('MidcapNifty chain error:', midcapChainResult.reason?.message);
+    else console.log(`[niftyCommentary] MIDCAP weeklyChain rows: ${midcapOI.weeklyChain?.length ?? 'N/A'}`);
     if (finniftyChainResult.status === 'rejected') console.warn('FinNifty chain error:', finniftyChainResult.reason?.message);
+    else console.log(`[niftyCommentary] FINNIFTY weeklyChain rows: ${finniftyOI.weeklyChain?.length ?? 'N/A'}`);
 
     const marketData = {
       spot,

@@ -223,18 +223,22 @@ function IndexSection({ name, accent, spot, oiData, commentary, commentaryError,
         <OICard label="Monthly" metrics={monthly} />
       </div>
 
-      {chain && chain.length > 0 && (
-        <div className="nc-chain-section">
-          <button
-            className="nc-chain-toggle"
-            onClick={() => setChainOpen(o => !o)}
-            style={{ borderColor: accent, color: accent }}
-          >
-            {chainOpen ? '▲' : '▼'} {chainOpen ? 'Hide' : 'Show'} Full Option Chain ({chain.length} strikes)
-          </button>
-          {chainOpen && <IndexOptionChainTable chain={chain} spot={spot?.price} />}
-        </div>
-      )}
+      <div className="nc-chain-section">
+        {chain && chain.length > 0 ? (
+          <>
+            <button
+              className="nc-chain-toggle"
+              onClick={() => setChainOpen(o => !o)}
+              style={{ borderColor: accent, color: accent }}
+            >
+              {chainOpen ? '▲' : '▼'} {chainOpen ? 'Hide' : 'Show'} Full Option Chain ({chain.length} strikes)
+            </button>
+            {chainOpen && <IndexOptionChainTable chain={chain} spot={spot?.price} />}
+          </>
+        ) : (
+          <div className="nc-chain-unavailable">Option chain data unavailable — click Refresh to reload</div>
+        )}
+      </div>
     </div>
   );
 }
