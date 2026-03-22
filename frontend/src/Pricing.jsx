@@ -67,6 +67,11 @@ export default function Pricing() {
         setLoading('');
         return;
       }
+      if (!keyId) {
+        setError('Payment gateway not configured. Please contact contact@sankyaan.com.');
+        setLoading('');
+        return;
+      }
 
       const rzp = new window.Razorpay({
         key: keyId,

@@ -51,6 +51,11 @@ export default function PaywallModal({ onClose, defaultPlan = 'basic', featureDe
         setLoading(false);
         return;
       }
+      if (!keyId) {
+        setError('Payment gateway not configured. Please contact contact@sankyaan.com.');
+        setLoading(false);
+        return;
+      }
 
       const rzp = new window.Razorpay({
         key: keyId,
