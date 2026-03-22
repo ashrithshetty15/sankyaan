@@ -175,7 +175,7 @@ async function fetchAllFromFyers() {
 
   const [quotesResult, ...chainResults] = await Promise.allSettled([
     getQuotes(fyersSymbols),
-    ...fyersSymbols.map(sym => getOptionChain(sym, 25)),
+    ...fyersSymbols.map(sym => getOptionChain(sym, 50)),
   ]);
 
   // Build spot map from quotes
