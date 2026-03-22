@@ -231,12 +231,12 @@ async function fetchAllFromFyers() {
                       : useAllRows    ? { expiry: nearestExpiry || 'current', ...computeFromFyersIdx(rows, null, spot?.price) }
                       : null;
 
-    // Keep per-expiry PCR from computeFromFyersIdx (matches Sensibull/Upstox).
-    // Aggregate OI (all expiries) stored separately for reference.
-    if (weeklyMetrics) {
-      weeklyMetrics.totalCallOI_allExpiries = fyersTotalCallOI;
-      weeklyMetrics.totalPutOI_allExpiries = fyersTotalPutOI;
-      weeklyMetrics.pcr_allExpiries = fyersPCR;
+    // Use aggregate OI (all expiries) for PCR — matches Sensibull/Upstox
+    if (weeklyMetrics && fyersPCR != null) {
+      weeklyMetrics.pcr_weeklyOnly = weeklyMetrics.pcr;
+      weeklyMetrics.pcr = fyersPCR;
+      weeklyMetrics.totalCallOI = fyersTotalCallOI;
+      weeklyMetrics.totalPutOI = fyersTotalPutOI;
     }
 
     output[name] = {
