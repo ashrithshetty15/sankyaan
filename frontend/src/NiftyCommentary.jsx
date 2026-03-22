@@ -23,6 +23,13 @@ function getPCRLabel(pcr) {
   return 'Neutral';
 }
 
+const INDICES = [
+  { key: 'nifty', label: 'Nifty 50', accent: '#60a5fa', spotKey: 'spot', commentaryKey: 'nifty' },
+  { key: 'banknifty', label: 'Bank Nifty', accent: '#a78bfa', spotKey: 'bankniftySpot', commentaryKey: 'banknifty' },
+  { key: 'midcap', label: 'Midcap Nifty', accent: '#34d399', spotKey: 'midcapSpot', commentaryKey: 'midcap' },
+  { key: 'finnifty', label: 'Fin Nifty', accent: '#fb923c', spotKey: 'finniftySpot', commentaryKey: 'finnifty' },
+];
+
 function Countdown({ nextUpdateAt, onTick }) {
   const [secs, setSecs] = useState(0);
   useEffect(() => {
@@ -41,90 +48,126 @@ function Countdown({ nextUpdateAt, onTick }) {
   return <span className="nc-countdown">{m}:{String(s).padStart(2, '0')}</span>;
 }
 
-function OICard({ label, metrics }) {
-  if (!metrics) return null;
-  const { pcr, maxPain, topCE = [], topPE = [], expiry,
-          atmIV, atmDelta, atmGamma, atmTheta, ivSkew, expectedMove } = metrics;
+/* ── Key Metrics Dashboard ── */
+function MetricCard({ label, value, sub, color, large }) {
+  return (
+    <div className={`nc-metric-card${large ? ' nc-metric-large' : ''}`}>
+      <div className="nc-metric-label">{label}</div>
+      <div className="nc-metric-value" style={color ? { color } : undefined}>{value}</div>
+      {sub && <div className="nc-metric-sub">{sub}</div>}
+    </div>
+  );
+}
+
+function KeyMetrics({ spot, oiData, accent }) {
+  const weekly = oiData?.weekly;
+  if (!weekly && !spot) return null;
+
+  const pcr = weekly?.pcr;
   const pcrColor = getPCRColor(pcr);
-  const hasGreeks = atmIV != null || atmDelta != null || atmGamma != null;
+  const topSupport = weekly?.topPE?.[0];
+  const topResistance = weekly?.topCE?.[0];
 
   return (
-    <div className="nc-oi-card">
-      <div className="nc-oi-header">
-        <span className="nc-oi-label">{label}</span>
-        <span className="nc-oi-expiry">{expiry}</span>
-        <span className="nc-pcr-badge" style={{ color: pcrColor, borderColor: pcrColor }}>
-          PCR {fmt(pcr, 2)} · {getPCRLabel(pcr)}
-        </span>
-        {maxPain && <span className="nc-maxpain">Max Pain: {fmtINR(maxPain)}</span>}
-      </div>
-
-      {/* Greeks row */}
-      {hasGreeks && (
-        <div className="nc-greeks-row">
-          {atmIV != null && (
-            <span className="nc-greek-chip">
-              <span className="nc-greek-lbl">IV</span> {fmt(atmIV)}%
-            </span>
-          )}
-          {expectedMove != null && (
-            <span className="nc-greek-chip">
-              <span className="nc-greek-lbl">Exp. Move</span> ±{expectedMove}
-            </span>
-          )}
-          {atmDelta != null && (
-            <span className="nc-greek-chip">
-              <span className="nc-greek-lbl">Δ</span> {fmt(atmDelta, 3)}
-            </span>
-          )}
-          {atmGamma != null && (
-            <span className="nc-greek-chip">
-              <span className="nc-greek-lbl">Γ</span> {fmt(atmGamma, 4)}
-            </span>
-          )}
-          {atmTheta != null && (
-            <span className="nc-greek-chip">
-              <span className="nc-greek-lbl">Θ</span> -{fmt(atmTheta)}/day
-            </span>
-          )}
-          {ivSkew != null && (
-            <span className="nc-greek-chip" style={{ color: ivSkew > 3 ? '#f0b429' : '#94a3b8' }}>
-              <span className="nc-greek-lbl">IV Skew</span> {ivSkew > 0 ? '+' : ''}{fmt(ivSkew)}%
-            </span>
-          )}
-        </div>
+    <div className="nc-metrics-grid">
+      <MetricCard
+        label="Spot Price"
+        value={spot ? fmtINR(spot.price) : '—'}
+        sub={spot ? `${spot.changePct >= 0 ? '+' : ''}${fmt(spot.changePct)}%` : null}
+        color={spot?.changePct >= 0 ? '#3ddc84' : '#ff6b6b'}
+        large
+      />
+      <MetricCard
+        label="PCR"
+        value={pcr != null ? fmt(pcr, 2) : '—'}
+        sub={getPCRLabel(pcr)}
+        color={pcrColor}
+        large
+      />
+      <MetricCard
+        label="Max Pain"
+        value={weekly?.maxPain ? fmtINR(weekly.maxPain) : '—'}
+        sub={weekly?.expiry || null}
+        color="#e2e8f0"
+        large
+      />
+      <MetricCard
+        label="ATM IV"
+        value={weekly?.atmIV != null ? `${fmt(weekly.atmIV)}%` : '—'}
+        sub={weekly?.expectedMove != null ? `Exp. Move ±${weekly.expectedMove}` : null}
+        color={weekly?.atmIV > 20 ? '#ff6b6b' : weekly?.atmIV > 15 ? '#f0b429' : '#3ddc84'}
+        large
+      />
+      <MetricCard
+        label="Key Support"
+        value={topSupport ? fmtINR(topSupport.strike) : '—'}
+        sub={topSupport ? `OI: ${fmtOI(topSupport.oi)}` : null}
+        color="#3ddc84"
+      />
+      <MetricCard
+        label="Key Resistance"
+        value={topResistance ? fmtINR(topResistance.strike) : '—'}
+        sub={topResistance ? `OI: ${fmtOI(topResistance.oi)}` : null}
+        color="#ff6b6b"
+      />
+      {weekly?.atmDelta != null && (
+        <MetricCard label="Delta" value={fmt(weekly.atmDelta, 3)} color="#94a3b8" />
       )}
+      {weekly?.atmGamma != null && (
+        <MetricCard label="Gamma" value={fmt(weekly.atmGamma, 4)} color="#94a3b8" />
+      )}
+      {weekly?.atmTheta != null && (
+        <MetricCard label="Theta" value={`-${fmt(weekly.atmTheta)}/d`} color="#94a3b8" />
+      )}
+      {weekly?.ivSkew != null && (
+        <MetricCard
+          label="IV Skew"
+          value={`${weekly.ivSkew > 0 ? '+' : ''}${fmt(weekly.ivSkew)}%`}
+          color={weekly.ivSkew > 3 ? '#f0b429' : '#94a3b8'}
+        />
+      )}
+    </div>
+  );
+}
 
-      <div className="nc-oi-grid">
-        <div className="nc-oi-col">
-          <div className="nc-oi-col-title">🟢 Support (PE OI)</div>
-          {topPE.slice(0, 5).map(s => (
-            <div key={s.strike} className="nc-oi-row">
-              <span className="nc-strike">{fmtINR(s.strike)}</span>
-              <div className="nc-oi-bar-wrap">
-                <div className="nc-oi-bar pe" style={{ width: `${Math.min(100, (s.oi / (topPE[0]?.oi || 1)) * 100)}%` }} />
-              </div>
-              <span className="nc-oi-val">{fmtOI(s.oi)}</span>
+/* ── OI Levels (Support / Resistance bars) ── */
+function OILevels({ oiData }) {
+  const weekly = oiData?.weekly;
+  if (!weekly) return null;
+  const { topCE = [], topPE = [] } = weekly;
+  if (topCE.length === 0 && topPE.length === 0) return null;
+
+  return (
+    <div className="nc-oi-levels">
+      <div className="nc-oi-col">
+        <div className="nc-oi-col-title">Support (Put OI)</div>
+        {topPE.slice(0, 5).map(s => (
+          <div key={s.strike} className="nc-oi-row">
+            <span className="nc-strike">{fmtINR(s.strike)}</span>
+            <div className="nc-oi-bar-wrap">
+              <div className="nc-oi-bar pe" style={{ width: `${Math.min(100, (s.oi / (topPE[0]?.oi || 1)) * 100)}%` }} />
             </div>
-          ))}
-        </div>
-        <div className="nc-oi-col">
-          <div className="nc-oi-col-title">🔴 Resistance (CE OI)</div>
-          {topCE.slice(0, 5).map(s => (
-            <div key={s.strike} className="nc-oi-row">
-              <span className="nc-strike">{fmtINR(s.strike)}</span>
-              <div className="nc-oi-bar-wrap">
-                <div className="nc-oi-bar ce" style={{ width: `${Math.min(100, (s.oi / (topCE[0]?.oi || 1)) * 100)}%` }} />
-              </div>
-              <span className="nc-oi-val">{fmtOI(s.oi)}</span>
+            <span className="nc-oi-val">{fmtOI(s.oi)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="nc-oi-col">
+        <div className="nc-oi-col-title">Resistance (Call OI)</div>
+        {topCE.slice(0, 5).map(s => (
+          <div key={s.strike} className="nc-oi-row">
+            <span className="nc-strike">{fmtINR(s.strike)}</span>
+            <div className="nc-oi-bar-wrap">
+              <div className="nc-oi-bar ce" style={{ width: `${Math.min(100, (s.oi / (topCE[0]?.oi || 1)) * 100)}%` }} />
             </div>
-          ))}
-        </div>
+            <span className="nc-oi-val">{fmtOI(s.oi)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
+/* ── Option Chain Table ── */
 function IndexOptionChainTable({ chain, spot }) {
   if (!chain || chain.length === 0) return null;
   const atmStrike = spot
@@ -171,83 +214,13 @@ function IndexOptionChainTable({ chain, spot }) {
   );
 }
 
-function IndexSection({ name, accent, spot, oiData, commentary, commentaryError, timestamp }) {
-  const weekly = oiData?.weekly;
-  const monthly = oiData?.monthly;
-  const chain = oiData?.weeklyChain;
-  const pcr = weekly?.pcr;
-  const [chainOpen, setChainOpen] = useState(false);
-
-  return (
-    <div className="nc-index-section" style={{ borderTopColor: accent }}>
-      <div className="nc-index-header">
-        <div className="nc-index-title-group">
-          <span className="nc-index-name" style={{ color: accent }}>{name}</span>
-          {spot && (
-            <span className="nc-index-price" style={{ color: spot.changePct >= 0 ? '#3ddc84' : '#ff6b6b' }}>
-              {fmtINR(spot.price)}
-              <span className="nc-index-chg">
-                {spot.changePct >= 0 ? ' +' : ' '}{fmt(spot.changePct)}%
-              </span>
-            </span>
-          )}
-        </div>
-        {pcr != null && (
-          <div className="nc-index-pcr" style={{ color: getPCRColor(pcr), borderColor: getPCRColor(pcr) }}>
-            PCR {fmt(pcr, 2)} · {getPCRLabel(pcr)}
-          </div>
-        )}
-      </div>
-
-      {/* Per-index AI commentary */}
-      {commentary ? (
-        <div className="nc-index-commentary">
-          <div className="nc-index-commentary-header">
-            <span className="nc-ai-badge">✦ AI Analysis</span>
-            {timestamp && (
-              <span className="nc-commentary-time">
-                {new Date(timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })} IST
-              </span>
-            )}
-          </div>
-          <div className="nc-commentary-text">
-            {commentary.split('\n\n').map((para, i) => <p key={i}>{para}</p>)}
-          </div>
-        </div>
-      ) : commentaryError ? (
-        <div className="nc-index-commentary-error">⚠️ {commentaryError}</div>
-      ) : null}
-
-      <div className="nc-oi-pair">
-        <OICard label="Weekly" metrics={weekly} />
-        <OICard label="Monthly" metrics={monthly} />
-      </div>
-
-      <div className="nc-chain-section">
-        {chain && chain.length > 0 ? (
-          <>
-            <button
-              className="nc-chain-toggle"
-              onClick={() => setChainOpen(o => !o)}
-              style={{ borderColor: accent, color: accent }}
-            >
-              {chainOpen ? '▲' : '▼'} {chainOpen ? 'Hide' : 'Show'} Full Option Chain ({chain.length} strikes)
-            </button>
-            {chainOpen && <IndexOptionChainTable chain={chain} spot={spot?.price} />}
-          </>
-        ) : (
-          <div className="nc-chain-unavailable">Option chain data unavailable — click Refresh to reload</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function NiftyCommentary() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [chainOpen, setChainOpen] = useState(false);
   const fetchingRef = useRef(false);
 
   const load = useCallback(async (force = false) => {
@@ -269,19 +242,24 @@ export default function NiftyCommentary() {
 
   useEffect(() => { load(); }, [load]);
 
-  const { spot, bankniftySpot, midcapSpot, finniftySpot, vix, nifty, banknifty, midcap, finnifty, commentaries, marketOpen } = data || {};
+  const { vix, commentaries, marketOpen } = data || {};
   const c = commentaries || {};
-  const noApiKey = c.errors?._global === 'ANTHROPIC_API_KEY not set';
+  const idx = INDICES[selectedIndex];
+  const spot = data?.[idx.spotKey];
+  const oiData = data?.[idx.key];
+  const commentary = c[idx.commentaryKey];
+  const commentaryError = c.errors?.[idx.commentaryKey];
+  const chain = oiData?.weeklyChain;
 
   return (
     <div className="nc-container">
       {/* ── Header ── */}
       <div className="nc-header">
         <div className="nc-title-row">
-          <h2 className="nc-title">🎙️ Live F&O Commentary</h2>
+          <h2 className="nc-title">Live F&O Commentary</h2>
           <div className="nc-controls">
             {!marketOpen && data && (
-              <span className="nc-market-closed">🔴 Market Closed</span>
+              <span className="nc-market-closed">Market Closed</span>
             )}
             {data?.nextUpdateAt && !loading && marketOpen && (
               <span className="nc-next">
@@ -289,7 +267,7 @@ export default function NiftyCommentary() {
               </span>
             )}
             <button className="nc-refresh-btn" onClick={() => load(true)} disabled={loading}>
-              {loading ? '⏳' : '↻'} Refresh
+              {loading ? '...' : '↻'} Refresh
             </button>
           </div>
         </div>
@@ -312,7 +290,7 @@ export default function NiftyCommentary() {
 
       {data && (
         <>
-          {/* ── VIX summary bar ── */}
+          {/* ── VIX bar ── */}
           {vix && (
             <div className="nc-vix-bar">
               <span className="nc-vix-label">India VIX</span>
@@ -325,55 +303,70 @@ export default function NiftyCommentary() {
             </div>
           )}
 
-          {noApiKey && (
-            <div className="nc-no-commentary">
-              🔑 Set <code>ANTHROPIC_API_KEY</code> in Railway environment variables to enable AI commentary
+          {/* ── Index Selector ── */}
+          <div className="nc-index-selector">
+            {INDICES.map((ind, i) => {
+              const s = data?.[ind.spotKey];
+              return (
+                <button
+                  key={ind.key}
+                  className={`nc-index-tab${selectedIndex === i ? ' nc-index-tab-active' : ''}`}
+                  style={selectedIndex === i ? { borderColor: ind.accent, color: ind.accent } : undefined}
+                  onClick={() => { setSelectedIndex(i); setChainOpen(false); }}
+                >
+                  <span className="nc-tab-name">{ind.label}</span>
+                  {s && (
+                    <span className="nc-tab-price" style={{ color: s.changePct >= 0 ? '#3ddc84' : '#ff6b6b' }}>
+                      {fmtINR(s.price)} <span className="nc-tab-chg">{s.changePct >= 0 ? '+' : ''}{fmt(s.changePct)}%</span>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── Key Metrics ── */}
+          <KeyMetrics spot={spot} oiData={oiData} accent={idx.accent} />
+
+          {/* ── AI Commentary ── */}
+          {commentary ? (
+            <div className="nc-index-commentary" style={{ borderLeftColor: idx.accent }}>
+              <div className="nc-index-commentary-header">
+                <span className="nc-ai-badge">✦ AI Analysis</span>
+                {data?.timestamp && (
+                  <span className="nc-commentary-time">
+                    {new Date(data.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })} IST
+                  </span>
+                )}
+              </div>
+              <div className="nc-commentary-text">
+                {commentary.split('\n\n').map((para, i) => <p key={i}>{para}</p>)}
+              </div>
             </div>
-          )}
+          ) : commentaryError ? (
+            <div className="nc-index-commentary-error">{commentaryError}</div>
+          ) : null}
 
-          {/* ── Nifty Section ── */}
-          <IndexSection
-            name="Nifty 50"
-            accent="#60a5fa"
-            spot={spot}
-            oiData={nifty}
-            commentary={c.nifty}
-            commentaryError={c.errors?.nifty}
-            timestamp={data?.timestamp}
-          />
+          {/* ── OI Levels ── */}
+          <OILevels oiData={oiData} />
 
-          {/* ── BankNifty Section ── */}
-          <IndexSection
-            name="Bank Nifty"
-            accent="#a78bfa"
-            spot={bankniftySpot}
-            oiData={banknifty}
-            commentary={c.banknifty}
-            commentaryError={c.errors?.banknifty}
-            timestamp={data?.timestamp}
-          />
-
-          {/* ── Midcap Nifty Section ── */}
-          <IndexSection
-            name="Midcap Nifty"
-            accent="#34d399"
-            spot={midcapSpot}
-            oiData={midcap}
-            commentary={c.midcap}
-            commentaryError={c.errors?.midcap}
-            timestamp={data?.timestamp}
-          />
-
-          {/* ── Fin Nifty Section ── */}
-          <IndexSection
-            name="Fin Nifty"
-            accent="#fb923c"
-            spot={finniftySpot}
-            oiData={finnifty}
-            commentary={c.finnifty}
-            commentaryError={c.errors?.finnifty}
-            timestamp={data?.timestamp}
-          />
+          {/* ── Option Chain ── */}
+          <div className="nc-chain-section">
+            {chain && chain.length > 0 ? (
+              <>
+                <button
+                  className="nc-chain-toggle"
+                  onClick={() => setChainOpen(o => !o)}
+                  style={{ borderColor: idx.accent, color: idx.accent }}
+                >
+                  {chainOpen ? '▲ Hide' : '▼ Show'} Full Option Chain ({chain.length} strikes)
+                </button>
+                {chainOpen && <IndexOptionChainTable chain={chain} spot={spot?.price} />}
+              </>
+            ) : (
+              <div className="nc-chain-unavailable">Option chain data unavailable — click Refresh to reload</div>
+            )}
+          </div>
         </>
       )}
     </div>
