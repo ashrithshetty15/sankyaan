@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { getOptionChain, getQuotes, getFyersSymbol, isReady as isFyersReady, getCachedUnderlyingData } from '../fyersService.js';
+import { getOptionChain, getQuotes, getFyersSymbol, isReady as isFyersReady, getCachedUnderlyingData, autoAuthenticate } from '../fyersService.js';
 
 const NSE_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -251,18 +251,36 @@ function buildOptionChain(optData, targetExpiry, spotPrice) {
 
 async function fetchFromFyers(symbol) {
   const fyersSymbol = getFyersSymbol(symbol);
-  await Promise.all([
+
+  // Single parallel fetch — use results directly (getOptionChain always calls Fyers API, not cache)
+  const [chainData, quotesResult] = await Promise.all([
     getOptionChain(fyersSymbol, 20),
     getQuotes([fyersSymbol]),
   ]);
 
-  // Read from cache (populated by the calls above)
-  const chainData = await getOptionChain(fyersSymbol, 20);
-  if (chainData?.error) throw new Error(chainData.error);
+  if (chainData?.error) {
+    // If token expired mid-session, attempt one silent re-auth then retry
+    if (chainData.error.startsWith('auth_error') || chainData.error.includes('not connected')) {
+      console.log(`Fyers auth error for ${symbol}, attempting re-auth...`);
+      const reauthed = await autoAuthenticate().catch(() => false);
+      if (reauthed) {
+        const retryChain = await getOptionChain(fyersSymbol, 20);
+        if (!retryChain?.error) {
+          // Recursion-safe: use retryChain directly
+          return buildFyersResult(symbol, fyersSymbol, retryChain);
+        }
+      }
+    }
+    throw new Error(chainData.error);
+  }
 
-  // Fyers option rows have no .expiry field — parse it from the symbol string
-  const rawOptData = chainData.optionsChain || [];
-  const optData = rawOptData.map(o => ({
+  console.log(`Fyers ${symbol}: chainData keys = ${Object.keys(chainData || {}).join(', ')}`);
+  return buildFyersResult(symbol, fyersSymbol, chainData);
+}
+
+function buildFyersResult(symbol, fyersSymbol, chainData, rawOptData) {
+  const rows = rawOptData || chainData.optionsChain || (Array.isArray(chainData) ? chainData : []);
+  const optData = rows.map(o => ({
     ...o,
     expiry: parseFyersExpiry(o.symbol || ''),
   }));
@@ -276,7 +294,6 @@ async function fetchFromFyers(symbol) {
   const nearMonth = nearExpiry ? { expiry: nearExpiry, ...computeFromFyers(optData, nearExpiry) } : null;
   const nextMonth = nextExpiry ? { expiry: nextExpiry, ...computeFromFyers(optData, nextExpiry) } : null;
 
-  // Spot price from getCachedUnderlyingData (populated by getQuotes above)
   const spotData = getCachedUnderlyingData(fyersSymbol);
   const spot = spotData?.ltp
     ? { price: parseFloat(spotData.ltp), change: null, changePct: null }
@@ -284,7 +301,7 @@ async function fetchFromFyers(symbol) {
 
   const nearChain = nearExpiry ? buildOptionChain(optData, nearExpiry, spot?.price) : [];
 
-  console.log(`Fyers ${symbol}: ${optData.length} rows, expiries: ${expiriesRaw.join(', ')}, spot: ${spotData?.ltp}`);
+  console.log(`Fyers ${symbol}: ${optData.length} rows, expiries=[${expiriesRaw.join(', ')}], spot=${spotData?.ltp}, nearMonth=${!!nearMonth}`);
   return { spot, nearMonth, nextMonth, nearChain, source: 'fyers' };
 }
 
