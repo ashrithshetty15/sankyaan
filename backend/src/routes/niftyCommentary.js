@@ -352,7 +352,11 @@ function extractExpiryMetrics(chainData, today, spotPrice) {
     ? { expiry: monthlyExpiry, ...computeOIMetrics(optData, monthlyExpiry, spotPrice) }
     : null;
 
-  const weeklyChain = weeklyExpiry ? buildIndexOptionChain(optData, weeklyExpiry, spotPrice) : [];
+  // Use filtered.data (NSE pre-filtered to near expiry) to avoid date-format matching issues
+  const filteredRows = chainData?.filtered?.data || [];
+  const weeklyChain = filteredRows.length > 0
+    ? buildIndexOptionChain(filteredRows, null, spotPrice)
+    : (weeklyExpiry ? buildIndexOptionChain(optData, weeklyExpiry, spotPrice) : []);
 
   return { weekly, monthly, weeklyChain };
 }
