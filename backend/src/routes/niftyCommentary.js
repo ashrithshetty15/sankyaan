@@ -139,6 +139,36 @@ function computeOIMetrics(optData, targetExpiry, spotPrice) {
            atmIV, atmDelta, atmGamma, atmTheta, ivSkew, expectedMove };
 }
 
+/**
+ * Full option chain table for a given expiry, filtered to ATM ± 20 strikes.
+ * Normalised to { strike, isATM, ce: { oi, ltp, iv }, pe: { oi, ltp, iv } }.
+ */
+function buildIndexOptionChain(optData, targetExpiry, spotPrice) {
+  const rows = optData.filter(r => !targetExpiry || r.expiryDate === targetExpiry);
+  const allStrikes = [...new Set(rows.map(r => r.strikePrice))].sort((a, b) => a - b);
+
+  let strikesToShow = allStrikes;
+  if (spotPrice && allStrikes.length > 40) {
+    const atmIdx = allStrikes.reduce((best, _, i) =>
+      Math.abs(allStrikes[i] - spotPrice) < Math.abs(allStrikes[best] - spotPrice) ? i : best, 0);
+    strikesToShow = allStrikes.slice(Math.max(0, atmIdx - 20), Math.min(allStrikes.length, atmIdx + 21));
+  }
+
+  const atmStrike = spotPrice && allStrikes.length > 0
+    ? allStrikes.reduce((p, c) => Math.abs(c - spotPrice) < Math.abs(p - spotPrice) ? c : p)
+    : null;
+
+  return strikesToShow.map(strike => {
+    const row = rows.find(r => r.strikePrice === strike);
+    return {
+      strike,
+      isATM: strike === atmStrike,
+      ce: row?.CE ? { oi: row.CE.openInterest || 0, ltp: row.CE.lastPrice || null, iv: row.CE.impliedVolatility || null } : null,
+      pe: row?.PE ? { oi: row.PE.openInterest || 0, ltp: row.PE.lastPrice || null, iv: row.PE.impliedVolatility || null } : null,
+    };
+  });
+}
+
 function extractExpiryMetrics(chainData, today, spotPrice) {
   const optData = chainData?.records?.data || chainData?.filtered?.data || [];
   const expiriesRaw = chainData?.records?.expiryDates || [];
@@ -158,7 +188,9 @@ function extractExpiryMetrics(chainData, today, spotPrice) {
     ? { expiry: monthlyExpiry, ...computeOIMetrics(optData, monthlyExpiry, spotPrice) }
     : null;
 
-  return { weekly, monthly };
+  const weeklyChain = weeklyExpiry ? buildIndexOptionChain(optData, weeklyExpiry, spotPrice) : [];
+
+  return { weekly, monthly, weeklyChain };
 }
 
 function fmtOI(oi) {

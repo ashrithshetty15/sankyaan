@@ -125,10 +125,58 @@ function OICard({ label, metrics }) {
   );
 }
 
+function IndexOptionChainTable({ chain, spot }) {
+  if (!chain || chain.length === 0) return null;
+  const atmStrike = spot
+    ? chain.reduce((p, c) => Math.abs(c.strike - spot) < Math.abs(p.strike - spot) ? c : p).strike
+    : chain.find(r => r.isATM)?.strike;
+  const maxCE = Math.max(...chain.map(r => r.ce?.oi || 0), 1);
+  const maxPE = Math.max(...chain.map(r => r.pe?.oi || 0), 1);
+
+  return (
+    <div className="nc-chain-table">
+      <div className="nc-chain-header">
+        <span className="nc-chain-ce-col">OI</span>
+        <span className="nc-chain-ce-col nc-chain-hide-mobile">IV%</span>
+        <span className="nc-chain-ce-col">LTP</span>
+        <span className="nc-chain-strike-hdr">Strike</span>
+        <span className="nc-chain-pe-col">LTP</span>
+        <span className="nc-chain-pe-col nc-chain-hide-mobile">IV%</span>
+        <span className="nc-chain-pe-col">OI</span>
+      </div>
+      {chain.map(row => (
+        <div key={row.strike} className={`nc-chain-row${row.strike === atmStrike ? ' nc-chain-atm' : ''}`}>
+          <span className="nc-chain-ce-col nc-chain-oi-wrap">
+            <span className="nc-chain-oi-bar-wrap">
+              <span className="nc-chain-oi-bar ce" style={{ width: `${Math.min(100, ((row.ce?.oi || 0) / maxCE) * 100)}%` }} />
+            </span>
+            <span className="nc-chain-oi-val">{fmtOI(row.ce?.oi || 0)}</span>
+          </span>
+          <span className="nc-chain-ce-col nc-chain-hide-mobile">{row.ce?.iv ? fmt(row.ce.iv) : '—'}</span>
+          <span className="nc-chain-ce-col nc-chain-ltp">{row.ce?.ltp ? fmt(row.ce.ltp) : '—'}</span>
+          <span className={`nc-chain-strike${row.strike === atmStrike ? ' nc-chain-strike-atm' : ''}`}>
+            {row.strike}
+          </span>
+          <span className="nc-chain-pe-col nc-chain-ltp">{row.pe?.ltp ? fmt(row.pe.ltp) : '—'}</span>
+          <span className="nc-chain-pe-col nc-chain-hide-mobile">{row.pe?.iv ? fmt(row.pe.iv) : '—'}</span>
+          <span className="nc-chain-pe-col nc-chain-oi-wrap">
+            <span className="nc-chain-oi-val">{fmtOI(row.pe?.oi || 0)}</span>
+            <span className="nc-chain-oi-bar-wrap">
+              <span className="nc-chain-oi-bar pe" style={{ width: `${Math.min(100, ((row.pe?.oi || 0) / maxPE) * 100)}%` }} />
+            </span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function IndexSection({ name, accent, spot, oiData, commentary, commentaryError, timestamp }) {
   const weekly = oiData?.weekly;
   const monthly = oiData?.monthly;
+  const chain = oiData?.weeklyChain;
   const pcr = weekly?.pcr;
+  const [chainOpen, setChainOpen] = useState(false);
 
   return (
     <div className="nc-index-section" style={{ borderTopColor: accent }}>
@@ -174,6 +222,19 @@ function IndexSection({ name, accent, spot, oiData, commentary, commentaryError,
         <OICard label="Weekly" metrics={weekly} />
         <OICard label="Monthly" metrics={monthly} />
       </div>
+
+      {chain && chain.length > 0 && (
+        <div className="nc-chain-section">
+          <button
+            className="nc-chain-toggle"
+            onClick={() => setChainOpen(o => !o)}
+            style={{ borderColor: accent, color: accent }}
+          >
+            {chainOpen ? '▲' : '▼'} {chainOpen ? 'Hide' : 'Show'} Full Option Chain ({chain.length} strikes)
+          </button>
+          {chainOpen && <IndexOptionChainTable chain={chain} spot={spot?.price} />}
+        </div>
+      )}
     </div>
   );
 }

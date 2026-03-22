@@ -443,3 +443,122 @@
     font-size: 1.1rem;
   }
 }
+
+/* ── Option Chain Table ── */
+.nc-chain-section {
+  margin-top: 16px;
+}
+
+.nc-chain-toggle {
+  background: none;
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+.nc-chain-toggle:hover { opacity: 1; }
+
+.nc-chain-table {
+  background: #0a1220;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.75rem;
+}
+
+.nc-chain-header,
+.nc-chain-row {
+  display: grid;
+  grid-template-columns: 1fr 0.6fr 0.8fr 1fr 0.8fr 0.6fr 1fr;
+  align-items: center;
+  padding: 6px 12px;
+  gap: 4px;
+}
+
+.nc-chain-header {
+  background: #1e293b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nc-chain-ce-col { text-align: left; }
+.nc-chain-pe-col { text-align: right; }
+
+.nc-chain-ce-col:not(:first-child),
+.nc-chain-pe-col { text-align: center; }
+
+.nc-chain-strike-hdr {
+  text-align: center;
+  color: #94a3b8;
+}
+
+.nc-chain-row {
+  border-top: 1px solid #1a2535;
+  color: #94a3b8;
+}
+
+.nc-chain-row:hover { background: rgba(255,255,255,0.02); }
+
+.nc-chain-atm {
+  background: rgba(96,165,250,0.06);
+  border-top-color: rgba(96,165,250,0.15);
+}
+
+.nc-chain-strike {
+  text-align: center;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.nc-chain-strike-atm {
+  color: #60a5fa;
+}
+
+.nc-chain-oi-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nc-chain-oi-bar-wrap {
+  flex: 1;
+  background: #1e293b;
+  border-radius: 2px;
+  height: 5px;
+  overflow: hidden;
+  min-width: 20px;
+}
+
+.nc-chain-oi-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.nc-chain-oi-bar.ce { background: #ff6b6b; }
+.nc-chain-oi-bar.pe { background: #3ddc84; }
+
+.nc-chain-oi-val {
+  font-size: 0.68rem;
+  color: #64748b;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nc-chain-ltp { color: #e2e8f0; }
+
+@media (max-width: 600px) {
+  .nc-chain-hide-mobile { display: none; }
+  .nc-chain-header,
+  .nc-chain-row {
+    grid-template-columns: 1fr 0.8fr 1fr 0.8fr 1fr;
+  }
+}
