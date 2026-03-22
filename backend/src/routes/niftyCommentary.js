@@ -597,6 +597,19 @@ export async function getNiftyCommentary(req, res) {
     // ── Fyers fallback when NSE is geo-blocked ─────────────────────────────────
     const nseChainResults = [niftyChainResult, bankniftyChainResult, midcapChainResult, finniftyChainResult];
     const nseSomeFailed = nseChainResults.some(r => r.status === 'rejected');
+    const nseNames = ['NIFTY', 'BANKNIFTY', 'MIDCPNIFTY', 'FINNIFTY'];
+    nseChainResults.forEach((r, i) => {
+      if (r.status === 'fulfilled') {
+        const d = r.value;
+        const recLen = d?.records?.data?.length || 0;
+        const filtLen = d?.filtered?.data?.length || 0;
+        const expLen = d?.records?.expiryDates?.length || 0;
+        const sampleIV = d?.filtered?.data?.[0]?.CE?.impliedVolatility;
+        console.log(`[NSE] ${nseNames[i]}: records=${recLen} filtered=${filtLen} expiries=${expLen} sampleIV=${sampleIV}`);
+      } else {
+        console.log(`[NSE] ${nseNames[i]}: FAILED - ${r.reason?.message}`);
+      }
+    });
     let fyersData = {};
     if (nseSomeFailed) {
       try { fyersData = await fetchAllFromFyers(); } catch (e) {
@@ -655,6 +668,23 @@ export async function getNiftyCommentary(req, res) {
       value: resolvedVixVal,
       level: resolvedVixVal < 15 ? 'Low Fear' : resolvedVixVal < 20 ? 'Moderate' : resolvedVixVal < 25 ? 'High' : 'Extreme Fear',
     } : null;
+
+    // Estimate ATM IV from VIX when NSE data is unavailable
+    // VIX is annualised Nifty ATM IV; other indices scale roughly:
+    // BankNifty ~1.15x, FinNifty ~1.1x, Midcap ~1.2x
+    if (resolvedVixVal) {
+      const ivScales = [1.0, 1.15, 1.2, 1.1]; // NIFTY, BANKNIFTY, MIDCPNIFTY, FINNIFTY
+      const spots = [resolvedSpot, resolvedBankniftySpot, resolvedMidcapSpot, resolvedFinniftySpot];
+      allOI.forEach((oi, idx) => {
+        if (oi.weekly && oi.weekly.atmIV == null) {
+          const estimatedIV = parseFloat((resolvedVixVal * ivScales[idx]).toFixed(2));
+          oi.weekly.atmIV = estimatedIV;
+          if (spots[idx]?.price) {
+            oi.weekly.expectedMove = parseFloat((estimatedIV / 100 * spots[idx].price / Math.sqrt(52)).toFixed(0));
+          }
+        }
+      });
+    }
 
     console.log(`[niftyCommentary] source: nse=${!nseSomeFailed}, fyers=${Object.keys(fyersData).filter(k => !k.startsWith('_')).join(',') || 'none'}`);
 
