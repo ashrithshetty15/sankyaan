@@ -1299,7 +1299,7 @@ export default function Home({ viewMode, setViewMode }) {
       )}
 
       {viewMode === 'fo-commentary' && (
-        <LoginGate><FOCommentary /></LoginGate>
+        <FOCommentary />
       )}
 
       {viewMode === 'stock-commentary' && (
