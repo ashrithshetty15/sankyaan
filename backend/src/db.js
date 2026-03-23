@@ -7,18 +7,28 @@ const { Pool } = pg;
 
 // PostgreSQL connection pool
 // Support both DATABASE_URL (Railway default) and individual vars (local dev)
-const pool = process.env.DATABASE_URL
-  ? new Pool({
+const poolConfig = process.env.DATABASE_URL
+  ? {
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    })
-  : new Pool({
+    }
+  : {
       host: process.env.DB_HOST || 'localhost',
       database: process.env.DB_NAME || 'Sankyaan',
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'Sankyaan',
       port: process.env.DB_PORT || 5432,
-    });
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    };
+
+// Keep connections alive and handle transient failures
+poolConfig.connectionTimeoutMillis = 10000;
+poolConfig.idleTimeoutMillis = 30000;
+poolConfig.max = 5;
+poolConfig.keepAlive = true;
+poolConfig.keepAliveInitialDelayMillis = 10000;
+
+const pool = new Pool(poolConfig);
 
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
