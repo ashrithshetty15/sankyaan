@@ -23,10 +23,21 @@ export async function googleLogin(req, res) {
       return res.status(400).json({ error: 'Missing access_token' });
     }
 
-    // Fetch user info from Google using the access token
-    const googleRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
+    // Fetch user info from Google using the access token (retry on transient errors)
+    let googleRes;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        googleRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${access_token}` },
+          timeout: 10000,
+        });
+        break;
+      } catch (err) {
+        if (attempt === 3 || !['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED'].includes(err.code)) throw err;
+        console.warn(`Google userinfo attempt ${attempt} failed (${err.code}), retrying...`);
+        await new Promise(r => setTimeout(r, 500 * attempt));
+      }
+    }
     const { sub: googleId, email, name, picture, hd } = googleRes.data;
 
     // Domain restriction
