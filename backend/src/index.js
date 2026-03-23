@@ -416,7 +416,7 @@ app.get('/api/newsletter/stats', getStats);
 
 // Market Sentiment - live VIX, PCR, StockTwits, news
 app.get('/api/market-sentiment', getMarketSentiment);
-app.get('/api/nifty-commentary', requireAuth, getNiftyCommentary);
+app.get('/api/nifty-commentary', getNiftyCommentary);
 app.get('/api/stock-commentary', requireAuth, getStockCommentary);
 app.get('/api/stock-ai-report', getStockAIReport);
 app.get('/api/fund-ai-report', getFundAIReport);
